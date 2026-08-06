@@ -19,13 +19,17 @@ signal settings_pressed
 const COLOR_ACCENT := Color("#3B82F6")
 const COLOR_PRIMARY_TEXT := Color("#1B2538")
 const COLOR_SECONDARY_TEXT := Color("#717D93")
+const DEFAULT_SUBTITLE := "Clear all paths"
 
 var interaction_locked := false
 var controls_enabled := true
+var message_tween: Tween = null
 
 func _ready() -> void:
 	_apply_styles()
 	lives_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	hint_count_badge.add_theme_color_override("font_color", COLOR_ACCENT)
+	hint_count_badge.add_theme_font_size_override("font_size", 14)
 	hint_card.gui_input.connect(_on_card_input.bind(hint_card, func() -> void: hint_pressed.emit()))
 	restart_card.gui_input.connect(_on_card_input.bind(restart_card, func() -> void: restart_pressed.emit()))
 	back_button.pressed.connect(func() -> void:
@@ -94,8 +98,25 @@ func _on_card_input(event: InputEvent, card: Control, callback: Callable) -> voi
 func update_hud(level_num: int, difficulty: String, lives: int, hints: int) -> void:
 	level_label.text = "Level %d" % level_num
 	difficulty_label.text = difficulty
-	hint_count_badge.text = str(maxi(hints, 0))
+	hint_count_badge.text = "×%d" % maxi(hints, 0)
+	hint_count_badge.visible = true
 	lives_count_label.text = str(maxi(lives, 0))
+	hint_card.modulate = Color.WHITE if hints > 0 else Color(1.0, 1.0, 1.0, 0.58)
+
+func show_message(message: String, accent: bool = false) -> void:
+	if message_tween != null and message_tween.is_valid():
+		message_tween.kill()
+	subtitle_label.text = message
+	subtitle_label.add_theme_color_override(
+		"font_color",
+		COLOR_ACCENT if accent else COLOR_SECONDARY_TEXT
+	)
+	message_tween = create_tween()
+	message_tween.tween_interval(1.6)
+	message_tween.tween_callback(func() -> void:
+		subtitle_label.text = DEFAULT_SUBTITLE
+		subtitle_label.add_theme_color_override("font_color", COLOR_SECONDARY_TEXT)
+	)
 
 func set_controls_enabled(enabled: bool) -> void:
 	controls_enabled = enabled
