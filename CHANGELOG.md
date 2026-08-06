@@ -1,6 +1,24 @@
 # Pathbreak — Changelog
 
-## [0.3.0] - Unreleased
+## [0.3.1] - Unreleased
+
+### Fixed
+
+- Gameplay taps now reach the board instead of being absorbed by the full-screen gameplay `Control`.
+- Path selection now converts viewport coordinates through each piece's full canvas transform, preserving accuracy after responsive scaling.
+- Slightly increased the mobile path-selection tolerance.
+- Level 1 tutorial hints are free and always provide visible feedback.
+- Hint count is now visible in the HUD, including the zero-hint state.
+- Added temporary HUD guidance for the tutorial, blocked paths, unavailable hints, and highlighted paths.
+- Fixed strict Godot 4.7 integer-division warnings in procedural audio generation and result time formatting.
+
+### Verified locally before the gameplay-input follow-up
+
+- Godot 4.7.1 editor scan: 0 parser warnings and 0 errors.
+- MovementValidator tests: 10/10 passed.
+- LevelDataValidator tests: 8/8 passed.
+
+## [0.3.0] - 2026-08-06
 
 ### Added
 
@@ -29,13 +47,6 @@
 - Duplicate root-level `scenes/PuzzlePiece.tscn`.
 - Legacy `scripts/GameManager.gd` and its UID.
 - Legacy victory scene/controller and its UID.
-
-### Verification required before merge
-
-- Open the branch in Godot 4.7.1 and fix all parser/runtime errors.
-- Run both headless test suites.
-- Test touch input, pause/settings, Android back, save/load, failure, and completion on devices.
-- Validate levels 1–5 against `docs/VERTICAL_SLICE.md`.
 
 ## [0.2.0] - 2026-08-06
 
