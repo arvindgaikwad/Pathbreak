@@ -10,10 +10,12 @@ const COLOR_ACCENT := Color("#3978F6")
 
 const CYCLE_DURATION := 4.4
 const PULSE_START := 0.45
-const PULSE_DURATION := 1.35
-const ESCAPE_START := 2.10
+const PULSE_DURATION := 1.20
+const HIGHLIGHT_DURATION := 0.42
+const ESCAPE_START := PULSE_START + PULSE_DURATION + HIGHLIGHT_DURATION
 const ESCAPE_DURATION := 0.72
-const PULSE_LENGTH := 56.0
+const MARKER_START_PROGRESS := 0.06
+const MARKER_END_PROGRESS := 0.78
 
 var elapsed: float = 0.0
 var active_index: int = 0
@@ -40,7 +42,7 @@ func _draw() -> void:
 	for index in range(paths.size()):
 		var offset := Vector2.ZERO
 		var path_color := COLOR_PATH
-		var pulse_progress: float = -1.0
+		var marker_progress: float = -1.0
 
 		if index == active_index:
 			if SettingsManager.reduce_motion:
@@ -56,16 +58,21 @@ func _draw() -> void:
 			elif elapsed >= PULSE_START + PULSE_DURATION:
 				path_color = COLOR_ACCENT
 			elif elapsed >= PULSE_START:
-				pulse_progress = clampf(
+				var normalized_progress := clampf(
 					(elapsed - PULSE_START) / PULSE_DURATION,
 					0.0,
 					1.0
 				)
+				marker_progress = lerpf(
+					MARKER_START_PROGRESS,
+					MARKER_END_PROGRESS,
+					normalized_progress
+				)
 
 		var shifted: PackedVector2Array = _shift_points(paths[index], offset)
 		_draw_path(shifted, directions[index], path_color)
-		if pulse_progress >= 0.0:
-			_draw_direction_pulse(shifted, pulse_progress)
+		if marker_progress >= 0.0:
+			_draw_direction_marker(shifted, marker_progress)
 
 func _draw_board_card() -> void:
 	var shadow_rect := Rect2(Vector2(8.0, 12.0), size - Vector2(16.0, 20.0))
@@ -133,29 +140,30 @@ func _draw_path(points: PackedVector2Array, direction: Vector2, color: Color) ->
 		return
 
 	draw_polyline(points, color, 13.0, true)
-	draw_circle(points[0], 5.5, color)
+	draw_circle(points[0], 4.8, color)
 
-	var tip := points[-1] + direction * 20.0
+	var length := 28.0
+	var half_height := 15.0
+	var base_offset := 6.0
+	var tip := points[-1] + direction * length
 	var side := direction.orthogonal()
 	var arrow := PackedVector2Array([
 		tip,
-		points[-1] - direction * 8.0 + side * 16.0,
-		points[-1] + direction * 2.0,
-		points[-1] - direction * 8.0 - side * 16.0
+		points[-1] - direction * base_offset + side * half_height,
+		points[-1] - direction * base_offset - side * half_height
 	])
 	draw_colored_polygon(arrow, color)
 
-func _draw_direction_pulse(points: PackedVector2Array, progress: float) -> void:
+func _draw_direction_marker(points: PackedVector2Array, progress: float) -> void:
 	var total_length := _polyline_length(points)
 	if total_length <= 0.0:
 		return
-
-	var head_distance := total_length * progress
-	var tail_distance := maxf(head_distance - PULSE_LENGTH, 0.0)
-	var pulse_points := _path_slice(points, tail_distance, head_distance)
-	if pulse_points.size() >= 2:
-		draw_polyline(pulse_points, COLOR_ACCENT, 13.0, true)
-	draw_circle(_point_at_distance(points, head_distance), 6.5, COLOR_ACCENT)
+	var marker_distance := total_length * clampf(
+		progress,
+		MARKER_START_PROGRESS,
+		MARKER_END_PROGRESS
+	)
+	draw_circle(_point_at_distance(points, marker_distance), 5.5, COLOR_ACCENT)
 
 func _polyline_length(points: PackedVector2Array) -> float:
 	var total := 0.0
@@ -183,48 +191,6 @@ func _point_at_distance(points: PackedVector2Array, target_distance: float) -> V
 			return start.lerp(finish, amount)
 		traveled += segment_length
 	return points[-1]
-
-func _path_slice(
-	points: PackedVector2Array,
-	start_distance: float,
-	end_distance: float
-) -> PackedVector2Array:
-	var result := PackedVector2Array()
-	if points.size() < 2:
-		return result
-
-	var traveled := 0.0
-	for index in range(points.size() - 1):
-		var start: Vector2 = points[index]
-		var finish: Vector2 = points[index + 1]
-		var segment_length := start.distance_to(finish)
-		var segment_start := traveled
-		var segment_end := traveled + segment_length
-
-		if end_distance < segment_start:
-			break
-		if start_distance > segment_end:
-			traveled = segment_end
-			continue
-
-		var local_start := clampf(
-			(start_distance - segment_start) / maxf(segment_length, 0.001),
-			0.0,
-			1.0
-		)
-		var local_end := clampf(
-			(end_distance - segment_start) / maxf(segment_length, 0.001),
-			0.0,
-			1.0
-		)
-		var slice_start := start.lerp(finish, local_start)
-		var slice_end := start.lerp(finish, local_end)
-		if result.is_empty() or result[-1] != slice_start:
-			result.append(slice_start)
-		result.append(slice_end)
-		traveled = segment_end
-
-	return result
 
 func _on_settings_changed() -> void:
 	elapsed = 0.0
