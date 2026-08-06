@@ -1,11 +1,37 @@
 # Pathbreak — Changelog
 
+## [0.3.3] - Unreleased
+
+### Added
+
+- Replaced the temporary landing-page menu with the `Living Board` game-menu concept.
+- Added a lightweight animated mini-board that demonstrates the core path-clearing rule without copied artwork.
+- Added explicit new-player, returning-player, and chapter-complete menu states.
+- Added total-star display, chapter progress, a dominant Start/Continue action, and clear secondary navigation.
+- Added a dedicated How to Play overlay.
+- Added a dedicated main-menu settings overlay for sound, haptics, reduced motion, and high contrast.
+
+### Changed
+
+- Removed random full-screen floating-arrow decoration from the main menu.
+- Removed store-style marketing copy from the primary player flow.
+- The main-menu primary action now recommends the first unlocked uncleared level and handles completed content honestly.
+- Main-menu motion now uses purposeful section fades and the Living Board demonstration only.
+
+### Verification required
+
+- Run the Godot 4.7.1 parser scan and both validator suites.
+- Verify F5 and packaged launch open `MainMenu.tscn`.
+- Test new-player, returning-player, and all-levels-complete menu states.
+- Test Start/Continue, Levels, How to Play, and Settings.
+- Review the composition at 360×800, 393×873, 412×915, 800×1280, and 1200×1920.
+- Verify Reduce Motion stops the Living Board animation.
+
 ## [0.3.2] - Unreleased
 
 ### Changed
 
 - Rebalanced the main-menu composition with a compact original mark, progress-aware copy, and clearer primary and secondary actions.
-- Replaced decorative menu clutter with fewer, softer directional accents that respect reduced-motion settings.
 - Changed level-select progress to measure completed levels instead of merely unlocked levels.
 - Added clear `NEXT`, `PLAY`, completed-star, and `LOCKED` states to level cards.
 - Removed the non-functional level-select settings button and restored a clear back-navigation pattern.
@@ -15,13 +41,6 @@
 - Rebuilt the completion card with a compact stat panel, a proper circular star badge, performance copy, and cleaner button hierarchy.
 - Replaced unclear pause-menu switch graphics with explicit `ON` and `OFF` capsule controls.
 - Removed the unfinished music row from the pause menu until a real music system exists.
-
-### Verification required
-
-- Run a Godot 4.7.1 parser scan after pulling the UI-polish branch.
-- Re-run both headless validator suites.
-- Inspect main menu, level select, gameplay HUD, pause menu, and result card at phone and tablet resolutions.
-- Complete levels 1–5 and confirm progression, replay, next level, and save/load behavior.
 
 ## [0.3.1] - 2026-08-06
 
