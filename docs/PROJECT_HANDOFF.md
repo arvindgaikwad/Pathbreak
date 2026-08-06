@@ -19,31 +19,34 @@ The current goal is not to build a large number of levels. The current productio
 ### Confirmed working from user testing
 
 - Main Menu launches the game and recommends the first uncleared unlocked level.
+- Tapping the animated menu board opens the recommended level.
+- The normal Start/Continue button opens the same recommended level.
+- The travelling blue menu animation plays.
 - Level Select, Levels 1–10, progression, failure, retry, result, Replay, and Next Level function.
 - Nearest-path touch selection works better than overlapping per-piece hit areas.
 - Hint depletion works.
+- A hint moves the blue directional marker toward the arrowhead.
 - Zero hints display `+3 / Refill`.
 - Hint refill popup opens after the native full-card button correction.
 - Refill restores three hints.
 - Restart works after the native-button correction.
+- The final remaining valid path clears automatically.
+- Automatic final clear does not add a player Move.
+- Reduce Motion alternatives work for the menu, hint, and automatic final clear.
 - `No path can leave yet` is useful and liked by testers.
 - Level 2 communicates blocking.
 - Level 3 communicates bent-path reading.
 - New players enjoyed the puzzle interaction.
 
-### Implemented but pending local verification
+### Still pending verification
 
-The following interaction-clarity changes were added after the latest player test and must not be called verified yet:
-
-- Main-menu demonstration board acts as Start/Continue.
-- State-aware `TAP TO START/CONTINUE` prompt.
-- Travelling directional pulse on the menu demonstration.
-- Larger gameplay arrowheads.
-- Smaller tail dots.
-- Directional hint/tutorial marker travelling toward the arrowhead.
-- Automatic final-path clear when exactly one valid path remains.
-- Automatic final clear does not increase the player Move count.
-- Reduce Motion alternatives for these behaviours.
+- Exact current parser output and all three automated test-suite outputs.
+- Fresh-save Level 1 `FREE` hint behaviour.
+- Rapid-tap double-navigation resistance.
+- Revised arrowhead/tail-dot comprehension with new players.
+- High Contrast regression.
+- Sound and Haptics persistence after application restart.
+- Android phone/tablet touch, Back, lifecycle, performance, sound, and haptic checks.
 
 ## 3. Current game-director findings
 
@@ -53,25 +56,25 @@ The following interaction-clarity changes were added after the latest player tes
 - Early teaching goals are understandable once the player reaches gameplay.
 - Levels 9–10 create enough uncertainty that testers used hints.
 - Players liked direct feedback such as `No path can leave yet`.
+- The menu-board play target and automatic final clear are manually functional.
+- The revised directional cue is manually functional.
 
 ### Current blockers
 
-1. Main-menu first action was unclear to new players.
-2. Some players tapped the decorative/demonstration arrows instead of Continue.
-3. Arrowhead and tail-dot language was not consistently understood.
+1. Formal parser and automated test evidence is not recorded for the latest branch head.
+2. Fresh-save Level 1 `FREE` hint state is still unverified.
+3. Revised arrowhead and tail-dot comprehension still needs no-explanation player evidence.
 4. Early levels were completed in roughly 10 seconds with zero mistakes.
-5. Final obvious path required a redundant final tap.
-6. Fresh-save Level 1 `FREE` hint state is still unverified.
-7. Latest interaction-clarity implementation has not passed local parser/tests.
-8. Android phone/tablet lifecycle and touch checks are incomplete.
+5. High Contrast and persistence regressions remain incomplete.
+6. Android phone/tablet lifecycle and touch checks are incomplete.
 
 ### Director decisions
 
 - Keep the core puzzle rule.
 - Improve readability before increasing difficulty.
 - Keep `No path can leave yet`.
-- Prototype automatic final clear.
-- Make the menu board a valid start target instead of a misleading decoration.
+- Keep automatic final clear because the local behaviour works and removes a redundant action.
+- Keep the menu board as a valid start target.
 - Do not implement the raw AI mockup directly.
 - Final UI should combine the current build's clarity with the concept images' stronger hierarchy.
 - Avoid AI-slop traits: excessive glow, decorative sparkles, oversized typography, repeated white cards, generic SaaS layout, and unnecessary labels.
@@ -133,16 +136,14 @@ Follow `TASKS.md` in priority order. The current immediate sequence is:
 
 1. Pull the active branch.
 2. Run the Godot parser scan.
-3. Run all three automated test suites.
-4. Test the new menu-board Start/Continue interaction.
-5. Test travelling direction cues.
-6. Test automatic final clear and Move count.
-7. Test Reduce Motion versions.
-8. Perform a clean-save Level 1 tutorial test.
-9. Repeat no-explanation testing with new players.
-10. Tune Levels 4–5 only after visual comprehension improves.
-11. Test Android phone and tablet.
-12. Approve or reject the vertical slice.
+3. Run all three automated test suites and record exact output.
+4. Back up and remove the save.
+5. Verify the fresh-save Main Menu and Level 1 `FREE` hint flow.
+6. Verify rapid taps, prompt placement, High Contrast, Sound persistence, and Haptics persistence.
+7. Repeat no-explanation testing with new players using the revised path visuals.
+8. Tune Levels 4–5 only after visual comprehension improves.
+9. Test Android phone and tablet.
+10. Approve or reject the vertical slice.
 
 ## 7. Local paths and commands
 
@@ -199,6 +200,12 @@ Verify:
 - It does not consume the persistent normal hint bank.
 - Completing Level 1 marks the tutorial complete.
 - Replaying Level 1 shows the real hint count.
+
+Restore the previous save after testing when needed:
+
+```bash
+cp "$SAVE.backup" "$SAVE" 2>/dev/null || true
+```
 
 ## 9. Vertical-slice exit criteria
 
