@@ -1,57 +1,94 @@
-# Pathbreak — Architecture & Design Decisions
+# Pathbreak — Architecture and Product Decision Log
 
-## Record 001: Data decoupling through custom resources
+**Last reviewed:** 2026-08-06  
+**Scope:** Current vertical-slice branch. Later decisions should be appended rather than silently replacing old ones.
 
-- **Date:** 2026-08-06
-- **Context:** Gameplay data must remain separate from UI and rendering nodes.
-- **Decision:** Keep `PuzzleLevelData` and `PuzzlePieceData` as typed resource classes used by gameplay code.
-- **Rationale:** Levels can be inspected, validated, tested, and converted without instantiating gameplay scenes.
+## Record 001 — Typed runtime level data
 
-## Record 002: Pure movement validation
+- **Status:** Active
+- **Decision:** Gameplay uses typed `PuzzleLevelData` and `PuzzlePieceData` objects at runtime.
+- **Clarification:** JSON is the canonical authored format. The loader converts validated JSON into these typed runtime objects. Existing `.tres` files are fallback material, not the primary source of truth.
+- **Reason:** Gameplay code remains typed and testable while authored data stays easy to diff, generate, validate, and migrate.
 
-- **Date:** 2026-08-06
-- **Context:** Escape logic must consistently handle bends, self-cells, board bounds, and blockers.
-- **Decision:** Keep movement checking inside the pure static `MovementValidator` helper with headless tests.
-- **Rationale:** Gameplay rules remain deterministic and independent of physics or frame timing.
+## Record 002 — Pure movement validation
 
-## Record 003: Light-mode programmatic rendering
+- **Status:** Active
+- **Decision:** Keep escape checking in the static `MovementValidator` helper with headless tests.
+- **Reason:** The core rule remains deterministic and independent from physics, animation, or frame timing.
 
-- **Date:** 2026-08-06
-- **Context:** The game requires a clean visual identity that scales across Android screens.
-- **Decision:** Render paths, arrowheads, dots, highlights, and board surfaces programmatically using the Pathbreak light palette.
-- **Rationale:** Vector-like rendering remains sharp, compact, themeable, and independent from copied raster assets.
+## Record 003 — Programmatic path rendering
 
-## Record 004: One modular gameplay architecture
+- **Status:** Active
+- **Decision:** Render paths, arrowheads, tail dots, highlights, trails, and feedback programmatically.
+- **Reason:** The presentation remains sharp across Android resolutions, compact in the repository, themeable, and independent from copied art assets.
 
-- **Date:** 2026-08-06
-- **Context:** The repository contained an older monolithic game manager and a newer modular stack.
-- **Decision:** Support only `scenes/game/game_screen.tscn`, `scripts/gameplay/level_manager.gd`, `board_manager.gd`, and the modular puzzle-piece scene.
-- **Rationale:** Two competing implementations cause agents and developers to modify the wrong files, duplicate bugs, and break progression.
+## Record 004 — One modular gameplay architecture
 
-## Record 005: JSON is the canonical level format
+- **Status:** Active
+- **Decision:** Support the modular stack centered on:
+  - `scenes/game/game_screen.tscn`
+  - `scripts/gameplay/level_manager.gd`
+  - `scripts/gameplay/board_manager.gd`
+  - `scripts/gameplay/puzzle_piece.gd`
+- **Reason:** Duplicate monolithic and modular implementations caused agents to edit the wrong files and created conflicting behavior.
 
-- **Date:** 2026-08-06
-- **Context:** Levels existed simultaneously as JSON and `.tres`, with no guaranteed synchronization.
-- **Decision:** Load versionable JSON first and treat existing `.tres` files as a temporary fallback until migration is complete.
-- **Rationale:** JSON is easier to diff, generate, validate, migrate, and export from an internal level editor.
+## Record 005 — JSON is the canonical level format
 
-## Record 006: Central nearest-path touch selection
+- **Status:** Active
+- **Decision:** Load `data/levelN.json` first. Treat `.tres` definitions as temporary fallback until migration is complete.
+- **Reason:** JSON supports reviewable diffs, external generation, validation, migration, and a future internal level editor.
 
-- **Date:** 2026-08-06
-- **Context:** Independent enlarged collision areas can overlap and punish the player for an ambiguous tap.
-- **Decision:** The board receives touch input, measures distance to every available path, and selects only the nearest path inside a scale-adjusted acceptance radius.
-- **Rationale:** Selection remains deterministic, fair, and consistent when the board scales on different devices.
+## Record 006 — Central nearest-path touch selection
 
-## Record 007: Accessibility settings are persistent and independent from progress
+- **Status:** Active
+- **Decision:** The board receives input and chooses the nearest eligible path inside a scale-adjusted acceptance radius.
+- **Reason:** Independent enlarged hit areas can overlap and select the wrong path. Central selection is deterministic and fair on phones and tablets.
 
-- **Date:** 2026-08-06
-- **Context:** Sound, haptics, motion, and contrast settings should survive restarts without complicating progression saves.
-- **Decision:** Use a dedicated `SettingsManager` autoload and separate settings file.
-- **Rationale:** Settings can evolve independently, apply globally, and recover safely if the file is invalid.
+## Record 007 — Settings persist separately from progression
 
-## Record 008: The vertical slice is the production quality gate
+- **Status:** Active
+- **Decision:** Sound, haptics, Reduce Motion, and High Contrast use `SettingsManager` and a dedicated settings file.
+- **Reason:** Accessibility and presentation settings can evolve independently from level progress and recover safely from invalid data.
 
-- **Date:** 2026-08-06
-- **Context:** Expanding to 75 levels before controls and game feel are approved would multiply rework.
-- **Decision:** Complete and device-test five representative levels before building the level editor and full content pack.
-- **Rationale:** The slice defines the final standard for touch handling, feedback, UI, audio, haptics, saving, and level difficulty.
+## Record 008 — The five-level vertical slice is the production quality gate
+
+- **Status:** Active
+- **Decision:** Approve five representative levels on real devices before building the level editor or producing the full content pack.
+- **Reason:** Expanding to dozens of levels before controls, tutorial clarity, feedback, UI, and difficulty are approved would multiply rework.
+
+## Record 009 — Save data has an explicit version
+
+- **Status:** Active
+- **Decision:** Progress is stored through `SaveManager` with `SAVE_VERSION`, safe defaults, clamped values, and per-level dictionaries.
+- **Reason:** Save migrations and corruption recovery must be possible before public release.
+
+## Record 010 — Menus and overlays are part of the gameplay slice
+
+- **Status:** Active
+- **Decision:** Main Menu, Level Select, Gameplay HUD, Pause/Settings, failure, result, and hint-refill flow are tested as one connected experience.
+- **Reason:** A technically correct board is not a releasable game loop.
+
+## Record 011 — Hint inventory is persistent
+
+- **Status:** Active
+- **Decision:** Non-tutorial hints consume the persistent `SaveManager.hint_count`. The first Level 1 tutorial hint is free while the tutorial is incomplete.
+- **Reason:** Hint usage must remain consistent across replay, menu navigation, and application restart.
+
+## Record 012 — Zero hints must remain actionable
+
+- **Status:** Active for vertical-slice testing; commercial rule not final
+- **Decision:** At zero, the HUD changes from `Hint 0` to a visible `Refill +3` action. Confirming the current refill popup restores three hints and saves immediately.
+- **Reason:** A disabled dead-end control is confusing and prevents continued testing.
+- **Launch note:** The current refill is a functional testing rule. Rewarded ads, earned currency, timed refills, purchases, or a permanent free model require a separate economy and monetization decision before launch.
+
+## Record 013 — Current light UI is provisional, not final brand approval
+
+- **Status:** Active
+- **Decision:** Treat the existing light-mode screen system as the vertical-slice usability baseline only.
+- **Reason:** Final logo, typography, chapter themes, particles, audio identity, store art, and monetization presentation should be designed after the gameplay slice passes.
+
+## Record 014 — Documentation has a source-of-truth hierarchy
+
+- **Status:** Active
+- **Decision:** `docs/README.md` identifies which documents are current, provisional, historical, or pending validation.
+- **Reason:** Dates alone do not prevent stale documents from being mistaken for current implementation truth.
