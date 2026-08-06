@@ -120,3 +120,17 @@
 - **Decision:** When exactly one valid path remains, lock board input, preview that path in blue, and clear it automatically without increasing the player move count.
 - **Reason:** The final tap contains no decision once every blocker is gone. Removing it preserves pacing and makes the clear feel like a consequence of the player's last meaningful move.
 - **Failure handling:** If the board does not contain exactly one valid remaining path, automatic clear is cancelled, a warning is recorded, and control returns to the player rather than silently corrupting state.
+
+## Record 019 — Ordered path endpoints are the direction source of truth
+
+- **Status:** Implemented; pending local verification
+- **Decision:** Author every path as `tail → ... → head`. Derive arrowhead and movement direction from the head endpoint and its adjacent cell. In the current canonical format, the head is the final cell and direction is `cells[-1] - cells[-2]`.
+- **Reason:** Legacy level data could store a movement direction that disagreed with both the rendered endpoint and the final segment, producing wrong-side or wrong-angle heads across multiple levels.
+- **Consequences:**
+  - `PathVisualGeometry` centralises endpoint, direction, triangle, and shaft-trimming logic.
+  - `PuzzlePieceData` derives `exit_direction` from ordered cells.
+  - `LevelDataValidator` rejects direction mismatches and malformed ordered paths.
+  - The Level Editor cannot save an arbitrary direction unrelated to an endpoint.
+  - Levels 1–5 were migrated; Levels 6–10 are protected by the full-pack audit test.
+  - The compatibility `direction` field remains temporarily but must mirror the final segment.
+- **Rejected alternative:** Geometric projection to a “leading cell” was rejected because it can attach a head to a non-endpoint and does not guarantee agreement with the adjacent final segment.
