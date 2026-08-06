@@ -8,6 +8,8 @@ var exit_direction: Vector2i
 var is_removed: bool = false
 var is_animating: bool = false
 var grid_size: float = 64.0
+var direction_marker: Polygon2D = null
+var direction_tween: Tween = null
 
 @onready var line: Line2D = $Line2D
 @onready var arrow_head: Polygon2D = $ArrowHead
@@ -30,6 +32,7 @@ func _ready() -> void:
 	if area != null:
 		area.input_pickable = false
 	_update_visuals()
+	_create_direction_marker()
 
 func _update_visuals() -> void:
 	if cells.is_empty():
@@ -37,7 +40,7 @@ func _update_visuals() -> void:
 
 	line.clear_points()
 	line.default_color = _normal_color()
-	line.width = clampf(grid_size * 0.25, 12.0, 18.0)
+	line.width = clampf(grid_size * 0.23, 12.0, 17.0)
 	line.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	line.end_cap_mode = Line2D.LINE_CAP_ROUND
 	line.joint_mode = Line2D.LINE_JOINT_ROUND
@@ -65,7 +68,7 @@ func set_color(color: Color) -> void:
 func _draw_tail_dot() -> void:
 	var tail_position := _cell_center(cells[0])
 	var points := PackedVector2Array()
-	var radius := clampf(grid_size * 0.16, 8.0, 11.0)
+	var radius := clampf(grid_size * 0.095, 5.0, 7.0)
 	for point_index in range(18):
 		var angle := (float(point_index) / 18.0) * TAU
 		points.append(tail_position + Vector2(cos(angle), sin(angle)) * radius)
@@ -75,9 +78,9 @@ func _draw_tail_dot() -> void:
 func _draw_arrowhead() -> void:
 	var head_position := _cell_center(cells[-1])
 	var angle := Vector2(exit_direction).angle()
-	var length := clampf(grid_size * 0.38, 19.0, 26.0)
-	var half_height := clampf(grid_size * 0.28, 14.0, 19.0)
-	var notch := clampf(grid_size * 0.07, 3.0, 5.0)
+	var length := clampf(grid_size * 0.50, 27.0, 35.0)
+	var half_height := clampf(grid_size * 0.25, 14.0, 18.0)
+	var notch := clampf(grid_size * 0.055, 3.0, 4.5)
 	arrow_head.polygon = PackedVector2Array([
 		Vector2(length, 0.0).rotated(angle) + head_position,
 		Vector2(-notch, -half_height).rotated(angle) + head_position,
@@ -85,6 +88,20 @@ func _draw_arrowhead() -> void:
 		Vector2(-notch, half_height).rotated(angle) + head_position
 	])
 	arrow_head.color = _normal_color()
+
+func _create_direction_marker() -> void:
+	direction_marker = Polygon2D.new()
+	direction_marker.polygon = _circle_polygon(clampf(grid_size * 0.105, 6.0, 8.0))
+	direction_marker.color = COLOR_ACCENT
+	direction_marker.visible = false
+	add_child(direction_marker)
+
+func _circle_polygon(radius: float) -> PackedVector2Array:
+	var points := PackedVector2Array()
+	for point_index in range(20):
+		var angle := (float(point_index) / 20.0) * TAU
+		points.append(Vector2(cos(angle), sin(angle)) * radius)
+	return points
 
 func _clear_legacy_collisions() -> void:
 	if area == null:
@@ -115,6 +132,38 @@ func _distance_to_segment(point: Vector2, start: Vector2, end: Vector2) -> float
 		return point.distance_to(start)
 	var amount := clampf((point - start).dot(segment) / length_squared, 0.0, 1.0)
 	return point.distance_to(start + segment * amount)
+
+func _set_direction_marker_progress(progress: float) -> void:
+	if direction_marker == null or line.points.is_empty():
+		return
+	direction_marker.visible = true
+	direction_marker.position = _point_on_path(clampf(progress, 0.0, 1.0))
+
+func _point_on_path(progress: float) -> Vector2:
+	if line.points.is_empty():
+		return Vector2.ZERO
+	if line.points.size() == 1:
+		return line.points[0]
+
+	var total_length := 0.0
+	for index in range(line.points.size() - 1):
+		total_length += line.points[index].distance_to(line.points[index + 1])
+
+	var target_distance := total_length * progress
+	var traveled := 0.0
+	for index in range(line.points.size() - 1):
+		var start: Vector2 = line.points[index]
+		var finish: Vector2 = line.points[index + 1]
+		var segment_length := start.distance_to(finish)
+		if target_distance <= traveled + segment_length:
+			var amount := clampf(
+				(target_distance - traveled) / maxf(segment_length, 0.001),
+				0.0,
+				1.0
+			)
+			return start.lerp(finish, amount)
+		traveled += segment_length
+	return line.points[-1]
 
 func animate_successful_escape() -> void:
 	if is_removed:
@@ -176,32 +225,51 @@ func play_hint_pulse() -> void:
 	_stop_pulse()
 	set_color(COLOR_ACCENT)
 	if SettingsManager.reduce_motion:
-		var color_timer := get_tree().create_timer(0.35)
+		var color_timer := get_tree().create_timer(0.55)
 		color_timer.timeout.connect(reset_color)
 		return
 
-	var tween := create_tween().set_loops(3)
-	tween.tween_property(self, "scale", Vector2(1.10, 1.10), 0.16).set_trans(Tween.TRANS_SINE)
-	tween.tween_property(self, "scale", Vector2.ONE, 0.20).set_trans(Tween.TRANS_SINE)
-	tween.finished.connect(func() -> void:
+	direction_tween = create_tween().set_loops(3)
+	direction_tween.tween_method(_set_direction_marker_progress, 0.0, 1.0, 0.62).set_trans(Tween.TRANS_SINE)
+	direction_tween.tween_interval(0.12)
+	direction_tween.finished.connect(func() -> void:
+		_hide_direction_marker()
 		reset_color()
-		scale = Vector2.ONE
 	)
+
+func play_final_clear_preview() -> void:
+	if is_removed:
+		return
+	_stop_pulse()
+	set_color(COLOR_ACCENT)
+	if SettingsManager.reduce_motion:
+		return
+	direction_tween = create_tween()
+	direction_tween.tween_method(_set_direction_marker_progress, 0.0, 1.0, 0.42).set_trans(Tween.TRANS_SINE)
+	direction_tween.finished.connect(_hide_direction_marker)
 
 func set_idle_pulse(enabled: bool) -> void:
 	_stop_pulse()
-	if not enabled or is_removed or SettingsManager.reduce_motion:
-		scale = Vector2.ONE
+	if not enabled or is_removed:
+		if not is_removed:
+			reset_color()
 		return
-	var tween := create_tween().set_loops()
-	tween.tween_property(self, "scale", Vector2(1.035, 1.035), 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_property(self, "scale", Vector2.ONE, 0.9).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	set_meta("idle_tween", tween)
+	if SettingsManager.reduce_motion:
+		set_color(COLOR_ACCENT)
+		return
+
+	reset_color()
+	direction_tween = create_tween().set_loops()
+	direction_tween.tween_method(_set_direction_marker_progress, 0.0, 1.0, 0.95).set_trans(Tween.TRANS_SINE)
+	direction_tween.tween_interval(0.55)
+
+func _hide_direction_marker() -> void:
+	if direction_marker != null:
+		direction_marker.visible = false
 
 func _stop_pulse() -> void:
-	if has_meta("idle_tween"):
-		var existing = get_meta("idle_tween")
-		if existing is Tween:
-			existing.kill()
-		remove_meta("idle_tween")
+	if direction_tween != null and direction_tween.is_valid():
+		direction_tween.kill()
+	direction_tween = null
+	_hide_direction_marker()
 	scale = Vector2.ONE
