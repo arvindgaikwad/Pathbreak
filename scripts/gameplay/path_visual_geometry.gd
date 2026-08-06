@@ -15,7 +15,7 @@ const VALID_CARDINAL_DIRECTIONS: Array[Vector2i] = [
 
 static func direction_from_cells(
 	cells: Array[Vector2i],
-	head_endpoint: HeadEndpoint = HeadEndpoint.END
+	head_endpoint: int = HeadEndpoint.END
 ) -> Vector2i:
 	if cells.size() < 2:
 		return Vector2i.ZERO
@@ -25,57 +25,43 @@ static func direction_from_cells(
 
 static func direction_from_points(
 	points: PackedVector2Array,
-	head_endpoint: HeadEndpoint = HeadEndpoint.END
+	head_endpoint: int = HeadEndpoint.END
 ) -> Vector2:
 	if points.size() < 2:
 		return Vector2.ZERO
-	var direction := points[0] - points[1] if head_endpoint == HeadEndpoint.START else points[-1] - points[-2]
+	var direction: Vector2
+	if head_endpoint == HeadEndpoint.START:
+		direction = points[0] - points[1]
+	else:
+		direction = points[-1] - points[-2]
 	return direction.normalized()
 
-static func head_cell_index(
-	cells: Array[Vector2i],
-	head_endpoint: HeadEndpoint = HeadEndpoint.END
-) -> int:
+static func head_cell_index(cells: Array[Vector2i], head_endpoint: int = HeadEndpoint.END) -> int:
 	if cells.is_empty():
 		return -1
 	return 0 if head_endpoint == HeadEndpoint.START else cells.size() - 1
 
-static func neighbour_cell_index(
-	cells: Array[Vector2i],
-	head_endpoint: HeadEndpoint = HeadEndpoint.END
-) -> int:
+static func neighbour_cell_index(cells: Array[Vector2i], head_endpoint: int = HeadEndpoint.END) -> int:
 	if cells.size() < 2:
 		return -1
 	return 1 if head_endpoint == HeadEndpoint.START else cells.size() - 2
 
-static func tail_cell_index(
-	cells: Array[Vector2i],
-	head_endpoint: HeadEndpoint = HeadEndpoint.END
-) -> int:
+static func tail_cell_index(cells: Array[Vector2i], head_endpoint: int = HeadEndpoint.END) -> int:
 	if cells.is_empty():
 		return -1
 	return cells.size() - 1 if head_endpoint == HeadEndpoint.START else 0
 
-static func head_point(
-	points: PackedVector2Array,
-	head_endpoint: HeadEndpoint = HeadEndpoint.END
-) -> Vector2:
+static func head_point(points: PackedVector2Array, head_endpoint: int = HeadEndpoint.END) -> Vector2:
 	if points.is_empty():
 		return Vector2.ZERO
 	return points[0] if head_endpoint == HeadEndpoint.START else points[-1]
 
-static func neighbour_point(
-	points: PackedVector2Array,
-	head_endpoint: HeadEndpoint = HeadEndpoint.END
-) -> Vector2:
+static func neighbour_point(points: PackedVector2Array, head_endpoint: int = HeadEndpoint.END) -> Vector2:
 	if points.size() < 2:
 		return Vector2.ZERO
 	return points[1] if head_endpoint == HeadEndpoint.START else points[-2]
 
-static func tail_point(
-	points: PackedVector2Array,
-	head_endpoint: HeadEndpoint = HeadEndpoint.END
-) -> Vector2:
+static func tail_point(points: PackedVector2Array, head_endpoint: int = HeadEndpoint.END) -> Vector2:
 	if points.is_empty():
 		return Vector2.ZERO
 	return points[-1] if head_endpoint == HeadEndpoint.START else points[0]
@@ -83,7 +69,7 @@ static func tail_point(
 static func trim_shaft_for_head(
 	points: PackedVector2Array,
 	trim_distance: float,
-	head_endpoint: HeadEndpoint = HeadEndpoint.END
+	head_endpoint: int = HeadEndpoint.END
 ) -> PackedVector2Array:
 	var trimmed := points.duplicate()
 	if trimmed.size() < 2:
@@ -92,7 +78,7 @@ static func trim_shaft_for_head(
 	if direction.is_zero_approx():
 		return trimmed
 	var head_index := 0 if head_endpoint == HeadEndpoint.START else trimmed.size() - 1
-	trimmed[head_index] -= direction * maxf(trim_distance, 0.0)
+	trimmed[head_index] = trimmed[head_index] - direction * maxf(trim_distance, 0.0)
 	return trimmed
 
 static func make_triangle_from_tip(
@@ -141,10 +127,7 @@ static func validate_ordered_cells(cells: Array[Vector2i]) -> PackedStringArray:
 		errors.append("Final segment does not produce a valid cardinal head direction.")
 	return errors
 
-static func legacy_head_endpoint(
-	cells: Array[Vector2i],
-	legacy_direction: Vector2i
-) -> int:
+static func legacy_head_endpoint(cells: Array[Vector2i], legacy_direction: Vector2i) -> int:
 	if cells.size() < 2:
 		return -1
 	if legacy_direction == direction_from_cells(cells, HeadEndpoint.END):
