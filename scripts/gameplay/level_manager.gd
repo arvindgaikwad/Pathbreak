@@ -147,7 +147,10 @@ func load_level(index: int) -> void:
 	total_pieces = level_data.pieces.size()
 	remaining_pieces = total_pieces
 	hud.update_hud(level_data.level_id, level_data.difficulty, lives_left, hints_left)
-	board.update_assist_pulses(current_level_idx == 0 and not SaveManager.tutorial_completed)
+	var tutorial_active := current_level_idx == 0 and not SaveManager.tutorial_completed
+	board.update_assist_pulses(tutorial_active)
+	if tutorial_active:
+		hud.show_message("Tap the path that can leave the board", true)
 	_update_layout()
 
 func _on_piece_tapped(piece: PuzzlePiece) -> void:
@@ -162,6 +165,9 @@ func _on_piece_tapped(piece: PuzzlePiece) -> void:
 		piece.animate_successful_escape()
 		remaining_pieces -= 1
 
+		if current_level_idx == 0 and remaining_pieces == 1:
+			hud.show_message("Great! Now clear the last path", true)
+
 		get_tree().create_timer(0.35).timeout.connect(func() -> void:
 			if not input_locked:
 				board.update_assist_pulses(current_level_idx == 0 and not SaveManager.tutorial_completed)
@@ -175,6 +181,7 @@ func _on_piece_tapped(piece: PuzzlePiece) -> void:
 		SettingsManager.play_haptic(&"error")
 		mistake_count += 1
 		lives_left = maxi(lives_left - 1, 0)
+		hud.show_message("That path is blocked")
 		hud.update_hud(
 			level_data_list[current_level_idx].level_id,
 			level_data_list[current_level_idx].difficulty,
@@ -252,23 +259,32 @@ func _on_restart_pressed() -> void:
 	load_level(current_level_idx)
 
 func _on_hint_pressed() -> void:
-	if input_locked or hints_left <= 0:
+	if input_locked:
+		return
+
+	var free_tutorial_hint := current_level_idx == 0 and not SaveManager.tutorial_completed
+	if not free_tutorial_hint and hints_left <= 0:
+		hud.show_message("No hints left")
 		return
 
 	var candidate: PuzzlePiece = board.get_first_escapable_piece()
 	if candidate == null:
+		hud.show_message("No path can leave yet")
 		return
 
-	hints_left -= 1
-	SaveManager.hint_count = hints_left
-	SaveManager.save_game()
-	hud.update_hud(
-		level_data_list[current_level_idx].level_id,
-		level_data_list[current_level_idx].difficulty,
-		lives_left,
-		hints_left
-	)
+	if not free_tutorial_hint:
+		hints_left -= 1
+		SaveManager.hint_count = hints_left
+		SaveManager.save_game()
+		hud.update_hud(
+			level_data_list[current_level_idx].level_id,
+			level_data_list[current_level_idx].difficulty,
+			lives_left,
+			hints_left
+		)
+
 	candidate.play_hint_pulse()
+	hud.show_message("Tap the blue path", true)
 	SettingsManager.play_haptic(&"light")
 
 func _on_settings_pressed() -> void:

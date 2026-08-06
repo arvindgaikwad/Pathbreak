@@ -40,7 +40,8 @@ func _play_synth_notes(freqs: Array, duration: float, volume: float) -> void:
 		return
 
 	var frames := PackedVector2Array()
-	var note_length := maxi(num_frames / freqs.size(), 1)
+	var note_count := maxi(freqs.size(), 1)
+	var note_length := maxi(int(floor(float(num_frames) / float(note_count))), 1)
 
 	for note_index in range(freqs.size()):
 		var frequency := float(freqs[note_index])
