@@ -154,7 +154,7 @@ func load_level(index: int) -> void:
 	var tutorial_active := current_level_idx == 0 and not SaveManager.tutorial_completed
 	board.update_assist_pulses(tutorial_active)
 	if tutorial_active:
-		hud.show_message("Tap the path that can leave the board", true)
+		hud.show_message("Follow the moving light to the arrow", true)
 	_update_layout()
 
 func _on_piece_tapped(piece: PuzzlePiece) -> void:
@@ -169,17 +169,20 @@ func _on_piece_tapped(piece: PuzzlePiece) -> void:
 		piece.animate_successful_escape()
 		remaining_pieces -= 1
 
-		if current_level_idx == 0 and remaining_pieces == 1:
-			hud.show_message("Great! Now clear the last path", true)
+		if remaining_pieces == 1:
+			_lock_gameplay()
+			get_tree().create_timer(0.32).timeout.connect(_auto_clear_final_piece)
+			return
+
+		if remaining_pieces <= 0:
+			_lock_gameplay()
+			get_tree().create_timer(0.28).timeout.connect(_on_level_completed)
+			return
 
 		get_tree().create_timer(0.35).timeout.connect(func() -> void:
 			if not input_locked:
 				board.update_assist_pulses(current_level_idx == 0 and not SaveManager.tutorial_completed)
 		)
-
-		if remaining_pieces <= 0:
-			_lock_gameplay()
-			get_tree().create_timer(0.28).timeout.connect(_on_level_completed)
 	else:
 		AudioManager.play_blocked_sound()
 		SettingsManager.play_haptic(&"error")
@@ -196,6 +199,40 @@ func _on_piece_tapped(piece: PuzzlePiece) -> void:
 		if lives_left <= 0:
 			_lock_gameplay()
 			get_tree().create_timer(0.35).timeout.connect(_show_fail_screen)
+
+func _auto_clear_final_piece() -> void:
+	if remaining_pieces != 1:
+		return
+
+	var final_piece: PuzzlePiece = board.get_only_remaining_piece()
+	if final_piece == null:
+		push_warning("Expected one remaining path, but the board state was inconsistent.")
+		input_locked = false
+		board.set_input_enabled(true)
+		hud.set_controls_enabled(true)
+		return
+
+	if not board.can_piece_escape(final_piece):
+		push_warning("The final remaining path could not escape.")
+		hud.show_message("The final path is still blocked")
+		input_locked = false
+		board.set_input_enabled(true)
+		hud.set_controls_enabled(true)
+		return
+
+	hud.show_message("Last path clears itself", true)
+	final_piece.play_final_clear_preview()
+	var preview_duration := 0.12 if SettingsManager.reduce_motion else 0.44
+	get_tree().create_timer(preview_duration).timeout.connect(func() -> void:
+		if not is_instance_valid(final_piece) or final_piece.is_removed:
+			return
+		AudioManager.play_move_sound()
+		SettingsManager.play_haptic(&"light")
+		board.remove_piece_occupancy(final_piece)
+		final_piece.animate_successful_escape()
+		remaining_pieces = 0
+		get_tree().create_timer(0.30).timeout.connect(_on_level_completed)
+	)
 
 func _show_fail_screen() -> void:
 	var fail_screen = FailScreenScene.instantiate()
@@ -288,7 +325,7 @@ func _on_hint_pressed() -> void:
 		)
 
 	candidate.play_hint_pulse()
-	hud.show_message("Tap the blue path", true)
+	hud.show_message("Follow the blue light to the arrow", true)
 	SettingsManager.play_haptic(&"light")
 
 func _open_hint_refill_popup() -> void:
