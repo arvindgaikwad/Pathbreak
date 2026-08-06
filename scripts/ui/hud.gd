@@ -29,6 +29,8 @@ var message_tween: Tween = null
 func _ready() -> void:
 	_apply_styles()
 	lives_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_prepare_clickable_card(hint_card)
+	_prepare_clickable_card(restart_card)
 	hint_card.gui_input.connect(_on_card_input.bind(hint_card, func() -> void: hint_pressed.emit()))
 	restart_card.gui_input.connect(_on_card_input.bind(restart_card, func() -> void: restart_pressed.emit()))
 	back_button.pressed.connect(func() -> void:
@@ -43,6 +45,16 @@ func _ready() -> void:
 		AudioManager.play_button_sound()
 		settings_pressed.emit()
 	)
+
+func _prepare_clickable_card(card: Control) -> void:
+	card.mouse_filter = Control.MOUSE_FILTER_STOP
+	_set_descendant_mouse_filter(card, Control.MOUSE_FILTER_IGNORE)
+
+func _set_descendant_mouse_filter(root: Node, filter: Control.MouseFilter) -> void:
+	for child in root.get_children():
+		if child is Control:
+			(child as Control).mouse_filter = filter
+		_set_descendant_mouse_filter(child, filter)
 
 func _apply_styles() -> void:
 	var card_style := StyleBoxFlat.new()
@@ -99,6 +111,7 @@ func _on_card_input(event: InputEvent, card: Control, callback: Callable) -> voi
 		return
 
 	interaction_locked = true
+	get_viewport().set_input_as_handled()
 	AudioManager.play_button_sound()
 	var tween := create_tween()
 	tween.tween_property(card, "scale", Vector2(0.96, 0.96), 0.07).set_trans(Tween.TRANS_SINE)
@@ -111,11 +124,11 @@ func update_hud(level_num: int, difficulty: String, lives: int, hints: int) -> v
 	difficulty_label.text = difficulty
 	lives_count_label.text = str(maxi(lives, 0))
 
-	var tutorial_hint_available := level_num == 1
-	if hints > 0:
-		hint_count_badge.text = "×%d" % hints
-	elif tutorial_hint_available:
+	var tutorial_hint_available := level_num == 1 and not SaveManager.tutorial_completed
+	if tutorial_hint_available:
 		hint_count_badge.text = "FREE"
+	elif hints > 0:
+		hint_count_badge.text = "×%d" % hints
 	else:
 		hint_count_badge.text = "0"
 
