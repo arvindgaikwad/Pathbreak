@@ -122,11 +122,11 @@ func _apply_styles() -> void:
 	replay_style.corner_radius_bottom_left = 18
 	replay_style.corner_radius_bottom_right = 18
 
-	var replay_pressed := replay_style.duplicate() as StyleBoxFlat
-	replay_pressed.bg_color = Color("#EDF3FF")
+	var replay_pressed_style := replay_style.duplicate() as StyleBoxFlat
+	replay_pressed_style.bg_color = Color("#EDF3FF")
 	replay_button.add_theme_stylebox_override("normal", replay_style)
-	replay_button.add_theme_stylebox_override("hover", replay_pressed)
-	replay_button.add_theme_stylebox_override("pressed", replay_pressed)
+	replay_button.add_theme_stylebox_override("hover", replay_pressed_style)
+	replay_button.add_theme_stylebox_override("pressed", replay_pressed_style)
 	replay_button.add_theme_stylebox_override("focus", replay_style)
 
 	var next_style := StyleBoxFlat.new()
@@ -136,11 +136,11 @@ func _apply_styles() -> void:
 	next_style.corner_radius_bottom_left = 18
 	next_style.corner_radius_bottom_right = 18
 
-	var next_pressed := next_style.duplicate() as StyleBoxFlat
-	next_pressed.bg_color = COLOR_ACCENT_DARK
+	var next_pressed_style := next_style.duplicate() as StyleBoxFlat
+	next_pressed_style.bg_color = COLOR_ACCENT_DARK
 	next_button.add_theme_stylebox_override("normal", next_style)
-	next_button.add_theme_stylebox_override("hover", next_pressed)
-	next_button.add_theme_stylebox_override("pressed", next_pressed)
+	next_button.add_theme_stylebox_override("hover", next_pressed_style)
+	next_button.add_theme_stylebox_override("pressed", next_pressed_style)
 	next_button.add_theme_stylebox_override("focus", next_style)
 
 	stars_label.add_theme_color_override("font_color", COLOR_STAR)
