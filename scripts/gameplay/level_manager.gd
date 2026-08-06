@@ -1,6 +1,7 @@
 extends Node2D
 
 var ResultPopupScene = preload("res://scenes/game/result_popup.tscn")
+var FailScreenScene = preload("res://scenes/GameOverScreen.tscn")
 
 @onready var board = $BoardPivot/Board
 @onready var hud = $HUD
@@ -9,6 +10,7 @@ var current_level_idx: int = 0
 var level_start_msec: int = 0
 var mistake_count: int = 0
 var hints_left: int = 5
+var hints_at_level_start: int = 5
 var lives_left: int = 3
 var total_pieces: int = 0
 var remaining_pieces: int = 0
@@ -102,6 +104,7 @@ func load_level(index: int) -> void:
 	var level_data := level_data_list[current_level_idx]
 	mistake_count = 0
 	lives_left = maxi(level_data.starting_lives, 1)
+	hints_at_level_start = hints_left
 	level_start_msec = Time.get_ticks_msec()
 
 	board.setup_level(level_data)
@@ -140,15 +143,27 @@ func _on_piece_tapped(piece: PuzzlePiece) -> void:
 		piece.animate_blocked_tap()
 		if lives_left <= 0:
 			input_locked = true
-			get_tree().create_timer(0.45).timeout.connect(func() -> void:
-				load_level(current_level_idx)
-			)
+			get_tree().create_timer(0.35).timeout.connect(_show_fail_screen)
+
+func _show_fail_screen() -> void:
+	var fail_screen = FailScreenScene.instantiate()
+	add_child(fail_screen)
+	fail_screen.retry_pressed.connect(func() -> void:
+		fail_screen.queue_free()
+		load_level(current_level_idx)
+	)
+	fail_screen.menu_pressed.connect(func() -> void:
+		SaveManager.current_level = current_level_idx
+		SaveManager.hint_count = hints_left
+		SaveManager.save_game()
+		get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+	)
 
 func _on_level_completed() -> void:
 	AudioManager.play_win_sound()
 	var elapsed_seconds := (Time.get_ticks_msec() - level_start_msec) / 1000.0
 	var stars := _calculate_stars(mistake_count, lives_left)
-	var hints_used := maxi(SaveManager.hint_count - hints_left, 0)
+	var hints_used := maxi(hints_at_level_start - hints_left, 0)
 
 	SaveManager.hint_count = hints_left
 	SaveManager.record_level_completion(
