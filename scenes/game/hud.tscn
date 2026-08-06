@@ -113,22 +113,26 @@ mouse_filter = 2
 
 [node name="VBox" type="VBoxContainer" parent="BottomBar/Margin/HBox/LivesCard"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 3
 alignment = 1
 
 [node name="IconBox" type="HBoxContainer" parent="BottomBar/Margin/HBox/LivesCard/VBox"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 5
 alignment = 1
 
 [node name="HeartIcon" type="Label" parent="BottomBar/Margin/HBox/LivesCard/VBox/IconBox"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_colors/font_color = Color(0.937, 0.357, 0.357, 1)
 theme_override_font_sizes/font_size = 22
 text = "♥"
 
 [node name="CountLabel" type="Label" parent="BottomBar/Margin/HBox/LivesCard/VBox/IconBox"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
 theme_override_font_sizes/font_size = 20
 theme_override_fonts/font = ExtResource("2_1")
@@ -136,6 +140,7 @@ text = "3"
 
 [node name="TitleLabel" type="Label" parent="BottomBar/Margin/HBox/LivesCard/VBox"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_colors/font_color = Color(0.443, 0.49, 0.576, 1)
 theme_override_font_sizes/font_size = 13
 text = "Lives"
@@ -145,50 +150,63 @@ horizontal_alignment = 1
 custom_minimum_size = Vector2(112, 88)
 layout_mode = 2
 size_flags_horizontal = 3
-mouse_filter = 0
+mouse_filter = 2
 
 [node name="VBox" type="VBoxContainer" parent="BottomBar/Margin/HBox/HintCard"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 3
 alignment = 1
 
 [node name="IconBox" type="HBoxContainer" parent="BottomBar/Margin/HBox/HintCard/VBox"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 5
 alignment = 1
 
 [node name="HintIcon" type="Label" parent="BottomBar/Margin/HBox/HintCard/VBox/IconBox"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_colors/font_color = Color(0.231, 0.51, 0.965, 1)
 theme_override_font_sizes/font_size = 22
 text = "✦"
 
 [node name="BadgeLabel" type="Label" parent="BottomBar/Margin/HBox/HintCard/VBox/IconBox"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_colors/font_color = Color(0.231, 0.51, 0.965, 1)
 theme_override_font_sizes/font_size = 14
 text = "×5"
 
 [node name="TitleLabel" type="Label" parent="BottomBar/Margin/HBox/HintCard/VBox"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_colors/font_color = Color(0.443, 0.49, 0.576, 1)
 theme_override_font_sizes/font_size = 13
 text = "Hint"
 horizontal_alignment = 1
 
+[node name="ClickTarget" type="Button" parent="BottomBar/Margin/HBox/HintCard"]
+layout_mode = 2
+focus_mode = 0
+flat = true
+mouse_default_cursor_shape = 2
+
 [node name="RestartCard" type="PanelContainer" parent="BottomBar/Margin/HBox"]
 custom_minimum_size = Vector2(112, 88)
 layout_mode = 2
 size_flags_horizontal = 3
-mouse_filter = 0
+mouse_filter = 2
 
 [node name="VBox" type="VBoxContainer" parent="BottomBar/Margin/HBox/RestartCard"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_constants/separation = 3
 alignment = 1
 
 [node name="RestartIcon" type="Label" parent="BottomBar/Margin/HBox/RestartCard/VBox"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
 theme_override_font_sizes/font_size = 22
 text = "↻"
@@ -196,7 +214,14 @@ horizontal_alignment = 1
 
 [node name="TitleLabel" type="Label" parent="BottomBar/Margin/HBox/RestartCard/VBox"]
 layout_mode = 2
+mouse_filter = 2
 theme_override_colors/font_color = Color(0.443, 0.49, 0.576, 1)
 theme_override_font_sizes/font_size = 13
 text = "Restart"
 horizontal_alignment = 1
+
+[node name="ClickTarget" type="Button" parent="BottomBar/Margin/HBox/RestartCard"]
+layout_mode = 2
+focus_mode = 0
+flat = true
+mouse_default_cursor_shape = 2
