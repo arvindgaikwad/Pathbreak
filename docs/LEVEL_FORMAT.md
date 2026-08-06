@@ -1,17 +1,39 @@
 # Pathbreak — Level Format Specification
 
-**Status:** Current loader contract  
-**Last reviewed:** 2026-08-06
+**Status:** Current ordered-path loader contract  
+**Last reviewed:** 2026-08-07
 
 ## 1. Source of truth
 
 `data/levelN.json` is the canonical authored level format.
 
-At runtime, the loader converts valid JSON into typed `PuzzleLevelData` and `PuzzlePieceData` objects. Existing `data/levels/level_N.tres` files are a temporary fallback and should not be edited as the primary version of a level.
+At runtime, valid JSON becomes typed `PuzzleLevelData` and `PuzzlePieceData`. Existing `.tres` files are compatibility fallback only.
 
-Levels are loaded sequentially starting at Level 1. The pack stops at the first number for which neither a JSON file nor a fallback resource exists.
+## 2. Canonical path rule
 
-## 2. Canonical JSON schema
+Every path is stored as an ordered list:
+
+```text
+tail → intermediate cells → head
+```
+
+The final two cells define the arrowhead and movement direction:
+
+```gdscript
+exit_direction = cells[-1] - cells[-2]
+```
+
+Required invariant:
+
+```text
+final segment direction
+= arrowhead direction
+= movement direction
+```
+
+Do not calculate bent-path direction from the first and last cells.
+
+## 3. JSON schema
 
 ```json
 {
@@ -21,68 +43,74 @@ Levels are loaded sequentially starting at Level 1. The pack stops at the first 
   "height": 6,
   "pieces": [
     {
-      "cells": [[1, 2], [2, 2], [3, 2], [3, 3]],
-      "direction": [0, -1]
+      "cells": [[1, 2], [2, 2], [2, 3]],
+      "direction": [0, 1],
+      "head_endpoint": "end"
     }
   ]
 }
 ```
 
-## 3. Root fields
+## 4. Root fields
 
 | Field | Type | Required behavior |
 |---|---|---|
-| `difficulty` | String | Display label. Loader supplies a level-range fallback when missing. |
-| `lives` | Integer | Starting lives. Current gameplay clamps practical use to at least one. |
+| `difficulty` | String | Display label; loader supplies a fallback when absent. |
+| `lives` | Integer | Starting lives. |
 | `width` | Integer | Board width in cells. |
 | `height` | Integer | Board height in cells. |
-| `pieces` | Array | Ordered piece definitions. Must produce at least one valid path. |
+| `pieces` | Array | Ordered path definitions. |
 
-The level identifier is derived from the filename and loading order, not authored inside the current JSON.
+The level ID comes from the sequential filename.
 
-## 4. Piece fields
+## 5. Piece fields
 
-| Field | Type | Required behavior |
-|---|---|---|
-| `cells` | Array of `[x, y]` pairs | Ordered path cells from tail to arrowhead. |
-| `direction` | Two-integer array | Cardinal escape direction of the complete path. |
+| Field | Type | Status | Required behavior |
+|---|---|---|---|
+| `cells` | Array of `[x, y]` | Canonical source | Ordered tail-to-head path cells. |
+| `head_endpoint` | String | Current metadata | Use `"end"`; editor reverses cells when the opposite endpoint becomes the head. |
+| `direction` | Two integers | Compatibility mirror | Must equal the final segment and is validator-enforced. |
 
-Piece identifiers are assigned sequentially by the loader beginning at 1.
-
-## 5. Valid directions
-
-| JSON | Runtime value | Meaning |
-|---|---|---|
-| `[0, -1]` | `Vector2i.UP` | Escape upward |
-| `[0, 1]` | `Vector2i.DOWN` | Escape downward |
-| `[-1, 0]` | `Vector2i.LEFT` | Escape left |
-| `[1, 0]` | `Vector2i.RIGHT` | Escape right |
-
-Diagonal and zero directions are invalid.
+`direction` remains for the current loader, but authors and tools must derive it rather than choose it independently.
 
 ## 6. Cell rules
 
-- Coordinates are zero-based.
-- Every cell must be inside the board.
-- A path must contain at least one cell.
-- Cells within one path must be unique.
-- Different paths may not occupy the same cell.
-- Consecutive cells should describe an orthogonally connected path.
-- The final ordered cell is the visual arrowhead location.
-- The first ordered cell is the visual tail-dot location.
+- At least two cells.
+- Zero-based coordinates.
+- Every cell inside the board.
+- No duplicate cells.
+- No overlap between different paths.
+- Consecutive cells must be exactly one cardinal step apart.
+- No diagonal segment.
+- No disconnected jump.
+- The final cell is the head endpoint.
+- The first cell is the tail endpoint.
+- The final segment must produce one of `UP`, `DOWN`, `LEFT`, or `RIGHT`.
 
-## 7. Runtime representation
+## 7. Valid compatibility directions
 
-```gdscript
-class_name PuzzleLevelData
-extends Resource
+| JSON | Runtime |
+|---|---|
+| `[0, -1]` | `Vector2i.UP` |
+| `[0, 1]` | `Vector2i.DOWN` |
+| `[-1, 0]` | `Vector2i.LEFT` |
+| `[1, 0]` | `Vector2i.RIGHT` |
 
-@export var level_id: int
-@export var board_size: Vector2i
-@export var difficulty: String
-@export var starting_lives: int
-@export var pieces: Array[PuzzlePieceData]
+For this path:
+
+```json
+"cells": [[2, 1], [3, 1], [3, 2]]
 ```
+
+the only valid compatibility direction is:
+
+```json
+"direction": [0, 1]
+```
+
+because the final segment goes down.
+
+## 8. Runtime representation
 
 ```gdscript
 class_name PuzzlePieceData
@@ -91,17 +119,42 @@ extends Resource
 @export var piece_id: int
 @export var cells: Array[Vector2i]
 @export var exit_direction: Vector2i
+@export var head_endpoint: PathVisualGeometry.HeadEndpoint
 ```
 
-These Resources are runtime typed data containers. They do not make `.tres` the canonical authoring format.
+`PuzzlePieceData.create(...)` derives `exit_direction` from the ordered endpoint. A legacy direction can be checked, but it is not a second source of truth.
 
-## 8. Validation and solvability
+## 9. Rendering
 
-`LevelDataValidator` checks structural correctness before a level enters the playable list.
+The renderer may trim the final `Line2D` segment so the shaft does not pass through the triangle. This is visual only.
 
-`LevelSolver` is used by the vertical-slice test to count opening moves and complete clear sequences. A structurally valid level may still be rejected by design review when it is trivial, confusing, overly open, or poorly paced.
+The original final grid cell remains unchanged for:
 
-## 9. File naming
+- occupancy;
+- movement validation;
+- solver logic;
+- touch selection;
+- save/progression data.
+
+## 10. Validation and migration
+
+`LevelDataValidator` rejects direction mismatches and malformed ordered paths.
+
+Preview legacy levels with:
+
+```bash
+godot --headless --path . --script tools/path_level_migration_preview.gd
+```
+
+Results:
+
+- `CANONICAL`: final segment matches stored direction.
+- `REVERSIBLE`: start endpoint matches; reverse cell order.
+- `AMBIGUOUS`: neither endpoint matches; requires level-design review.
+
+The preview tool never writes files.
+
+## 11. File naming
 
 ```text
 data/level1.json
@@ -110,12 +163,4 @@ data/level3.json
 ...
 ```
 
-Temporary fallback resources currently use:
-
-```text
-data/levels/level_1.tres
-data/levels/level_2.tres
-...
-```
-
-New production content should be authored or exported as JSON.
+New content must be exported as ordered JSON paths.
