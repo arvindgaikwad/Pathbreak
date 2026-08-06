@@ -1,6 +1,8 @@
 class_name LevelDataValidator
 extends RefCounted
 
+const PathVisualGeometryScript = preload("res://scripts/gameplay/path_visual_geometry.gd")
+
 const VALID_DIRECTIONS: Array[Vector2i] = [
 	Vector2i.UP,
 	Vector2i.DOWN,
@@ -54,6 +56,35 @@ static func validate(level: PuzzleLevelData) -> PackedStringArray:
 				)
 
 	return errors
+
+static func audit_visual_orientation(level: PuzzleLevelData) -> PackedStringArray:
+	var warnings := PackedStringArray()
+	if level == null:
+		warnings.append("Level resource is null.")
+		return warnings
+	for piece in level.pieces:
+		if piece == null or piece.cells.is_empty():
+			continue
+		if piece.exit_direction not in VALID_DIRECTIONS:
+			continue
+		var leading_index: int = PathVisualGeometryScript.leading_cell_index(
+			piece.cells,
+			piece.exit_direction
+		)
+		var trailing_index: int = PathVisualGeometryScript.trailing_cell_index(
+			piece.cells,
+			piece.exit_direction
+		)
+		if leading_index < 0 or trailing_index < 0:
+			warnings.append("Piece %d could not resolve visual head/tail anchors." % piece.piece_id)
+			continue
+		if piece.cells.size() > 1 and leading_index == trailing_index:
+			warnings.append("Piece %d resolves visual head and tail to the same cell." % piece.piece_id)
+		if PathVisualGeometryScript.cell_projection_span(piece.cells, piece.exit_direction) == 0:
+			warnings.append(
+				"Piece %d has no cell-to-cell extent along its exit direction; endpoint tie fallback is used." % piece.piece_id
+			)
+	return warnings
 
 static func is_valid(level: PuzzleLevelData) -> bool:
 	return validate(level).is_empty()
