@@ -1,4 +1,5 @@
 extends CanvasLayer
+class_name PauseMenu
 
 signal resume_pressed
 signal restart_pressed
@@ -24,7 +25,7 @@ func _ready() -> void:
 	layer = 100
 	_build_ui()
 	_sync_from_settings()
-	_animate_in()
+	call_deferred("_finish_layout")
 
 func _build_ui() -> void:
 	backdrop = ColorRect.new()
@@ -120,11 +121,11 @@ func _build_ui() -> void:
 	)
 	secondary_buttons.add_child(menu_button)
 
-	sound_toggle.toggled.connect(SettingsManager.set_sound_enabled)
-	music_toggle.toggled.connect(SettingsManager.set_music_enabled)
-	haptics_toggle.toggled.connect(SettingsManager.set_haptics_enabled)
-	reduce_motion_toggle.toggled.connect(SettingsManager.set_reduce_motion)
-	high_contrast_toggle.toggled.connect(SettingsManager.set_high_contrast)
+	sound_toggle.toggled.connect(func(enabled: bool) -> void: SettingsManager.set_sound_enabled(enabled))
+	music_toggle.toggled.connect(func(enabled: bool) -> void: SettingsManager.set_music_enabled(enabled))
+	haptics_toggle.toggled.connect(func(enabled: bool) -> void: SettingsManager.set_haptics_enabled(enabled))
+	reduce_motion_toggle.toggled.connect(func(enabled: bool) -> void: SettingsManager.set_reduce_motion(enabled))
+	high_contrast_toggle.toggled.connect(func(enabled: bool) -> void: SettingsManager.set_high_contrast(enabled))
 	resume_button.grab_focus()
 
 func _add_setting_row(parent: VBoxContainer, title_text: String, description_text: String) -> CheckButton:
@@ -203,13 +204,18 @@ func _sync_from_settings() -> void:
 	reduce_motion_toggle.set_pressed_no_signal(SettingsManager.reduce_motion)
 	high_contrast_toggle.set_pressed_no_signal(SettingsManager.high_contrast)
 
+func _finish_layout() -> void:
+	if not is_instance_valid(panel):
+		return
+	panel.pivot_offset = panel.size * 0.5
+	_animate_in()
+
 func _animate_in() -> void:
 	if SettingsManager.reduce_motion:
 		return
 	backdrop.modulate.a = 0.0
 	panel.modulate.a = 0.0
 	panel.scale = Vector2(0.92, 0.92)
-	panel.pivot_offset = panel.size * 0.5
 	var tween := create_tween().set_parallel(true)
 	tween.tween_property(backdrop, "modulate:a", 1.0, 0.18)
 	tween.tween_property(panel, "modulate:a", 1.0, 0.22)
