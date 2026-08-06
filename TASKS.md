@@ -1,114 +1,270 @@
-# Pathbreak — Task Tracker
+# Pathbreak — Master TODO
 
-## Current phase: Living Board Menu & Vertical Slice QA
+**Status:** Current execution tracker  
+**Last reviewed:** 2026-08-07  
+**Active branch:** `codex/vertical-slice-level-review`  
+**Draft PR:** `#8 — Direct and approve the Pathbreak vertical slice`
 
-### In progress
+Read `docs/PROJECT_HANDOFF.md` before continuing after a lost conversation.
 
-- [ ] Pull and parse-test `codex/vertical-slice-ui-polish` in Godot 4.7.1.
-- [ ] Review the new Living Board main menu at phone and tablet viewports.
-- [ ] Verify new-player, returning-player, and chapter-complete menu states.
-- [ ] Verify Start/Continue, Levels, How to Play, and Settings navigation.
-- [ ] Manually complete levels 2–5 and record layout, difficulty, and progression issues.
-- [ ] Verify pause, Android back, save/load, failure, replay, and next-level flows.
-- [ ] Tune the first five levels to the quality gate in `docs/VERTICAL_SLICE.md`.
+## Current objective
 
-### Verified foundation
-
-- [x] Godot 4.7.1 parser scan passed with 0 warnings and 0 errors before the latest menu pass.
-- [x] MovementValidator test suite passed 10/10.
-- [x] LevelDataValidator test suite passed 8/8.
-- [x] Level 1 accepts precise path taps and ignores empty-board taps.
-- [x] Level 1 completion popup displays Replay and Next Level.
-- [x] Main-menu Continue selects the first unlocked uncleared level.
-
-### Implemented in the Living Board pass
-
-- [x] Document the final main-menu and player-flow direction.
-- [x] Replace random decorative arrows with an original animated mini puzzle board.
-- [x] Add explicit new-player, returning-player, and chapter-complete states.
-- [x] Add total-star display and chapter progress.
-- [x] Add dominant Start/Continue action.
-- [x] Add Levels and How to Play secondary actions.
-- [x] Add a dedicated How to Play overlay.
-- [x] Add a dedicated main-menu settings overlay.
-- [x] Make Reduce Motion stop the Living Board demonstration.
-- [x] Preserve `MainMenu.tscn` as the project startup scene.
-
-### Implemented in the UI-polish pass
-
-- [x] Make level-select progress reflect completed levels.
-- [x] Add distinct NEXT, PLAY, completed, and LOCKED level-card states.
-- [x] Remove the dead level-select settings button.
-- [x] Compact the gameplay HUD for small phone screens.
-- [x] Replace inconsistent emoji HUD icons with monochrome symbols.
-- [x] Clarify free tutorial hints and zero-hint states.
-- [x] Rebuild the completion card hierarchy and statistics panel.
-- [x] Replace unclear pause toggles with explicit ON/OFF controls.
-- [x] Remove the unfinished music control until a real music system exists.
-
-### Implemented in the foundation pass
-
-- [x] Route the product through the modular gameplay stack.
-- [x] Remove obsolete `Main.tscn`, duplicate `PuzzlePiece.tscn`, legacy `GameManager.gd`, and legacy victory flow.
-- [x] Add responsive board positioning and scaling.
-- [x] Replace overlapping per-piece input with nearest-path touch selection.
-- [x] Restrict automatic valid-move pulsing to the unfinished tutorial.
-- [x] Add persistent sound, haptics, reduce-motion, and high-contrast settings.
-- [x] Add a functional pause/settings overlay.
-- [x] Add haptic feedback hooks for success, errors, hints, and completion.
-- [x] Track moves and mistakes independently.
-- [x] Version save data and record best moves, mistakes, and completion times.
-- [x] Make JSON the canonical runtime level format with `.tres` fallback.
-- [x] Add reusable level schema validation and automated tests.
-- [x] Stop level-pack loading when an invalid level would shift progression indexes.
-- [x] Document the five-level vertical-slice acceptance criteria.
-
-### Testing pending after the menu changes
-
-- [ ] Run a Godot 4.7.1 headless editor/parser scan.
-- [ ] Run `godot --headless --path . --script tests/test_movement_validator.gd`.
-- [ ] Run `godot --headless --path . --script tests/test_level_data_validator.gd`.
-- [ ] Test 360×800, 393×873, 412×915, 800×1280, and 1200×1920.
-- [ ] Test Living Board motion and Reduce Motion.
-- [ ] Test How to Play and Settings overlays.
-- [ ] Test touch ambiguity near two closely spaced paths.
-- [ ] Test rapid repeated input during escape and blocked animations.
-- [ ] Test pause/resume, background/resume, and Android back.
-- [ ] Test corrupt save and settings files.
+Approve a complete, understandable, stable, device-tested vertical slice before building the level-production pipeline, final art, or monetization.
 
 ---
 
-## Next milestones
+## P0 — Do next
 
-### Milestone 1 — Approve the vertical slice
+### A. Verify the latest interaction-clarity build
 
-- [ ] Final tutorial presentation.
-- [ ] Five polished and manually reviewed levels.
-- [ ] Final-quality interaction sounds for the slice.
-- [ ] Device-tested haptics and motion.
-- [ ] No critical gameplay or progress bugs.
+- [ ] Pull the latest active branch.
+- [ ] Run the Godot 4.7.1 headless editor/parser scan.
+- [ ] Confirm zero parser errors and no new warnings.
+- [ ] Run `tests/test_movement_validator.gd`.
+- [ ] Run `tests/test_level_data_validator.gd`.
+- [ ] Run `tests/test_vertical_slice_levels.gd`.
+- [ ] Record exact test output in the playtest/verification document.
 
-### Milestone 2 — Level production tools
+### B. Main-menu acceptance
 
-- [ ] Replace the old experimental editor with a modular level editor.
-- [ ] Add schema validation in the editor.
-- [ ] Add a solvability solver.
-- [ ] Add difficulty measurements and playtest notes.
-- [ ] Export versioned JSON level packs.
+- [ ] Confirm tapping the hero board opens the same recommended level as Start/Continue.
+- [ ] Confirm rapid taps do not trigger double navigation.
+- [ ] Confirm the state-aware prompt is readable and does not overlap paths.
+- [ ] Confirm the travelling direction pulse communicates movement toward the arrowhead.
+- [ ] Confirm new-player state says Start Level 1.
+- [ ] Confirm returning-player state recommends the first uncleared unlocked level.
+- [ ] Confirm chapter-complete state remains understandable.
+- [ ] Test menu at 360×800 and 800×1280 first.
 
-### Milestone 3 — Content production
+### C. Gameplay readability and final clear
 
-- [ ] 5 tutorial/showcase levels.
-- [ ] 20 easy levels.
-- [ ] 25 normal levels.
-- [ ] 20 hard levels.
-- [ ] 5 mechanic showcase levels.
+- [ ] Review larger arrowheads and smaller tail dots on Levels 1–5.
+- [ ] Use a hint and confirm the directional marker travels from tail toward arrowhead.
+- [ ] Confirm the marker never suggests the wrong direction.
+- [ ] Clear the second-last path and confirm the final valid path previews in blue.
+- [ ] Confirm the final path clears automatically exactly once.
+- [ ] Confirm automatic final clear does not add a player Move.
+- [ ] Confirm result timing, stars, hints used, and progression remain correct.
+- [ ] Confirm `No path can leave yet` still appears when appropriate.
 
-### Milestone 4 — Launch preparation
+### D. Accessibility regression
 
-- [ ] Final name, icon, logo, store artwork, audio, and copy.
-- [ ] Analytics and crash reporting.
-- [ ] Android performance and interruption testing.
-- [ ] Signed Android App Bundle.
-- [ ] Privacy policy, Data Safety, content rating, and closed testing.
-- [ ] Rewarded ads and optional remove-ads purchase only after retention validation.
+- [ ] Enable Reduce Motion and repeat menu animation, hint, and automatic final-clear tests.
+- [ ] Confirm Reduce Motion remains understandable without travelling animation.
+- [ ] Enable High Contrast and verify paths, arrowheads, tail markers, and hints remain readable.
+- [ ] Verify Sound and Haptics toggles persist.
+
+### E. Fresh-save tutorial
+
+- [ ] Back up and remove the current save.
+- [ ] Confirm Main Menu shows the new-player Start state.
+- [ ] Confirm Level 1 displays `FREE`.
+- [ ] Confirm the free hint highlights an escapable path.
+- [ ] Confirm the free hint does not consume a normal hint.
+- [ ] Confirm completing Level 1 marks the tutorial complete.
+- [ ] Confirm replaying Level 1 displays the real hint count.
+
+---
+
+## P1 — Repeat external playtesting
+
+Test with at least three players who have not seen the revised menu or path visuals.
+
+For every tester record:
+
+- [ ] First thing tapped on the Main Menu.
+- [ ] Whether they understood that the board and Start button both begin play.
+- [ ] Whether they identified the arrow direction without verbal explanation.
+- [ ] Whether tail dots confused them.
+- [ ] Completion time for Levels 1–5.
+- [ ] Moves and mistakes.
+- [ ] Hint usage.
+- [ ] Confusion, boredom, enjoyment, and abandonment points.
+- [ ] Reaction to automatic final clear.
+
+Decision rules:
+
+- [ ] Do not increase difficulty until direction readability improves.
+- [ ] Keep Level 2 if blocking remains understandable.
+- [ ] Keep Level 3 if bent-path reading remains understandable.
+- [ ] Tune Levels 4–5 if first-time players still clear them automatically or in roughly 10 seconds.
+- [ ] Do not use visual confusion as difficulty.
+
+---
+
+## P1 — Android verification
+
+### Phone
+
+- [ ] Export and install a debug APK.
+- [ ] Verify portrait layout.
+- [ ] Verify nearest-path touch selection.
+- [ ] Verify close paths do not select the wrong path.
+- [ ] Verify multi-touch does not create duplicate actions.
+- [ ] Verify Android Back closes popup/pause before leaving gameplay.
+- [ ] Verify suspend/resume.
+- [ ] Verify force-close/reopen save persistence.
+- [ ] Verify sound and haptics.
+
+### Tablet
+
+- [ ] Install on Samsung Galaxy Tab S6 Lite or another available Android tablet.
+- [ ] Verify board scale and centring.
+- [ ] Verify touch tolerance with stylus and finger.
+- [ ] Verify popup and menu sizing.
+- [ ] Verify performance and lifecycle behaviour.
+
+---
+
+## P1 — Vertical-slice level direction
+
+### Level 1
+
+- [x] Two clear opening moves implemented.
+- [ ] Fresh-save tutorial approved.
+
+### Level 2
+
+- [x] Tightened to a 6×6 board.
+- [x] New players understood blocking in the recorded test.
+- [ ] Confirm revised arrow/tail language does not reduce comprehension.
+
+### Level 3
+
+- [x] Tightened to a 6×6 board.
+- [x] New players understood bent-path reading in the recorded test.
+- [ ] Confirm revised direction cue.
+
+### Level 4
+
+- [x] Failure/retry/result flow exercised.
+- [ ] Retest with new players after readability revision.
+- [ ] Increase decision depth only if evidence supports it.
+
+### Level 5
+
+- [x] Redesigned around an authored dependency chain.
+- [ ] Retest with new players after readability revision.
+- [ ] Target a meaningful first-time solve rather than visual busyness.
+
+---
+
+## P2 — UI direction after slice approval
+
+### Main Menu
+
+- [ ] Keep clear Start/Continue hierarchy.
+- [ ] Keep the board as a valid start target.
+- [ ] Place tap instruction below the board without overlap.
+- [ ] Improve vertical balance and reduce unused lower space.
+- [ ] Add restrained game-specific iconography.
+- [ ] Avoid excessive glow, sparkles, shadows, and repeated cards.
+
+### Level Select
+
+- [ ] Keep four columns on compact phones.
+- [ ] Make Completed, Current, Unlocked, and Locked states unmistakable.
+- [ ] Make the recommended next level easy to identify.
+- [ ] Increase star readability.
+- [ ] Use a dedicated Continue action when it improves touch clarity.
+- [ ] Avoid five narrow columns and repetitive status labels.
+
+### Final art-direction work deferred
+
+- [ ] Final logo and app icon.
+- [ ] Ownable Pathbreak motif.
+- [ ] Final typography and iconography.
+- [ ] Chapter themes and backgrounds.
+- [ ] Production particles and transitions.
+- [ ] Final sound and music direction.
+- [ ] Store screenshots and marketing art.
+
+---
+
+## P2 — Level-production pipeline
+
+Start only after the vertical slice is approved.
+
+- [ ] Replace the experimental editor with a modular level editor.
+- [ ] Create, move, rotate, and delete paths.
+- [ ] Validate schema before export.
+- [ ] Integrate `LevelSolver`.
+- [ ] Show opening-move count.
+- [ ] Show full-clear solution count.
+- [ ] Detect reachable dead ends.
+- [ ] Add dependency-depth measurements.
+- [ ] Add difficulty notes and playtest fields.
+- [ ] Preview at phone/tablet scales.
+- [ ] Export versioned JSON.
+- [ ] Batch validate level packs.
+
+---
+
+## P3 — Content production
+
+Do not manually produce the full pack before the editor and solver workflow are reliable.
+
+- [ ] Finalise chapter and mechanic plan.
+- [ ] Produce teaching levels for every new mechanic.
+- [ ] Produce combination levels.
+- [ ] Tune difficulty from solver measurements and player evidence.
+- [ ] Remove levels that solve through random tapping.
+- [ ] Verify originality and avoid competitor layouts.
+- [ ] Build the launch-sized level pack.
+
+---
+
+## P3 — Commercial and launch preparation
+
+- [ ] Final name and trademark clearance.
+- [ ] Analytics event implementation.
+- [ ] Crash reporting.
+- [ ] Privacy policy and Data Safety form.
+- [ ] Consent flow where required.
+- [ ] Android target/API and store configuration.
+- [ ] Signed Android App Bundle and signing-key backup.
+- [ ] Closed testing.
+- [ ] Store listing, screenshots, feature graphic, and trailer.
+- [ ] Customer support and incident plan.
+- [ ] Rewarded hints and optional remove-ads purchase only after retention validation.
+
+---
+
+## Verified or accepted foundations
+
+- [x] Modular gameplay architecture is the only supported runtime architecture.
+- [x] Main Menu is the project startup scene.
+- [x] JSON is the canonical level format.
+- [x] Movement rules are separated into `MovementValidator`.
+- [x] Reusable level validation exists.
+- [x] `LevelSolver` and vertical-slice tests exist.
+- [x] Central nearest-path touch selection exists.
+- [x] Save data is versioned.
+- [x] Sound, Haptics, Reduce Motion, and High Contrast persist separately.
+- [x] Moves and mistakes are tracked independently.
+- [x] Hint inventory is persistent.
+- [x] Zero hints remain actionable through the refill flow.
+- [x] Hint refill was confirmed working after the native-button correction.
+- [x] Restart was moved to the same reliable native-button system.
+- [x] AI anti-slop standard is active.
+- [x] Current light UI is explicitly provisional.
+
+---
+
+## Commands
+
+```bash
+cd "/home/silver/Downloads/godot games /projects/arrow puzzle"
+git fetch origin
+git switch codex/vertical-slice-level-review
+git pull origin codex/vertical-slice-level-review
+
+GODOT="/home/silver/Downloads/godot games /Godot_v4.7.1-stable_linux.x86_64"
+
+"$GODOT" --headless --path . --editor --quit
+"$GODOT" --headless --path . --script tests/test_movement_validator.gd
+"$GODOT" --headless --path . --script tests/test_level_data_validator.gd
+"$GODOT" --headless --path . --script tests/test_vertical_slice_levels.gd
+```
+
+Run the complete game with **F5**, not F6.
