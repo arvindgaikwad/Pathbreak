@@ -1,8 +1,8 @@
 extends Control
 
-var ResultPopupScene = preload("res://scenes/game/result_popup.tscn")
-var FailScreenScene = preload("res://scenes/GameOverScreen.tscn")
-var PauseMenuScene = preload("res://scenes/game/pause_menu.tscn")
+var ResultPopupScene: PackedScene = preload("res://scenes/game/result_popup.tscn")
+var FailScreenScene: PackedScene = preload("res://scenes/GameOverScreen.tscn")
+var PauseMenuScene: PackedScene = preload("res://scenes/game/pause_menu.tscn")
 
 @onready var board_pivot: Node2D = $BoardPivot
 @onready var board = $BoardPivot/Board
@@ -18,7 +18,7 @@ var lives_left: int = 3
 var total_pieces: int = 0
 var remaining_pieces: int = 0
 var input_locked: bool = false
-var pause_menu: CanvasLayer = null
+var pause_menu: PauseMenu = null
 var level_data_list: Array[PuzzleLevelData] = []
 
 const TOP_RESERVED := 190.0
@@ -55,17 +55,23 @@ func _load_levels() -> void:
 			level_data_list.append(level)
 
 func _load_level_resource(level_number: int) -> PuzzleLevelData:
+	# JSON is the canonical, diff-friendly production format. Resources remain a temporary fallback.
+	var json_path := "res://data/level%d.json" % level_number
+	if FileAccess.file_exists(json_path):
+		var json_level := _load_json_level(json_path, level_number)
+		if json_level != null:
+			return json_level
+
 	var resource_path := "res://data/levels/level_%d.tres" % level_number
 	if ResourceLoader.exists(resource_path):
 		var resource_level := load(resource_path) as PuzzleLevelData
 		if resource_level != null and _is_level_data_valid(resource_level):
 			return resource_level
 
-	var json_path := "res://data/level%d.json" % level_number
-	if not FileAccess.file_exists(json_path):
-		push_warning("Missing level definition: %s" % json_path)
-		return null
+	push_warning("No valid level definition for level %d" % level_number)
+	return null
 
+func _load_json_level(json_path: String, level_number: int) -> PuzzleLevelData:
 	var file := FileAccess.open(json_path, FileAccess.READ)
 	if file == null:
 		push_warning("Could not open level definition: %s" % json_path)
@@ -113,12 +119,18 @@ func _is_level_data_valid(level: PuzzleLevelData) -> bool:
 			return false
 		if piece.exit_direction not in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
 			return false
-		for cell in piece.cells:
+		for cell_index in range(piece.cells.size()):
+			var cell := piece.cells[cell_index]
 			if not MovementValidator.is_inside_board(cell, level.board_size):
 				return false
 			if occupied_cells.has(cell):
 				return false
 			occupied_cells[cell] = piece.piece_id
+			if cell_index > 0:
+				var previous_cell := piece.cells[cell_index - 1]
+				var manhattan_distance := abs(cell.x - previous_cell.x) + abs(cell.y - previous_cell.y)
+				if manhattan_distance != 1:
+					return false
 	return true
 
 func _difficulty_for_level(level_number: int) -> String:
@@ -151,7 +163,7 @@ func load_level(index: int) -> void:
 	total_pieces = level_data.pieces.size()
 	remaining_pieces = total_pieces
 	hud.update_hud(level_data.level_id, level_data.difficulty, lives_left, hints_left)
-	board.update_assist_pulses(current_level_idx == 0)
+	board.update_assist_pulses(current_level_idx == 0 and not SaveManager.tutorial_completed)
 	_update_layout()
 
 func _on_piece_tapped(piece: PuzzlePiece) -> void:
@@ -168,7 +180,7 @@ func _on_piece_tapped(piece: PuzzlePiece) -> void:
 
 		get_tree().create_timer(0.35).timeout.connect(func() -> void:
 			if not input_locked:
-				board.update_assist_pulses(current_level_idx == 0)
+				board.update_assist_pulses(current_level_idx == 0 and not SaveManager.tutorial_completed)
 		)
 
 		if remaining_pieces <= 0:
@@ -284,7 +296,13 @@ func _open_pause_menu() -> void:
 	input_locked = true
 	board.set_input_enabled(false)
 	hud.set_controls_enabled(false)
-	pause_menu = PauseMenuScene.instantiate() as CanvasLayer
+	pause_menu = PauseMenuScene.instantiate() as PauseMenu
+	if pause_menu == null:
+		push_error("Pause menu scene does not use PauseMenu script.")
+		input_locked = false
+		board.set_input_enabled(true)
+		hud.set_controls_enabled(true)
+		return
 	add_child(pause_menu)
 	pause_menu.resume_pressed.connect(_resume_from_pause)
 	pause_menu.restart_pressed.connect(_restart_from_pause)
