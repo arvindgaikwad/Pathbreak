@@ -132,14 +132,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	for piece in pieces:
 		if not is_instance_valid(piece) or piece.is_removed or piece.is_animating:
 			continue
-		var local_position := piece.to_local(screen_position)
+		var canvas_to_piece := piece.get_global_transform_with_canvas().affine_inverse()
+		var local_position := canvas_to_piece * screen_position
 		var distance := piece.distance_to_path(local_position)
 		if distance < closest_distance:
 			closest_distance = distance
 			closest_piece = piece
 
 	var canvas_scale := absf(get_global_transform_with_canvas().get_scale().x)
-	var local_threshold := 36.0 / maxf(canvas_scale, 0.1)
+	var local_threshold := 40.0 / maxf(canvas_scale, 0.1)
 	if closest_piece != null and closest_distance <= local_threshold:
 		piece_selected.emit(closest_piece)
 		get_viewport().set_input_as_handled()
