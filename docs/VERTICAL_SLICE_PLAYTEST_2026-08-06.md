@@ -10,6 +10,7 @@ Branch: `codex/vertical-slice-level-review`
 3. Local interaction-clarity verification.
 4. Clean-save tutorial verification.
 5. Screenshot review after the first simple-triangle cleanup.
+6. Screenshot review after the ordered-path migration.
 
 ## Returning-tester evidence
 
@@ -83,12 +84,12 @@ Observed:
 
 - some triangles remained attached to a side that did not follow the path endpoint;
 - some L-shaped heads still pointed in a direction unrelated to their adjacent segment;
-- visually “leading” placement and stored movement direction could disagree;
+- visually leading placement and stored movement direction could disagree;
 - the result looked systematic across multiple pieces, not like isolated styling defects.
 
 The initial projection-based correction was therefore rejected. A geometric leading edge is not necessarily an ordered path endpoint.
 
-## Expert-prompt correction now implemented — pending verification
+## Expert-prompt correction
 
 The two supplied expert prompts establish the correct model:
 
@@ -109,7 +110,7 @@ cells[-1] - cells[-2]
 = movement direction
 ```
 
-Implemented after the screenshot review:
+Implemented:
 
 - ordered endpoint helper in `path_visual_geometry.gd`;
 - shaft trimming before the triangle;
@@ -131,7 +132,26 @@ Migration review:
 - 6 required small geometry changes;
 - Levels 6–10 already followed the convention.
 
-**Verification boundary:** none of the latest ordered-path changes should be called working until the local parser, migration preview, tests, and screenshots pass.
+## Ordered-path screenshot verification — visually passed for Levels 2 and 5
+
+The user supplied new screenshots of Levels 2 and 5 after pulling the ordered-path correction and described the result as “much better.”
+
+Observed in the screenshots:
+
+- right-facing heads attach to right-facing final segments;
+- down-facing heads attach to downward final segments;
+- left-facing heads attach to left-facing final segments;
+- the upward L-shaped path in Level 5 attaches its head to the upper endpoint;
+- bent paths follow the adjacent endpoint segment rather than a first-to-last diagonal;
+- shaft rendering stops before the triangle instead of visibly passing through it;
+- tail endpoints remain visually quieter than heads;
+- triangle proportions are consistent across the visible four directions;
+- Level 2 remains immediately readable as a blocking lesson;
+- Level 5 now reads as a deliberate collection of directional paths rather than mismatched symbols.
+
+**Director verdict:** the ordered-path visual model is accepted as the correct Pathbreak foundation. Do not return to projection-based placement, manual per-level rotations, or separate movement/head directions.
+
+**Verification boundary:** screenshots prove static visual alignment for the displayed Levels 2 and 5. Exact parser/test output, actual movement-direction matching for every migrated path, hint-marker regression, accessibility regression, and Android behaviour still require evidence.
 
 ## Current level status
 
@@ -145,7 +165,10 @@ Migration review:
 
 - Blocking was understood before migration.
 - One L-path was reshaped and one path reversed.
+- New screenshot confirms the straight right, bent down, and straight left path heads are visually aligned.
 - Expected one-opening/one-solution target remains encoded in tests.
+
+**Status:** static visual acceptance passed; formal tests and new-player regression remain.
 
 ### Level 3
 
@@ -162,7 +185,10 @@ Migration review:
 
 - Previous screenshot exposed the shared head problem.
 - Four paths were reversed and two were minimally reshaped.
+- New screenshot confirms consistent endpoint-based heads across right, down, left, and up paths.
 - Expected one opening and six solutions remain encoded in tests.
+
+**Status:** static visual acceptance passed; solver, movement, and external difficulty evidence remain.
 
 ### Levels 9–10
 
@@ -180,18 +206,19 @@ Migration review:
 
 ## Remaining gates
 
-1. Parser scan.
-2. Migration preview reports zero reversible/ambiguous paths.
-3. Ordered geometry suite passes.
-4. Movement, data, and vertical-slice solver suites pass.
-5. Levels 1–5 screenshots show endpoint-aligned heads.
-6. Visible head direction equals actual escape movement.
-7. Shaft/head overlap looks clean.
-8. Hint marker follows the same final segment.
-9. Reduce Motion and High Contrast pass.
-10. New-player no-explanation test.
-11. Android phone/tablet test.
+1. Record parser scan output.
+2. Confirm migration preview reports zero reversible/ambiguous paths.
+3. Confirm ordered geometry suite passes.
+4. Confirm movement, data, and vertical-slice solver suites pass.
+5. Play migrated Levels 1–5 and verify visible head direction equals actual escape movement.
+6. Verify hint marker follows the same final segment.
+7. Verify menu demonstration still follows the same ordered-path rules.
+8. Verify Restart, refill, automatic final clear, and failure flow did not regress.
+9. Verify Reduce Motion and High Contrast.
+10. Repeat a no-explanation test with new players.
+11. Tune Levels 4–5 from evidence.
+12. Complete Android phone/tablet testing.
 
 ## Current decision
 
-The old arrow data/rendering model was the shared root problem. The new ordered endpoint system is implemented but unverified. Difficulty and final UI work remain deferred until this correction passes.
+The ordered endpoint system has passed static visual review on representative straight and bent paths in Levels 2 and 5. The next gate is formal parser/test evidence and movement-regression testing. Difficulty tuning begins only after that gate passes.
