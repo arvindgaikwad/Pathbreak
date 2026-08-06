@@ -34,9 +34,16 @@ func _update_progress_copy() -> void:
 		play_btn.text = "Start Journey"
 		progress_pill.text = "%d handcrafted levels  ·  No timers" % TOTAL_LEVELS
 	else:
-		var next_level := clampi(SaveManager.current_level + 1, 1, TOTAL_LEVELS)
-		play_btn.text = "Continue Level %d" % next_level
+		var recommended_level := _get_recommended_level_index() + 1
+		play_btn.text = "Continue Level %d" % recommended_level
 		progress_pill.text = "%d / %d cleared  ·  %d stars earned" % [completed, TOTAL_LEVELS, total_stars]
+
+func _get_recommended_level_index() -> int:
+	var max_available := clampi(SaveManager.max_level_unlocked, 0, TOTAL_LEVELS - 1)
+	for level_index in range(max_available + 1):
+		if int(SaveManager.level_stars.get(str(level_index), 0)) <= 0:
+			return level_index
+	return max_available
 
 func _apply_progress_style() -> void:
 	var pill_style := StyleBoxFlat.new()
@@ -145,7 +152,7 @@ func _animate_float(node: Control, rng: RandomNumberGenerator) -> void:
 	tween.tween_property(node, "position:y", start_y, duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func _on_play_pressed() -> void:
-	SaveManager.current_level = clampi(SaveManager.current_level, 0, SaveManager.max_level_unlocked)
+	SaveManager.current_level = _get_recommended_level_index()
 	SaveManager.save_game()
 	get_tree().change_scene_to_file("res://scenes/game/game_screen.tscn")
 
