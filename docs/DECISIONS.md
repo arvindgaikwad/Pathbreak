@@ -1,6 +1,6 @@
 # Pathbreak — Architecture and Product Decision Log
 
-**Last reviewed:** 2026-08-06  
+**Last reviewed:** 2026-08-07  
 **Scope:** Current vertical-slice branch. Later decisions should be appended rather than silently replacing old ones.
 
 ## Record 001 — Typed runtime level data
@@ -99,3 +99,24 @@
 - **Decision:** Apply `docs/AI_ANTI_SLOP_STANDARD.md` to code, levels, UI, art, writing, monetization, documentation, and pull-request review.
 - **Reason:** AI speed is useful only when authorship, specificity, consistency, and verification are preserved.
 - **Consequences:** Parser warnings are defects; generic or placeholder presentation must be removed or labelled provisional; levels require authored decisions rather than quantity; untested changes cannot be described as verified; features without a Pathbreak-specific player purpose should be rejected.
+
+## Record 016 — The living-board demonstration is also a play target
+
+- **Status:** Implemented; pending local and player verification
+- **Decision:** Tapping anywhere on the main-menu demonstration starts the same recommended level as the primary Start/Continue button.
+- **Reason:** New players tapped the game-like arrows and were confused when nothing happened. The interface should honour the expectation it creates instead of teaching players to ignore the most game-like object on the screen.
+- **Consequences:** The board receives a full-card native Button target, displays an explicit start/continue prompt, and shares one guarded navigation path with the primary button.
+
+## Record 017 — Direction is communicated through hierarchy and motion
+
+- **Status:** Implemented; pending local and player verification
+- **Decision:** Strengthen arrowheads, reduce tail-dot prominence, and use a moving accent marker from tail to arrowhead during demonstrations, tutorial assistance, and hints.
+- **Reason:** New players did not consistently understand direction from the previous arrowhead and dot treatment. A larger arrowhead plus restrained directional motion communicates the rule without adding more labels or decorative symbols.
+- **Accessibility consequence:** Reduce Motion replaces travelling cues with static accent treatment or shorter transitions.
+
+## Record 018 — The final obvious path clears automatically
+
+- **Status:** Prototype implemented; pending local and player verification
+- **Decision:** When exactly one valid path remains, lock board input, preview that path in blue, and clear it automatically without increasing the player move count.
+- **Reason:** The final tap contains no decision once every blocker is gone. Removing it preserves pacing and makes the clear feel like a consequence of the player's last meaningful move.
+- **Failure handling:** If the board does not contain exactly one valid remaining path, automatic clear is cancelled, a warning is recorded, and control returns to the player rather than silently corrupting state.
