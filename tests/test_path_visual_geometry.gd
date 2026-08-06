@@ -22,11 +22,15 @@ func _init() -> void:
 	quit(0 if passed == tests.size() else 1)
 
 func test_straight_directions_from_final_segment() -> bool:
-	var cases: Array[Dictionary] = [
-		{"cells": [Vector2i(0, 0), Vector2i(1, 0)], "direction": Vector2i.RIGHT},
-		{"cells": [Vector2i(1, 0), Vector2i(0, 0)], "direction": Vector2i.LEFT},
-		{"cells": [Vector2i(0, 0), Vector2i(0, 1)], "direction": Vector2i.DOWN},
-		{"cells": [Vector2i(0, 1), Vector2i(0, 0)], "direction": Vector2i.UP}
+	var c1: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0)]
+	var c2: Array[Vector2i] = [Vector2i(1, 0), Vector2i(0, 0)]
+	var c3: Array[Vector2i] = [Vector2i(0, 0), Vector2i(0, 1)]
+	var c4: Array[Vector2i] = [Vector2i(0, 1), Vector2i(0, 0)]
+	var cases := [
+		{"cells": c1, "direction": Vector2i.RIGHT},
+		{"cells": c2, "direction": Vector2i.LEFT},
+		{"cells": c3, "direction": Vector2i.DOWN},
+		{"cells": c4, "direction": Vector2i.UP}
 	]
 	for test_case in cases:
 		var cells: Array[Vector2i] = test_case["cells"]
@@ -35,23 +39,15 @@ func test_straight_directions_from_final_segment() -> bool:
 	return true
 
 func test_l_shaped_directions_from_final_segment() -> bool:
-	var cases: Array[Dictionary] = [
-		{
-			"cells": [Vector2i(0, 0), Vector2i(0, 1), Vector2i(1, 1)],
-			"direction": Vector2i.RIGHT
-		},
-		{
-			"cells": [Vector2i(1, 0), Vector2i(1, 1), Vector2i(0, 1)],
-			"direction": Vector2i.LEFT
-		},
-		{
-			"cells": [Vector2i(0, 0), Vector2i(1, 0), Vector2i(1, 1)],
-			"direction": Vector2i.DOWN
-		},
-		{
-			"cells": [Vector2i(0, 1), Vector2i(1, 1), Vector2i(1, 0)],
-			"direction": Vector2i.UP
-		}
+	var l1: Array[Vector2i] = [Vector2i(0, 0), Vector2i(0, 1), Vector2i(1, 1)]
+	var l2: Array[Vector2i] = [Vector2i(1, 0), Vector2i(1, 1), Vector2i(0, 1)]
+	var l3: Array[Vector2i] = [Vector2i(0, 0), Vector2i(1, 0), Vector2i(1, 1)]
+	var l4: Array[Vector2i] = [Vector2i(0, 1), Vector2i(1, 1), Vector2i(1, 0)]
+	var cases := [
+		{"cells": l1, "direction": Vector2i.RIGHT},
+		{"cells": l2, "direction": Vector2i.LEFT},
+		{"cells": l3, "direction": Vector2i.DOWN},
+		{"cells": l4, "direction": Vector2i.UP}
 	]
 	for test_case in cases:
 		var cells: Array[Vector2i] = test_case["cells"]
