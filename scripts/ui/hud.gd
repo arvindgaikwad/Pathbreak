@@ -53,7 +53,7 @@ func _prepare_clickable_card(card: Control) -> void:
 func _set_descendant_mouse_filter(root: Node, filter_value: int) -> void:
 	for child in root.get_children():
 		if child is Control:
-			(child as Control).mouse_filter = filter_value
+			(child as Control).mouse_filter = filter_value as Control.MouseFilter
 		_set_descendant_mouse_filter(child, filter_value)
 
 func _apply_styles() -> void:
