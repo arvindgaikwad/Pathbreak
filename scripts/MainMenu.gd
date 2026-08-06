@@ -9,12 +9,13 @@ const COLOR_ACCENT_DARK := Color("#2F6AE2")
 const COLOR_PRIMARY := Color("#1B2538")
 const COLOR_SECONDARY := Color("#717D93")
 const COLOR_BORDER := Color("#E1E7EF")
-const COLOR_CANVAS := Color("#F8F6F0")
 
 @onready var star_label: Label = $SafeMargin/Content/TopRow/StarLabel
 @onready var settings_button: Button = $SafeMargin/Content/TopRow/SettingsButton
 @onready var hero: VBoxContainer = $SafeMargin/Content/Hero
 @onready var board_center: CenterContainer = $SafeMargin/Content/BoardCenter
+@onready var board_button: Button = $SafeMargin/Content/BoardCenter/BoardOverlay/ClickTarget
+@onready var board_prompt: Label = $SafeMargin/Content/BoardCenter/BoardOverlay/PromptLabel
 @onready var progress_card: PanelContainer = $SafeMargin/Content/ProgressCard
 @onready var chapter_label: Label = $SafeMargin/Content/ProgressCard/CardMargin/CardContent/ChapterLabel
 @onready var level_label: Label = $SafeMargin/Content/ProgressCard/CardMargin/CardContent/LevelRow/LevelLabel
@@ -25,11 +26,13 @@ const COLOR_CANVAS := Color("#F8F6F0")
 @onready var levels_button: Button = $SafeMargin/Content/SecondaryRow/LevelsButton
 @onready var how_to_button: Button = $SafeMargin/Content/SecondaryRow/HowToButton
 
-var primary_level_index := 0
+var primary_level_index: int = 0
 var active_overlay: CanvasLayer = null
+var navigation_started: bool = false
 
 func _ready() -> void:
 	primary_button.pressed.connect(_on_primary_pressed)
+	board_button.pressed.connect(_on_board_pressed)
 	levels_button.pressed.connect(_on_levels_pressed)
 	how_to_button.pressed.connect(_on_how_to_pressed)
 	settings_button.pressed.connect(_on_settings_pressed)
@@ -52,19 +55,22 @@ func _refresh_state() -> void:
 		chapter_label.text = "CHAPTER 1 · FIRST PATHS"
 		level_label.text = "Begin with one clear route"
 		progress_label.text = "0 / %d" % TOTAL_LEVELS
-		primary_button.text = "Start"
+		primary_button.text = "Start Level 1"
+		board_prompt.text = "TAP THE BOARD TO START"
 	elif all_complete:
 		primary_level_index = TOTAL_LEVELS - 1
 		chapter_label.text = "CHAPTER 1 COMPLETE"
 		level_label.text = "Every path cleared"
 		progress_label.text = "%d / %d" % [TOTAL_LEVELS, TOTAL_LEVELS]
 		primary_button.text = "Replay Level %d" % TOTAL_LEVELS
+		board_prompt.text = "TAP TO REPLAY · LEVEL %d" % TOTAL_LEVELS
 	else:
 		primary_level_index = _get_recommended_level_index()
 		chapter_label.text = "CHAPTER 1 · FIRST PATHS"
 		level_label.text = "Level %d" % (primary_level_index + 1)
 		progress_label.text = "%d / %d cleared" % [completed, TOTAL_LEVELS]
 		primary_button.text = "Continue · Level %d" % (primary_level_index + 1)
+		board_prompt.text = "TAP TO CONTINUE · LEVEL %d" % (primary_level_index + 1)
 
 func _completed_level_count() -> int:
 	var completed := 0
@@ -93,7 +99,7 @@ func _apply_styles() -> void:
 	primary_button.add_theme_stylebox_override("pressed", _primary_button_style(COLOR_ACCENT_DARK))
 	primary_button.add_theme_stylebox_override("focus", _primary_button_style(COLOR_ACCENT))
 
-	for button in [levels_button, how_to_button]:
+	for button: Button in [levels_button, how_to_button]:
 		button.add_theme_stylebox_override("normal", _secondary_button_style(Color.WHITE))
 		button.add_theme_stylebox_override("hover", _secondary_button_style(Color("#F1F4F8")))
 		button.add_theme_stylebox_override("pressed", _secondary_button_style(Color("#EDF1F6")))
@@ -104,6 +110,7 @@ func _apply_styles() -> void:
 	settings_button.add_theme_stylebox_override("pressed", _utility_button_style(Color("#EDF1F6")))
 	settings_button.add_theme_stylebox_override("focus", _utility_button_style(Color.WHITE))
 	star_label.add_theme_stylebox_override("normal", _star_pill_style())
+	board_prompt.add_theme_stylebox_override("normal", _board_prompt_style())
 
 	var progress_background := StyleBoxFlat.new()
 	progress_background.bg_color = Color("#E9EDF3")
@@ -122,7 +129,8 @@ func _apply_styles() -> void:
 	progress_bar.add_theme_stylebox_override("fill", progress_fill)
 
 func _prepare_button_feedback() -> void:
-	for button in [primary_button, levels_button, how_to_button, settings_button]:
+	var buttons: Array[Button] = [primary_button, levels_button, how_to_button, settings_button]
+	for button in buttons:
 		button.button_down.connect(func() -> void:
 			AudioManager.play_button_sound()
 			create_tween().tween_property(button, "scale", Vector2(0.97, 0.97), 0.07).set_trans(Tween.TRANS_SINE)
@@ -150,11 +158,34 @@ func _animate_entrance() -> void:
 		delay += 0.08
 
 func _on_primary_pressed() -> void:
+	_start_primary_level()
+
+func _on_board_pressed() -> void:
+	if navigation_started:
+		return
+	AudioManager.play_button_sound()
+	if SettingsManager.reduce_motion:
+		_start_primary_level()
+		return
+
+	board_center.pivot_offset = board_center.size * 0.5
+	var tween := create_tween()
+	tween.tween_property(board_center, "scale", Vector2(0.985, 0.985), 0.07).set_trans(Tween.TRANS_SINE)
+	tween.tween_property(board_center, "scale", Vector2.ONE, 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.finished.connect(_start_primary_level)
+
+func _start_primary_level() -> void:
+	if navigation_started:
+		return
+	navigation_started = true
 	SaveManager.current_level = primary_level_index
 	SaveManager.save_game()
 	get_tree().change_scene_to_file("res://scenes/game/game_screen.tscn")
 
 func _on_levels_pressed() -> void:
+	if navigation_started:
+		return
+	navigation_started = true
 	get_tree().change_scene_to_file("res://scenes/LevelSelect.tscn")
 
 func _on_how_to_pressed() -> void:
@@ -239,4 +270,20 @@ func _star_pill_style() -> StyleBoxFlat:
 	style.corner_radius_bottom_right = 20
 	style.content_margin_left = 15
 	style.content_margin_right = 15
+	return style
+
+func _board_prompt_style() -> StyleBoxFlat:
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(1.0, 1.0, 1.0, 0.94)
+	style.border_color = Color("#D9E7FF")
+	style.border_width_left = 1
+	style.border_width_top = 1
+	style.border_width_right = 1
+	style.border_width_bottom = 1
+	style.corner_radius_top_left = 14
+	style.corner_radius_top_right = 14
+	style.corner_radius_bottom_left = 14
+	style.corner_radius_bottom_right = 14
+	style.content_margin_left = 10
+	style.content_margin_right = 10
 	return style
