@@ -84,11 +84,11 @@ func _apply_button_styles() -> void:
 	level_style.corner_radius_bottom_left = 22
 	level_style.corner_radius_bottom_right = 22
 
-	var level_pressed := level_style.duplicate() as StyleBoxFlat
-	level_pressed.bg_color = Color("#F2F5F9")
+	var level_pressed_style := level_style.duplicate() as StyleBoxFlat
+	level_pressed_style.bg_color = Color("#F2F5F9")
 	levels_btn.add_theme_stylebox_override("normal", level_style)
-	levels_btn.add_theme_stylebox_override("hover", level_pressed)
-	levels_btn.add_theme_stylebox_override("pressed", level_pressed)
+	levels_btn.add_theme_stylebox_override("hover", level_pressed_style)
+	levels_btn.add_theme_stylebox_override("pressed", level_pressed_style)
 	levels_btn.add_theme_stylebox_override("focus", level_style)
 
 	for button in [play_btn, levels_btn]:
@@ -102,18 +102,21 @@ func _apply_button_styles() -> void:
 		button.pivot_offset = button.custom_minimum_size * 0.5
 
 func _animate_entrance() -> void:
+	var animated_nodes: Array[Control] = [logo_mark, title_label, progress_pill, play_btn, levels_btn]
+	for node in animated_nodes:
+		node.modulate.a = 1.0
+
 	if SettingsManager.reduce_motion:
 		return
-	for node in [logo_mark, title_label, progress_pill, play_btn, levels_btn]:
+
+	for node in animated_nodes:
 		node.modulate.a = 0.0
-		node.position.y += 18.0
 
 	var tween := create_tween().set_parallel(true)
 	var delay := 0.0
-	for node in [logo_mark, title_label, progress_pill, play_btn, levels_btn]:
-		tween.tween_property(node, "modulate:a", 1.0, 0.35).set_delay(delay)
-		tween.tween_property(node, "position:y", node.position.y - 18.0, 0.42).set_delay(delay).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-		delay += 0.05
+	for node in animated_nodes:
+		tween.tween_property(node, "modulate:a", 1.0, 0.30).set_delay(delay).set_trans(Tween.TRANS_SINE)
+		delay += 0.06
 
 func _spawn_floating_arrows() -> void:
 	var rng := RandomNumberGenerator.new()
