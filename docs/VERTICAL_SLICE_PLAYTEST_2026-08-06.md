@@ -97,19 +97,39 @@ Two kinds of evidence were received:
 - Hint and Restart cards moved from custom `gui_input` parsing to native Button hit targets.
 - Hint refill was confirmed working after the native-button correction.
 
+## Interaction clarity implementation — pending local verification
+
+The following changes were implemented in response to the new-player evidence:
+
+- The living-board demonstration is now a full-card play target.
+- New players see `Start Level 1` and `TAP THE BOARD TO START`.
+- Returning players see the recommended level on both the board prompt and Continue button.
+- The menu demonstration now shows an accent pulse travelling through the path before escape, rather than only translating the full shape.
+- Gameplay arrowheads are larger and tail dots are smaller.
+- Tutorial and hint guidance now use a moving accent marker that travels from tail to arrowhead.
+- When exactly one escapable path remains, it previews in blue and clears automatically.
+- The automatic final path does not add another player move.
+- Reduce Motion uses a static or shortened version of these cues.
+- `No path can leave yet` remains unchanged for dead-end board states.
+
+These changes are implemented but must not be described as verified until the parser, test suites, and manual flows pass in Godot 4.7.1.
+
 ## Next iteration gates
 
-The vertical slice is not approved yet. The next build must address these in order:
+The vertical slice is not approved yet. Verify these in order:
 
-1. Main-menu start clarity.
-2. Demonstration animation and interaction expectation.
-3. Arrowhead/tail-dot readability.
-4. Automatic final-path clear prototype.
-5. Clean-save Level 1 `FREE` verification.
-6. Difficulty tuning for Levels 4–5 after readability is stable.
-7. Repeat new-player testing with no verbal explanation.
-8. Android phone/tablet input and lifecycle testing.
+1. Parser scan and all automated suites on the current branch head.
+2. Tapping anywhere on the menu demonstration starts the recommended level.
+3. The primary Start/Continue button still works and does not double-navigate.
+4. The travelling pulse clearly communicates tail-to-arrow direction.
+5. Hint motion identifies the intended path without blocking input.
+6. The final path previews and clears once without increasing Moves.
+7. Reduce Motion removes the travelling cue and shortens the final clear.
+8. Clean-save Level 1 displays `FREE` and does not consume a normal hint.
+9. Repeat new-player testing with no verbal explanation.
+10. Tune Levels 4–5 only after readability is accepted.
+11. Complete Android phone/tablet input and lifecycle testing.
 
 ## Current decision
 
-The core puzzle is enjoyable and Levels 2–3 teach their intended ideas. The blockers are now interaction clarity, path visual language, menu hierarchy, and insufficient challenge—not basic functionality.
+The core puzzle is enjoyable and Levels 2–3 teach their intended ideas. The current branch now contains the first interaction-clarity response, but its parser health and player comprehension remain unverified. Difficulty tuning is deliberately deferred until this visual-language pass is approved.
