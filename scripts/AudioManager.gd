@@ -3,7 +3,9 @@ extends Node
 var stream_player: AudioStreamPlayer
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	stream_player = AudioStreamPlayer.new()
+	stream_player.process_mode = Node.PROCESS_MODE_ALWAYS
 	stream_player.bus = "Master"
 	add_child(stream_player)
 
