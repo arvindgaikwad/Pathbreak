@@ -33,6 +33,17 @@ Required:
 - no state that can become permanently unsolvable after a legal move;
 - stable level order and IDs.
 
+Implemented automation:
+
+- `scripts/gameplay/level_solver.gd` counts complete clear orders, finds one solution, reports opening moves, and detects reachable dead ends.
+- `tests/test_vertical_slice_levels.gd` loads the five canonical JSON levels and checks their structure, opening curve, solution counts, and solvability.
+
+Local verification command:
+
+```bash
+godot --headless --path . --script tests/test_vertical_slice_levels.gd
+```
+
 ### Gate 3 — Director playtest
 
 Each level is played three times:
@@ -79,31 +90,32 @@ Verify:
 
 ## Current static audit
 
-The counts below were derived from the current JSON data using the same directional ray-blocking rule as `MovementValidator`.
+The counts below were derived from the JSON data using the same directional ray-blocking rule as `MovementValidator`.
 
 | Level | Board | Pieces | Valid opening moves | Full-clear sequences | Intended lesson | Director verdict |
 |---|---:|---:|---:|---:|---|---|
-| 1 | 6×6 | 2 | 1 | 1 | Learn the exit rule with two clearly available moves | Reject for redesign: current level teaches a forced move, not choice between obvious valid moves. |
+| 1 | 6×6 | 2 | 2 | 2 | Learn the exit rule with two clearly available moves | Redesigned: structurally matches the lesson. Visual tutorial playtest remains required. |
 | 2 | 8×8 | 3 | 1 | 1 | Understand one obvious blocker | Conditional: clean forced sequence, but the blocker lesson must be verified visually and through first-time play. |
 | 3 | 8×10 | 4 | 3 | 12 | Read a bent path | Conditional: introduces a bend, but three openings may dilute the lesson and make the level feel less authored. |
 | 4 | 8×8 | 8 | 2 | 7 | Choose between valid moves | Promising: two openings and limited solution variety fit the intended lesson. Requires touch-density review. |
-| 5 | 8×8 | 8 | 6 | 13,440 | Representative 45–90 second challenge | Reject for redesign: too many immediate choices and too many clear sequences; likely feels like cleanup rather than a representative puzzle. |
+| 5 | 8×8 | 8 | 1 | 6 | Representative 45–90 second challenge | Redesigned: one clear entry move and a limited dependency chain. Timing, readability, and satisfaction remain unverified. |
 
-## Immediate decisions
+## Level decisions
 
 ### Level 1
 
-Redesign before approval.
+The data redesign is complete.
 
-Target:
+Current structure:
 
-- 2–3 pieces;
-- exactly two obvious opening moves;
-- both openings safe;
-- final piece becomes clear after either opening;
-- completion in roughly 5–15 seconds;
-- tutorial text limited to one sentence;
-- free Hint remains demonstrative rather than necessary.
+- two straight paths;
+- both are immediately safe;
+- either can be selected first;
+- the other remains available;
+- exactly two full-clear orders;
+- target completion time remains 5–15 seconds.
+
+Approval still requires observing a first-time player without explaining the rule.
 
 ### Level 2
 
@@ -129,7 +141,7 @@ Target:
 
 ### Level 4
 
-Keep as the strongest current candidate.
+Keep as the strongest existing candidate.
 
 Target:
 
@@ -140,18 +152,18 @@ Target:
 
 ### Level 5
 
-Redesign before approval.
+The structural redesign is complete.
 
-Target:
+Current structure:
 
-- 7–10 pieces;
-- 1–3 valid opening moves;
-- several authored dependencies;
-- limited but meaningful route variety;
-- no new mechanic;
-- completion in roughly 45–90 seconds for a new player;
-- satisfying final chain of removals;
-- serves as the benchmark for future standard levels.
+- eight pieces;
+- one initial valid move;
+- six complete solution orders rather than 13,440;
+- an authored chain with a small amount of safe branching;
+- several bent paths using only previously introduced rules;
+- target completion time remains 45–90 seconds.
+
+Approval still depends on whether the chain is understandable and satisfying on a real phone. Structural difficulty must not become visual confusion.
 
 ## Slice difficulty curve
 
@@ -161,9 +173,9 @@ Expected progression:
 |---|---|---:|---:|
 | 1 | Rule discovery | 2 obvious | 5–15 s |
 | 2 | Blocking | 1 | 10–20 s |
-| 3 | Shape reading | 1–2 | 15–30 s |
+| 3 | Shape reading | 1–2 preferred; currently 3 | 15–30 s |
 | 4 | Safe choice | 2 | 25–50 s |
-| 5 | Combined reasoning | 1–3 | 45–90 s |
+| 5 | Combined reasoning | 1 | 45–90 s |
 
 A level is not harder merely because it has more pieces. Difficulty should come from understandable dependencies, not visual clutter or ambiguous taps.
 
@@ -205,21 +217,21 @@ Interpretation:
 
 ## Current gate status
 
-- Level 1: redesign required.
+- Automated solver and slice-specific test suite: implemented, local Godot verification pending.
+- Level 1: structurally redesigned; playtest required.
 - Level 2: playtest required.
 - Level 3: playtest and likely tuning required.
-- Level 4: playtest required; strongest current candidate.
-- Level 5: redesign required.
+- Level 4: playtest required; strongest existing candidate.
+- Level 5: structurally redesigned; playtest required.
 - Final UI/art direction: deferred.
 - Mass level production: blocked until all five levels pass.
 
 ## Next implementation sequence
 
-1. Add automated vertical-slice structure and solvability checks.
-2. Redesign Level 1.
-3. Redesign Level 5.
-4. Run parser and validator tests.
-5. Conduct a full five-level director playtest.
-6. Tune Levels 2–4 using recorded evidence.
-7. Test on Android phone and tablet.
-8. Approve or reject the slice as a complete package.
+1. Run the Godot parser scan and all three test suites.
+2. Conduct a complete five-level director playtest from Main Menu.
+3. Record screenshots, completion times, mistakes, hints, and confusing moments for each level.
+4. Tune Levels 2–4 using the recorded evidence.
+5. Repeat automated tests after every level-data change.
+6. Test on Android phone and tablet.
+7. Approve or reject the slice as a complete package.
