@@ -1,140 +1,172 @@
 # Pathbreak — Technical Plan
 
 **Status:** Current vertical-slice architecture  
-**Last reviewed:** 2026-08-06
+**Last reviewed:** 2026-08-07
 
 ## 1. Runtime target
 
-- Engine: Godot 4.7.1 Stable.
-- Language: typed GDScript.
-- Primary platform: Android portrait.
-- Development verification: Linux desktop and headless Godot.
-- Renderer: Compatibility.
-- Gameplay network dependency: none.
+- Godot 4.7.1 Stable.
+- Typed GDScript.
+- Android portrait.
+- Linux desktop/headless verification.
+- Offline gameplay.
 
-## 2. Supported application flow
+## 2. Supported flow
 
 ```text
 MainMenu.tscn
   → LevelSelect.tscn or game/game_screen.tscn
-  → gameplay board + HUD
-  → pause/settings, failure, result, or hint refill overlay
-  → next level, replay, level select, or main menu
+  → board + HUD
+  → pause/settings, failure, result, or hint refill
+  → next, replay, select, or menu
 ```
 
-The removed legacy monolithic gameplay stack is not supported.
+The removed monolithic legacy stack is unsupported.
 
-## 3. Core gameplay modules
+## 3. Core modules
 
 | Module | Responsibility |
 |---|---|
-| `scripts/gameplay/level_manager.gd` | Connected game loop, level loading, counters, progression, hints, overlays |
-| `scripts/gameplay/board_manager.gd` | Board construction, occupancy, centralized touch selection, candidate queries |
-| `scripts/gameplay/puzzle_piece.gd` | Programmatic path visuals and path feedback animations |
-| `scripts/gameplay/movement_validator.gd` | Pure escape-rule validation |
-| `scripts/gameplay/level_data_validator.gd` | Structural validation of loaded level data |
-| `scripts/gameplay/level_solver.gd` | Structural slice analysis and complete solution enumeration |
+| `level_manager.gd` | Connected loop, loading, counters, progression, hints, overlays |
+| `board_manager.gd` | Board construction, occupancy, centralized touch selection |
+| `puzzle_piece.gd` | Shared path rendering and feedback |
+| `path_visual_geometry.gd` | Ordered endpoint direction, triangle geometry, shaft trimming, migration helpers |
+| `movement_validator.gd` | Pure escape-rule validation |
+| `level_data_validator.gd` | Structural and ordered-path validation |
+| `level_solver.gd` | Solution enumeration and dead-end analysis |
 
-## 4. Level data pipeline
+## 4. Ordered path model
 
-1. Search sequentially for `data/levelN.json` or fallback `.tres` definitions.
-2. Prefer JSON when present.
-3. Parse JSON into typed `PuzzleLevelData` and `PuzzlePieceData` runtime objects.
-4. Validate board dimensions, piece identifiers, cells, directions, and overlaps.
-5. Stop loading the pack at the first missing or invalid sequential level.
-6. Pass typed data to the board.
+Every path is authored:
 
-JSON is canonical. `.tres` remains a temporary compatibility fallback.
+```text
+tail → intermediate cells → head
+```
 
-## 5. Occupancy and movement
+Current canonical head endpoint is the final cell.
 
-- Occupancy maps each `Vector2i` cell to a piece identifier.
-- `MovementValidator.can_escape(...)` scans from every occupied path cell in the path's exit direction.
-- Cells owned by the same path are ignored.
-- A different occupying piece blocks the escape.
-- Occupancy is removed before successful escape animation begins.
-- Restart rebuilds a fresh board and occupancy map.
+```gdscript
+exit_direction = cells[-1] - cells[-2]
+```
 
-## 6. Input model
+The same derived value controls:
 
-- The board receives touch/mouse input centrally.
-- It computes distance to each available path.
-- The nearest path within a scale-adjusted acceptance radius is selected.
-- Removing or animating paths are excluded.
-- Gameplay input is locked while pause, failure, result, or hint-refill flows are active.
-- HUD card descendants ignore mouse input so the parent card receives a reliable single activation.
+- triangle orientation;
+- escape validation;
+- escape animation;
+- hint direction;
+- editor preview;
+- solver behavior.
 
-## 7. Hint system
+The compatibility JSON `direction` field must mirror this derived value and is not an independent source of truth.
 
-- `SaveManager.hint_count` is the persistent source of truth between sessions.
-- `level_manager.gd` keeps the active level's `hints_left` synchronized with the save.
-- The incomplete Level 1 tutorial receives a free hint.
-- Normal hints decrement and save immediately.
-- At zero, the HUD shows `Refill +3` and opens `hint_refill_popup.tscn`.
-- Confirming the current testing refill restores three hints, synchronizes the active level, updates the HUD, and saves immediately.
-- The final commercial refill provider is intentionally abstracted from this vertical-slice rule and has not been selected.
+## 5. Data pipeline
 
-## 8. Persistence
+1. Load sequential `data/levelN.json` or fallback `.tres`.
+2. Parse cells into typed `PuzzlePieceData`.
+3. Derive direction from the ordered endpoint.
+4. Compare any compatibility direction.
+5. Validate dimensions, IDs, ordered cells, direction invariant, bounds, and overlaps.
+6. Stop at the first invalid sequential level.
+7. Pass typed data to the board.
 
-### Progress save
+## 6. Rendering
 
-Managed by `scripts/SaveManager.gd`:
+- `Line2D` renders the ordered shaft.
+- `Polygon2D` renders one generated triangle.
+- The final rendered shaft point is shortened before the triangle.
+- Grid cells remain unchanged for occupancy and puzzle logic.
+- The tail marker remains at the opposite endpoint.
+- Menu and gameplay use the same geometry helper.
+- No imported directional sprites, negative-scale flips, or per-level rotations.
+
+## 7. Occupancy and movement
+
+- Occupancy maps every path cell to a piece ID.
+- `MovementValidator` scans from every occupied cell in the derived exit direction.
+- Self-owned cells are ignored.
+- Another piece blocks escape.
+- Occupancy is removed before successful escape animation.
+- Restart rebuilds occupancy from typed level data.
+
+## 8. Input
+
+- Board receives touch/mouse centrally.
+- Nearest eligible path within a scale-adjusted radius wins.
+- Removed/animating paths are excluded.
+- Input locks during overlays and automatic final clear.
+- UI cards use native Button targets.
+
+## 9. Hint system
+
+- Persistent count lives in `SaveManager`.
+- Incomplete Level 1 tutorial receives a free hint.
+- Normal hints consume and save immediately.
+- Zero opens `Refill +3` in the testing build.
+- Hint marker is a small directional triangle moving along the final segment.
+- Reduce Motion uses a static full-path highlight.
+
+## 10. Persistence
+
+### Progress
 
 - Save version.
-- Current level.
-- Maximum unlocked level.
+- Current/unlocked level.
 - Hint inventory.
-- Lives default.
-- Difficulty string.
 - Tutorial completion.
-- Per-level stars, best time, best moves, and best mistakes.
+- Per-level stars, time, moves, and mistakes.
 
-Invalid or missing save data falls back to safe defaults.
-
-### Settings save
-
-Managed independently by `SettingsManager`:
+### Settings
 
 - Sound.
 - Haptics.
 - Reduce Motion.
 - High Contrast.
 
-## 9. Responsive layout
+## 11. Level authoring and migration
 
-- Gameplay reserves top and bottom HUD regions and scales the board into the remaining portrait area.
-- The board pivot is centered within the available area.
-- UI screens use Control containers and anchors.
-- Manual target checks include compact phones through high-resolution portrait tablets.
+The current experimental Level Editor now:
 
-## 10. Automated verification
+- records cells in draw order;
+- derives direction from the final segment;
+- reverses the path when the opposite endpoint is selected;
+- rejects arbitrary unrelated direction choices;
+- exports ordered JSON.
+
+Preview old level data without writing files:
+
+```bash
+godot --headless --path . --script tools/path_level_migration_preview.gd
+```
+
+## 12. Automated verification
 
 ```bash
 godot --headless --path . --editor --quit
+godot --headless --path . --script tools/path_level_migration_preview.gd
+godot --headless --path . --script tests/test_path_visual_geometry.gd
 godot --headless --path . --script tests/test_movement_validator.gd
 godot --headless --path . --script tests/test_level_data_validator.gd
 godot --headless --path . --script tests/test_vertical_slice_levels.gd
 ```
 
-The editor scan checks parser and warning cleanliness. The script tests check movement rules, data validation, and slice structure/solvability.
+## 13. Manual verification
 
-## 11. Required manual verification
-
-- Fresh-save tutorial and free-hint behavior.
-- Hint depletion, `Refill +3`, cancel, confirm, persistence, and subsequent hint use.
-- Level failure, retry, replay, and next-level flow.
-- Android touch selection and system Back behavior.
-- Phone/tablet layout.
-- Sound/haptic toggles.
+- Levels 1–5 head placement and movement direction.
+- Four cardinal and four L-shaped final segments.
+- Shaft/head overlap.
+- Hint marker direction.
+- Fresh-save tutorial.
+- Refill, restart, pause, failure, result, and progression.
 - Reduce Motion and High Contrast.
-- Save persistence after closing and reopening the game.
+- Android touch, Back, lifecycle, phone/tablet layout.
 
-## 12. Next architecture work after slice approval
+## 14. Next architecture work after slice approval
 
-- Internal level editor.
-- Batch level validation and difficulty reporting.
-- Explicit save migrations for future versions.
-- Analytics event contract.
-- Android export/signing configuration.
-- Production hint economy provider.
-- Crash reporting and release diagnostics.
+- Production modular level editor.
+- Batch level metrics and validation.
+- Save migrations.
+- Analytics contract.
+- Android export/signing.
+- Production hint economy.
+- Crash reporting.
