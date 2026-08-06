@@ -6,7 +6,7 @@ const PathVisualGeometryScript = preload("res://scripts/gameplay/path_visual_geo
 @export var piece_id: int
 @export var cells: Array[Vector2i]
 @export var exit_direction: Vector2i
-@export var head_endpoint: PathVisualGeometry.HeadEndpoint = PathVisualGeometry.HeadEndpoint.END
+@export_enum("Start", "End") var head_endpoint: int = PathVisualGeometry.HeadEndpoint.END
 
 static func create(
 	id: int,
