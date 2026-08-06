@@ -102,6 +102,42 @@ layout_mode = 2
 mouse_filter = 2
 script = ExtResource("3_1")
 
+[node name="BoardOverlay" type="Control" parent="SafeMargin/Content/BoardCenter"]
+custom_minimum_size = Vector2(500, 236)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="ClickTarget" type="Button" parent="SafeMargin/Content/BoardCenter/BoardOverlay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+focus_mode = 0
+flat = true
+mouse_default_cursor_shape = 2
+
+[node name="PromptLabel" type="Label" parent="SafeMargin/Content/BoardCenter/BoardOverlay"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 132.0
+offset_top = -42.0
+offset_right = -132.0
+offset_bottom = -12.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.184, 0.416, 0.886, 1)
+theme_override_font_sizes/font_size = 13
+theme_override_fonts/font = ExtResource("2_1")
+text = "TAP THE BOARD TO START"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="ProgressCard" type="PanelContainer" parent="SafeMargin/Content"]
 custom_minimum_size = Vector2(0, 226)
 layout_mode = 2
@@ -154,7 +190,7 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_font_sizes/font_size = 23
 theme_override_fonts/font = ExtResource("2_1")
-text = "Start"
+text = "Start Level 1"
 
 [node name="SecondaryRow" type="HBoxContainer" parent="SafeMargin/Content"]
 custom_minimum_size = Vector2(0, 62)
