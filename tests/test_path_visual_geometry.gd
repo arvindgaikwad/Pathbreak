@@ -10,6 +10,7 @@ func _init() -> void:
 		test_start_endpoint_support,
 		test_triangle_tip_faces_direction,
 		test_shaft_trim_preserves_logic_endpoint,
+		test_snake_route_follows_corner,
 		test_all_authored_levels_are_canonical
 	]
 	var passed := 0
@@ -109,6 +110,33 @@ func test_shaft_trim_preserves_logic_endpoint() -> bool:
 		and trimmed[-1] == Vector2(64.0, 52.0)
 		and trimmed[0] == points[0]
 		and PathVisualGeometryScript.direction_from_points(points) == Vector2.DOWN
+	)
+
+func test_snake_route_follows_corner() -> bool:
+	var points := PackedVector2Array([
+		Vector2(0.0, 0.0),
+		Vector2(64.0, 0.0),
+		Vector2(64.0, 64.0)
+	])
+	var dense := PathVisualGeometryScript.densify_polyline(points, 8.0)
+	var distances := PathVisualGeometryScript.cumulative_distances(dense)
+	if dense.size() < 3 or distances.is_empty():
+		return false
+	if not dense.has(Vector2(64.0, 0.0)):
+		return false
+	if not is_equal_approx(distances[-1], 128.0):
+		return false
+
+	var route := points.duplicate()
+	route.append(Vector2(64.0, 256.0))
+	var travel := 32.0
+	var moved_tail := PathVisualGeometryScript.point_at_distance(route, travel)
+	var moved_corner := PathVisualGeometryScript.point_at_distance(route, 64.0 + travel)
+	var moved_head := PathVisualGeometryScript.point_at_distance(route, 128.0 + travel)
+	return (
+		moved_tail.is_equal_approx(Vector2(32.0, 0.0))
+		and moved_corner.is_equal_approx(Vector2(64.0, 32.0))
+		and moved_head.is_equal_approx(Vector2(64.0, 96.0))
 	)
 
 func test_all_authored_levels_are_canonical() -> bool:
