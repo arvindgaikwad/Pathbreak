@@ -49,7 +49,9 @@ func test_duplicate_cell() -> bool:
 
 func test_non_adjacent_cells() -> bool:
 	var level := _make_level()
-	level.pieces[0].cells = [Vector2i(1, 1), Vector2i(3, 1)]
+	level.pieces[0].cells.clear()
+	level.pieces[0].cells.append(Vector2i(1, 1))
+	level.pieces[0].cells.append(Vector2i(3, 1))
 	return not LevelDataValidatorScript.is_valid(level)
 
 func test_invalid_direction() -> bool:
@@ -64,7 +66,9 @@ func test_duplicate_piece_id() -> bool:
 
 func test_out_of_bounds_cell() -> bool:
 	var level := _make_level()
-	level.pieces[0].cells = [Vector2i(5, 5), Vector2i(6, 5)]
+	level.pieces[0].cells.clear()
+	level.pieces[0].cells.append(Vector2i(5, 5))
+	level.pieces[0].cells.append(Vector2i(6, 5))
 	return not LevelDataValidatorScript.is_valid(level)
 
 func test_occupancy_build() -> bool:
