@@ -1,15 +1,38 @@
 # Pathbreak — Task Tracker
 
-## Current phase: Vertical Slice Foundation
+## Current phase: Vertical Slice UI Polish & Device QA
 
 ### In progress
 
-- [ ] Open the project in Godot 4.7.1 and fix any parser/runtime errors from the foundation branch.
-- [ ] Manually validate levels 1–5 on Android.
-- [ ] Verify pause, settings, Android back, save/load, failure, and completion flows.
+- [ ] Pull and parse-test `codex/vertical-slice-ui-polish` in Godot 4.7.1.
+- [ ] Review the polished main menu, level select, gameplay HUD, pause menu, and completion card on phone and tablet viewports.
+- [ ] Manually complete levels 2–5 and record layout, difficulty, and progression issues.
+- [ ] Verify pause, settings, Android back, save/load, failure, replay, and next-level flows.
 - [ ] Tune the first five levels to the quality gate in `docs/VERTICAL_SLICE.md`.
 
-### Implemented in the current foundation pass
+### Verified foundation
+
+- [x] Godot 4.7.1 parser scan passed with 0 warnings and 0 errors before the UI-polish branch.
+- [x] MovementValidator test suite passed 10/10.
+- [x] LevelDataValidator test suite passed 8/8.
+- [x] Level 1 accepts precise path taps and ignores empty-board taps.
+- [x] Level 1 completion popup displays Replay and Next Level.
+
+### Implemented in the current UI-polish pass
+
+- [x] Rebalance the main menu and add progress-aware continue copy.
+- [x] Reduce decorative menu arrows and respect reduced-motion settings.
+- [x] Make level-select progress reflect completed levels.
+- [x] Add distinct NEXT, PLAY, completed, and LOCKED level-card states.
+- [x] Remove the dead level-select settings button.
+- [x] Compact the gameplay HUD for small phone screens.
+- [x] Replace inconsistent emoji HUD icons with monochrome symbols.
+- [x] Clarify free tutorial hints and zero-hint states.
+- [x] Rebuild the completion card hierarchy and statistics panel.
+- [x] Replace unclear pause toggles with explicit ON/OFF controls.
+- [x] Remove the unfinished music control until a real music system exists.
+
+### Implemented in the foundation pass
 
 - [x] Route the product through the modular gameplay stack.
 - [x] Remove obsolete `Main.tscn`, duplicate `PuzzlePiece.tscn`, legacy `GameManager.gd`, and legacy victory flow.
@@ -26,10 +49,10 @@
 - [x] Stop level-pack loading when an invalid level would shift progression indexes.
 - [x] Document the five-level vertical-slice acceptance criteria.
 
-### Testing pending
+### Testing pending after UI changes
 
-- [ ] Run `godot --headless --script tests/test_movement_validator.gd`.
-- [ ] Run `godot --headless --script tests/test_level_data_validator.gd`.
+- [ ] Run `godot --headless --path . --script tests/test_movement_validator.gd`.
+- [ ] Run `godot --headless --path . --script tests/test_level_data_validator.gd`.
 - [ ] Test 360×800, 393×873, 412×915, 800×1280, and 1200×1920.
 - [ ] Test touch ambiguity near two closely spaced paths.
 - [ ] Test rapid repeated input during escape and blocked animations.
