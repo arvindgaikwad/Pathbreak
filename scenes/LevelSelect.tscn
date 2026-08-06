@@ -19,6 +19,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 color = Color(0.972, 0.965, 0.941, 1)
 
 [node name="UI" type="VBoxContainer" parent="."]
@@ -29,8 +30,8 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="TopBar" type="HBoxContainer" parent="UI"]
-custom_minimum_size = Vector2(0, 100)
+[node name="TopBar" type="Control" parent="UI"]
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 
 [node name="Margin" type="MarginContainer" parent="UI/TopBar"]
@@ -40,8 +41,9 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_right = 24
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 20
 
 [node name="HBox" type="HBoxContainer" parent="UI/TopBar/Margin"]
 layout_mode = 2
@@ -52,54 +54,51 @@ custom_minimum_size = Vector2(56, 56)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
 theme_override_font_sizes/font_size = 28
-text = "≡"
+text = "←"
 flat = true
 
 [node name="TitleBox" type="VBoxContainer" parent="UI/TopBar/Margin/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 2
 alignment = 1
 
 [node name="TitleLabel" type="Label" parent="UI/TopBar/Margin/HBox/TitleBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 30
 theme_override_fonts/font = ExtResource("2_1")
-text = "Pathbreak"
+text = "Choose a Level"
 horizontal_alignment = 1
 
 [node name="SubTitle" type="Label" parent="UI/TopBar/Margin/HBox/TitleBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.443, 0.49, 0.576, 1)
 theme_override_font_sizes/font_size = 14
-text = "Find the way. Clear the board."
+text = "Replay a favourite or continue forward."
 horizontal_alignment = 1
 
-[node name="SettingsButton" type="Button" parent="UI/TopBar/Margin/HBox"]
+[node name="RightSpacer" type="Control" parent="UI/TopBar/Margin/HBox"]
 custom_minimum_size = Vector2(56, 56)
 layout_mode = 2
-theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
-theme_override_font_sizes/font_size = 26
-text = "⚙"
-flat = true
 
 [node name="ProgressMargin" type="MarginContainer" parent="UI"]
 layout_mode = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 8
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 12
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 14
 
 [node name="ProgressCard" type="PanelContainer" parent="UI/ProgressMargin"]
-custom_minimum_size = Vector2(0, 90)
+custom_minimum_size = Vector2(0, 96)
 layout_mode = 2
 
 [node name="Margin" type="MarginContainer" parent="UI/ProgressMargin/ProgressCard"]
 layout_mode = 2
 theme_override_constants/margin_left = 20
-theme_override_constants/margin_top = 16
+theme_override_constants/margin_top = 14
 theme_override_constants/margin_right = 20
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_bottom = 14
 
 [node name="HBox" type="HBoxContainer" parent="UI/ProgressMargin/ProgressCard/Margin"]
 layout_mode = 2
@@ -108,38 +107,40 @@ alignment = 1
 
 [node name="StarIcon" type="Label" parent="UI/ProgressMargin/ProgressCard/Margin/HBox"]
 layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.65, 0.13, 1)
 theme_override_font_sizes/font_size = 32
-text = "⭐"
+text = "★"
 
 [node name="VBox" type="VBoxContainer" parent="UI/ProgressMargin/ProgressCard/Margin/HBox"]
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 3
 alignment = 1
 
 [node name="ProgLabel" type="Label" parent="UI/ProgressMargin/ProgressCard/Margin/HBox/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.443, 0.49, 0.576, 1)
-theme_override_font_sizes/font_size = 14
-text = "Progress"
+theme_override_font_sizes/font_size = 13
+text = "Journey progress"
 
 [node name="CountLabel" type="Label" parent="UI/ProgressMargin/ProgressCard/Margin/HBox/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
 theme_override_font_sizes/font_size = 18
 theme_override_fonts/font = ExtResource("2_1")
-text = "5 / 10"
+text = "0 cleared · 1 unlocked"
 
 [node name="PercentLabel" type="Label" parent="UI/ProgressMargin/ProgressCard/Margin/HBox"]
 layout_mode = 2
-theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
+theme_override_colors/font_color = Color(0.231, 0.51, 0.965, 1)
 theme_override_font_sizes/font_size = 20
 theme_override_fonts/font = ExtResource("2_1")
-text = "50%"
+text = "0%"
 
 [node name="WorldTitleMargin" type="MarginContainer" parent="UI"]
 layout_mode = 2
-theme_override_constants/margin_left = 28
-theme_override_constants/margin_top = 8
+theme_override_constants/margin_left = 22
+theme_override_constants/margin_top = 4
 theme_override_constants/margin_bottom = 8
 
 [node name="WorldLabel" type="Label" parent="UI/WorldTitleMargin"]
@@ -147,23 +148,24 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
 theme_override_font_sizes/font_size = 18
 theme_override_fonts/font = ExtResource("2_1")
-text = "World 1 · Beginnings"
+text = "Chapter 1 · First Paths"
 
 [node name="ScrollContainer" type="ScrollContainer" parent="UI"]
 layout_mode = 2
 size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
 [node name="CenterPadding" type="MarginContainer" parent="UI/ScrollContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 12
-theme_override_constants/margin_right = 24
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 32
 
 [node name="LevelGrid" type="GridContainer" parent="UI/ScrollContainer/CenterPadding"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/h_separation = 20
-theme_override_constants/v_separation = 20
+theme_override_constants/h_separation = 14
+theme_override_constants/v_separation = 14
 columns = 4

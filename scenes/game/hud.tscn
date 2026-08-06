@@ -10,7 +10,7 @@ script = ExtResource("1_1")
 layout_mode = 3
 anchors_preset = 10
 anchor_right = 1.0
-offset_bottom = 180.0
+offset_bottom = 156.0
 grow_horizontal = 2
 
 [node name="Margin" type="MarginContainer" parent="TopBar"]
@@ -20,36 +20,36 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 24
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 18
+theme_override_constants/margin_right = 20
 
 [node name="VBox" type="VBoxContainer" parent="TopBar/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8
 
 [node name="TopRow" type="HBoxContainer" parent="TopBar/Margin/VBox"]
 layout_mode = 2
 alignment = 1
 
 [node name="BackButton" type="Button" parent="TopBar/Margin/VBox/TopRow"]
-custom_minimum_size = Vector2(56, 56)
+custom_minimum_size = Vector2(52, 52)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
-theme_override_font_sizes/font_size = 30
+theme_override_font_sizes/font_size = 26
 text = "←"
 flat = true
 
 [node name="HeaderBox" type="VBoxContainer" parent="TopBar/Margin/VBox/TopRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 4
+theme_override_constants/separation = 2
 alignment = 1
 
 [node name="LevelTitle" type="Label" parent="TopBar/Margin/VBox/TopRow/HeaderBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 26
 theme_override_fonts/font = ExtResource("2_1")
 text = "Level 1"
 horizontal_alignment = 1
@@ -60,22 +60,22 @@ layout_mode = 2
 [node name="DiffLabel" type="Label" parent="TopBar/Margin/VBox/TopRow/HeaderBox/DifficultyPill"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.231, 0.51, 0.965, 1)
-theme_override_font_sizes/font_size = 14
-text = "Normal"
+theme_override_font_sizes/font_size = 13
+text = "Easy"
 horizontal_alignment = 1
 
 [node name="SettingsButton" type="Button" parent="TopBar/Margin/VBox/TopRow"]
-custom_minimum_size = Vector2(56, 56)
+custom_minimum_size = Vector2(52, 52)
 layout_mode = 2
 theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 24
 text = "⚙"
 flat = true
 
 [node name="SubtitleLabel" type="Label" parent="TopBar/Margin/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.443, 0.49, 0.576, 1)
-theme_override_font_sizes/font_size = 18
+theme_override_font_sizes/font_size = 16
 text = "Clear all paths"
 horizontal_alignment = 1
 
@@ -85,7 +85,7 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -180.0
+offset_top = -148.0
 grow_horizontal = 2
 grow_vertical = 0
 
@@ -96,121 +96,107 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 32
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 24
 
 [node name="HBox" type="HBoxContainer" parent="BottomBar/Margin"]
 layout_mode = 2
-theme_override_constants/separation = 20
+theme_override_constants/separation = 12
 alignment = 1
 
 [node name="LivesCard" type="PanelContainer" parent="BottomBar/Margin/HBox"]
-custom_minimum_size = Vector2(160, 100)
+custom_minimum_size = Vector2(112, 88)
 layout_mode = 2
-mouse_filter = 0
+size_flags_horizontal = 3
+mouse_filter = 2
 
 [node name="VBox" type="VBoxContainer" parent="BottomBar/Margin/HBox/LivesCard"]
 layout_mode = 2
+theme_override_constants/separation = 3
 alignment = 1
 
 [node name="IconBox" type="HBoxContainer" parent="BottomBar/Margin/HBox/LivesCard/VBox"]
 layout_mode = 2
+theme_override_constants/separation = 5
 alignment = 1
 
 [node name="HeartIcon" type="Label" parent="BottomBar/Margin/HBox/LivesCard/VBox/IconBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.937, 0.357, 0.357, 1)
-theme_override_font_sizes/font_size = 24
-text = "❤️"
+theme_override_font_sizes/font_size = 22
+text = "♥"
 
 [node name="CountLabel" type="Label" parent="BottomBar/Margin/HBox/LivesCard/VBox/IconBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
-theme_override_font_sizes/font_size = 22
+theme_override_font_sizes/font_size = 20
 theme_override_fonts/font = ExtResource("2_1")
 text = "3"
 
 [node name="TitleLabel" type="Label" parent="BottomBar/Margin/HBox/LivesCard/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.443, 0.49, 0.576, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 13
 text = "Lives"
 horizontal_alignment = 1
 
 [node name="HintCard" type="PanelContainer" parent="BottomBar/Margin/HBox"]
-custom_minimum_size = Vector2(160, 100)
+custom_minimum_size = Vector2(112, 88)
 layout_mode = 2
+size_flags_horizontal = 3
 mouse_filter = 0
 
 [node name="VBox" type="VBoxContainer" parent="BottomBar/Margin/HBox/HintCard"]
 layout_mode = 2
+theme_override_constants/separation = 3
 alignment = 1
 
-[node name="IconBox" type="Control" parent="BottomBar/Margin/HBox/HintCard/VBox"]
-custom_minimum_size = Vector2(0, 36)
+[node name="IconBox" type="HBoxContainer" parent="BottomBar/Margin/HBox/HintCard/VBox"]
 layout_mode = 2
+theme_override_constants/separation = 5
+alignment = 1
 
 [node name="HintIcon" type="Label" parent="BottomBar/Margin/HBox/HintCard/VBox/IconBox"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -16.0
-offset_top = -18.0
-offset_right = 16.0
-offset_bottom = 18.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_font_sizes/font_size = 24
-text = "💡"
-horizontal_alignment = 1
-vertical_alignment = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(0.231, 0.51, 0.965, 1)
+theme_override_font_sizes/font_size = 22
+text = "✦"
 
 [node name="BadgeLabel" type="Label" parent="BottomBar/Margin/HBox/HintCard/VBox/IconBox"]
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -60.0
-offset_top = -2.0
-offset_right = -38.0
-offset_bottom = 20.0
-grow_horizontal = 0
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 12
-text = "2"
-horizontal_alignment = 1
-vertical_alignment = 1
+layout_mode = 2
+theme_override_colors/font_color = Color(0.231, 0.51, 0.965, 1)
+theme_override_font_sizes/font_size = 14
+text = "×5"
 
 [node name="TitleLabel" type="Label" parent="BottomBar/Margin/HBox/HintCard/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.443, 0.49, 0.576, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 13
 text = "Hint"
 horizontal_alignment = 1
 
 [node name="RestartCard" type="PanelContainer" parent="BottomBar/Margin/HBox"]
-custom_minimum_size = Vector2(160, 100)
+custom_minimum_size = Vector2(112, 88)
 layout_mode = 2
+size_flags_horizontal = 3
 mouse_filter = 0
 
 [node name="VBox" type="VBoxContainer" parent="BottomBar/Margin/HBox/RestartCard"]
 layout_mode = 2
+theme_override_constants/separation = 3
 alignment = 1
 
 [node name="RestartIcon" type="Label" parent="BottomBar/Margin/HBox/RestartCard/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
-theme_override_font_sizes/font_size = 24
-text = "↺"
+theme_override_font_sizes/font_size = 22
+text = "↻"
 horizontal_alignment = 1
 
 [node name="TitleLabel" type="Label" parent="BottomBar/Margin/HBox/RestartCard/VBox"]
 layout_mode = 2
 theme_override_colors/font_color = Color(0.443, 0.49, 0.576, 1)
-theme_override_font_sizes/font_size = 14
+theme_override_font_sizes/font_size = 13
 text = "Restart"
 horizontal_alignment = 1

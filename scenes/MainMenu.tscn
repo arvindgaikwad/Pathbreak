@@ -1,13 +1,17 @@
-[gd_scene format=3 uid="uid://mainmenu001"]
+[gd_scene load_steps=4 format=3 uid="uid://mainmenu001"]
 
 [ext_resource type="Script" path="res://scripts/MainMenu.gd" id="1_1"]
 [ext_resource type="FontFile" path="res://assets/fonts/OpenSans-Bold.ttf" id="2_1"]
+[ext_resource type="Script" path="res://scripts/ui/living_board.gd" id="3_1"]
 
 [node name="MainMenu" type="Control"]
-script = ExtResource("1_1")
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_1")
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
@@ -16,55 +20,165 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.968, 0.968, 0.957, 1.0)
-
-[node name="FloatingArrows" type="Control" parent="."]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
 mouse_filter = 2
+color = Color(0.972, 0.965, 0.941, 1)
 
-[node name="UI" type="CenterContainer" parent="."]
+[node name="SafeMargin" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 34
+theme_override_constants/margin_top = 30
+theme_override_constants/margin_right = 34
+theme_override_constants/margin_bottom = 26
 
-[node name="VBox" type="VBoxContainer" parent="UI"]
-custom_minimum_size = Vector2(560, 0)
-theme_override_constants/separation = 24
+[node name="Content" type="VBoxContainer" parent="SafeMargin"]
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="TopRow" type="HBoxContainer" parent="SafeMargin/Content"]
+custom_minimum_size = Vector2(0, 54)
+layout_mode = 2
 alignment = 1
 
-[node name="TitleLabel" type="Label" parent="UI/VBox"]
-theme_override_colors/font_color = Color(0.125, 0.149, 0.204, 1)
-theme_override_font_sizes/font_size = 56
+[node name="StarLabel" type="Label" parent="SafeMargin/Content/TopRow"]
+custom_minimum_size = Vector2(110, 42)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.88, 0.55, 0.08, 1)
+theme_override_font_sizes/font_size = 17
 theme_override_fonts/font = ExtResource("2_1")
-text = "Pathbreak"
-horizontal_alignment = 1
+text = "★  0"
 vertical_alignment = 1
 
-[node name="SubtitleLabel" type="Label" parent="UI/VBox"]
-theme_override_colors/font_color = Color(0.447, 0.482, 0.549, 1)
-theme_override_font_sizes/font_size = 20
-text = "Unblock & escape all directional paths"
+[node name="Spacer" type="Control" parent="SafeMargin/Content/TopRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SettingsButton" type="Button" parent="SafeMargin/Content/TopRow"]
+custom_minimum_size = Vector2(52, 52)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
+theme_override_font_sizes/font_size = 24
+text = "⚙"
+
+[node name="Hero" type="VBoxContainer" parent="SafeMargin/Content"]
+layout_mode = 2
+theme_override_constants/separation = 2
+alignment = 1
+
+[node name="BrandMark" type="Label" parent="SafeMargin/Content/Hero"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.224, 0.471, 0.965, 1)
+theme_override_font_sizes/font_size = 34
+theme_override_fonts/font = ExtResource("2_1")
+text = "↗"
 horizontal_alignment = 1
 
-[node name="Spacer" type="Control" parent="UI/VBox"]
-custom_minimum_size = Vector2(0, 32)
-
-[node name="PlayButton" type="Button" parent="UI/VBox"]
-custom_minimum_size = Vector2(560, 80)
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 32
+[node name="TitleLabel" type="Label" parent="SafeMargin/Content/Hero"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
+theme_override_font_sizes/font_size = 44
 theme_override_fonts/font = ExtResource("2_1")
-text = "Play Game"
+text = "PATHBREAK"
+horizontal_alignment = 1
 
-[node name="LevelsButton" type="Button" parent="UI/VBox"]
-custom_minimum_size = Vector2(560, 60)
-theme_override_colors/font_color = Color(0.125, 0.149, 0.204, 1)
-theme_override_font_sizes/font_size = 22
-text = "Level Select"
-flat = false
+[node name="PromiseLabel" type="Label" parent="SafeMargin/Content/Hero"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.443, 0.49, 0.576, 1)
+theme_override_font_sizes/font_size = 18
+text = "Find the clear path."
+horizontal_alignment = 1
+
+[node name="BoardCenter" type="CenterContainer" parent="SafeMargin/Content"]
+custom_minimum_size = Vector2(0, 252)
+layout_mode = 2
+
+[node name="LivingBoard" type="Control" parent="SafeMargin/Content/BoardCenter"]
+custom_minimum_size = Vector2(500, 236)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("3_1")
+
+[node name="ProgressCard" type="PanelContainer" parent="SafeMargin/Content"]
+custom_minimum_size = Vector2(0, 226)
+layout_mode = 2
+
+[node name="CardMargin" type="MarginContainer" parent="SafeMargin/Content/ProgressCard"]
+layout_mode = 2
+theme_override_constants/margin_left = 26
+theme_override_constants/margin_top = 22
+theme_override_constants/margin_right = 26
+theme_override_constants/margin_bottom = 22
+
+[node name="CardContent" type="VBoxContainer" parent="SafeMargin/Content/ProgressCard/CardMargin"]
+layout_mode = 2
+theme_override_constants/separation = 13
+
+[node name="ChapterLabel" type="Label" parent="SafeMargin/Content/ProgressCard/CardMargin/CardContent"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.224, 0.471, 0.965, 1)
+theme_override_font_sizes/font_size = 14
+theme_override_fonts/font = ExtResource("2_1")
+text = "CHAPTER 1 · FIRST PATHS"
+
+[node name="LevelRow" type="HBoxContainer" parent="SafeMargin/Content/ProgressCard/CardMargin/CardContent"]
+layout_mode = 2
+
+[node name="LevelLabel" type="Label" parent="SafeMargin/Content/ProgressCard/CardMargin/CardContent/LevelRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
+theme_override_font_sizes/font_size = 24
+theme_override_fonts/font = ExtResource("2_1")
+text = "Begin with one clear route"
+
+[node name="ProgressLabel" type="Label" parent="SafeMargin/Content/ProgressCard/CardMargin/CardContent/LevelRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.443, 0.49, 0.576, 1)
+theme_override_font_sizes/font_size = 15
+text = "0 / 10"
+vertical_alignment = 1
+
+[node name="ProgressBar" type="ProgressBar" parent="SafeMargin/Content/ProgressCard/CardMargin/CardContent"]
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+mouse_filter = 2
+show_percentage = false
+
+[node name="PrimaryButton" type="Button" parent="SafeMargin/Content/ProgressCard/CardMargin/CardContent"]
+custom_minimum_size = Vector2(0, 68)
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 23
+theme_override_fonts/font = ExtResource("2_1")
+text = "Start"
+
+[node name="SecondaryRow" type="HBoxContainer" parent="SafeMargin/Content"]
+custom_minimum_size = Vector2(0, 62)
+layout_mode = 2
+theme_override_constants/separation = 14
+
+[node name="LevelsButton" type="Button" parent="SafeMargin/Content/SecondaryRow"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
+theme_override_font_sizes/font_size = 19
+theme_override_fonts/font = ExtResource("2_1")
+text = "Levels"
+
+[node name="HowToButton" type="Button" parent="SafeMargin/Content/SecondaryRow"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
+theme_override_font_sizes/font_size = 19
+theme_override_fonts/font = ExtResource("2_1")
+text = "How to Play"
+
+[node name="BottomSpacer" type="Control" parent="SafeMargin/Content"]
+layout_mode = 2
+size_flags_vertical = 3
