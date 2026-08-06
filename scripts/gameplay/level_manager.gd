@@ -311,8 +311,9 @@ func _open_hint_refill_popup() -> void:
 	hint_refill_popup.cancelled.connect(_on_hint_refill_cancelled)
 
 func _on_hint_refill_confirmed() -> void:
+	var hints_used_before_refill := maxi(hints_at_level_start - hints_left, 0)
 	hints_left = HINT_REFILL_AMOUNT
-	hints_at_level_start = maxi(hints_at_level_start, hints_left)
+	hints_at_level_start = hints_used_before_refill + hints_left
 	SaveManager.hint_count = hints_left
 	SaveManager.save_game()
 	hud.update_hud(
