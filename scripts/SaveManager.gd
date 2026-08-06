@@ -1,15 +1,17 @@
 extends Node
 
 const SAVE_PATH := "user://save.json"
-const SAVE_VERSION := 1
+const SAVE_VERSION := 2
 
 var current_level: int = 0
 var max_level_unlocked: int = 0
 var hint_count: int = 5
 var lives: int = 3
 var difficulty: String = "Normal"
+var tutorial_completed: bool = false
 var level_stars: Dictionary = {}
 var level_best_times: Dictionary = {}
+var level_best_moves: Dictionary = {}
 var level_mistakes: Dictionary = {}
 
 func _ready() -> void:
@@ -18,13 +20,15 @@ func _ready() -> void:
 func save_game() -> void:
 	var save_data := {
 		"version": SAVE_VERSION,
-		"current_level": max(current_level, 0),
-		"max_level_unlocked": max(max_level_unlocked, 0),
-		"hint_count": max(hint_count, 0),
+		"current_level": maxi(current_level, 0),
+		"max_level_unlocked": maxi(max_level_unlocked, 0),
+		"hint_count": maxi(hint_count, 0),
 		"lives": clampi(lives, 0, 9),
 		"difficulty": difficulty,
+		"tutorial_completed": tutorial_completed,
 		"level_stars": level_stars,
 		"level_best_times": level_best_times,
+		"level_best_moves": level_best_moves,
 		"level_mistakes": level_mistakes
 	}
 	var file := FileAccess.open(SAVE_PATH, FileAccess.WRITE)
@@ -56,11 +60,20 @@ func load_game() -> void:
 	hint_count = maxi(int(data.get("hint_count", 5)), 0)
 	lives = clampi(int(data.get("lives", 3)), 0, 9)
 	difficulty = str(data.get("difficulty", "Normal"))
+	tutorial_completed = bool(data.get("tutorial_completed", max_level_unlocked > 0))
 	level_stars = _dictionary_or_empty(data.get("level_stars", {}))
 	level_best_times = _dictionary_or_empty(data.get("level_best_times", {}))
+	level_best_moves = _dictionary_or_empty(data.get("level_best_moves", {}))
 	level_mistakes = _dictionary_or_empty(data.get("level_mistakes", {}))
 
-func record_level_completion(level_index: int, stars: int, elapsed_seconds: float, mistakes: int, total_levels: int) -> void:
+func record_level_completion(
+	level_index: int,
+	stars: int,
+	elapsed_seconds: float,
+	moves: int,
+	mistakes: int,
+	total_levels: int
+) -> void:
 	var key := str(level_index)
 	level_stars[key] = maxi(int(level_stars.get(key, 0)), clampi(stars, 1, 3))
 
@@ -68,10 +81,16 @@ func record_level_completion(level_index: int, stars: int, elapsed_seconds: floa
 	if previous_time <= 0.0 or elapsed_seconds < previous_time:
 		level_best_times[key] = elapsed_seconds
 
+	var previous_moves := int(level_best_moves.get(key, -1))
+	if previous_moves < 0 or moves < previous_moves:
+		level_best_moves[key] = moves
+
 	var previous_mistakes := int(level_mistakes.get(key, -1))
 	if previous_mistakes < 0 or mistakes < previous_mistakes:
 		level_mistakes[key] = mistakes
 
+	if level_index == 0:
+		tutorial_completed = true
 	max_level_unlocked = mini(maxi(max_level_unlocked, level_index + 1), maxi(total_levels - 1, 0))
 	current_level = mini(level_index + 1, maxi(total_levels - 1, 0))
 	save_game()
@@ -82,8 +101,10 @@ func reset_progress(write_to_disk: bool = true) -> void:
 	hint_count = 5
 	lives = 3
 	difficulty = "Normal"
+	tutorial_completed = false
 	level_stars.clear()
 	level_best_times.clear()
+	level_best_moves.clear()
 	level_mistakes.clear()
 	if write_to_disk:
 		save_game()

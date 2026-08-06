@@ -3,23 +3,25 @@ extends CanvasLayer
 signal restart_pressed
 signal hint_pressed
 signal back_pressed
+signal settings_pressed
 
-@onready var level_label = $TopBar/Margin/VBox/TopRow/HeaderBox/LevelTitle
-@onready var difficulty_label = $TopBar/Margin/VBox/TopRow/HeaderBox/DifficultyPill/DiffLabel
-@onready var subtitle_label = $TopBar/Margin/VBox/SubtitleLabel
-@onready var lives_count_label = $BottomBar/Margin/HBox/LivesCard/VBox/IconBox/CountLabel
-@onready var hint_count_badge = $BottomBar/Margin/HBox/HintCard/VBox/IconBox/BadgeLabel
-@onready var lives_card = $BottomBar/Margin/HBox/LivesCard
-@onready var hint_card = $BottomBar/Margin/HBox/HintCard
-@onready var restart_card = $BottomBar/Margin/HBox/RestartCard
-@onready var back_button = $TopBar/Margin/VBox/TopRow/BackButton
-@onready var settings_button = $TopBar/Margin/VBox/TopRow/SettingsButton
+@onready var level_label: Label = $TopBar/Margin/VBox/TopRow/HeaderBox/LevelTitle
+@onready var difficulty_label: Label = $TopBar/Margin/VBox/TopRow/HeaderBox/DifficultyPill/DiffLabel
+@onready var subtitle_label: Label = $TopBar/Margin/VBox/SubtitleLabel
+@onready var lives_count_label: Label = $BottomBar/Margin/HBox/LivesCard/VBox/IconBox/CountLabel
+@onready var hint_count_badge: Label = $BottomBar/Margin/HBox/HintCard/VBox/IconBox/BadgeLabel
+@onready var lives_card: PanelContainer = $BottomBar/Margin/HBox/LivesCard
+@onready var hint_card: PanelContainer = $BottomBar/Margin/HBox/HintCard
+@onready var restart_card: PanelContainer = $BottomBar/Margin/HBox/RestartCard
+@onready var back_button: Button = $TopBar/Margin/VBox/TopRow/BackButton
+@onready var settings_button: Button = $TopBar/Margin/VBox/TopRow/SettingsButton
 
 const COLOR_ACCENT := Color("#3B82F6")
 const COLOR_PRIMARY_TEXT := Color("#1B2538")
 const COLOR_SECONDARY_TEXT := Color("#717D93")
 
 var interaction_locked := false
+var controls_enabled := true
 
 func _ready() -> void:
 	_apply_styles()
@@ -27,8 +29,16 @@ func _ready() -> void:
 	hint_card.gui_input.connect(_on_card_input.bind(hint_card, func() -> void: hint_pressed.emit()))
 	restart_card.gui_input.connect(_on_card_input.bind(restart_card, func() -> void: restart_pressed.emit()))
 	back_button.pressed.connect(func() -> void:
+		if not controls_enabled:
+			return
 		AudioManager.play_button_sound()
 		back_pressed.emit()
+	)
+	settings_button.pressed.connect(func() -> void:
+		if not controls_enabled:
+			return
+		AudioManager.play_button_sound()
+		settings_pressed.emit()
 	)
 
 func _apply_styles() -> void:
@@ -63,7 +73,7 @@ func _apply_styles() -> void:
 		button.add_theme_stylebox_override("focus", circle_style)
 
 func _on_card_input(event: InputEvent, card: Control, callback: Callable) -> void:
-	if interaction_locked:
+	if interaction_locked or not controls_enabled:
 		return
 	var activated := (
 		event is InputEventMouseButton
@@ -86,3 +96,10 @@ func update_hud(level_num: int, difficulty: String, lives: int, hints: int) -> v
 	difficulty_label.text = difficulty
 	hint_count_badge.text = str(maxi(hints, 0))
 	lives_count_label.text = str(maxi(lives, 0))
+
+func set_controls_enabled(enabled: bool) -> void:
+	controls_enabled = enabled
+	back_button.disabled = not enabled
+	settings_button.disabled = not enabled
+	hint_card.mouse_filter = Control.MOUSE_FILTER_STOP if enabled else Control.MOUSE_FILTER_IGNORE
+	restart_card.mouse_filter = Control.MOUSE_FILTER_STOP if enabled else Control.MOUSE_FILTER_IGNORE

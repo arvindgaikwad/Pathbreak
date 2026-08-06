@@ -1,13 +1,16 @@
-extends Node2D
+extends Control
 
-var ResultPopupScene = preload("res://scenes/game/result_popup.tscn")
-var FailScreenScene = preload("res://scenes/GameOverScreen.tscn")
+var ResultPopupScene: PackedScene = preload("res://scenes/game/result_popup.tscn")
+var FailScreenScene: PackedScene = preload("res://scenes/GameOverScreen.tscn")
+var PauseMenuScene: PackedScene = preload("res://scenes/game/pause_menu.tscn")
 
+@onready var board_pivot: Node2D = $BoardPivot
 @onready var board = $BoardPivot/Board
 @onready var hud = $HUD
 
 var current_level_idx: int = 0
 var level_start_msec: int = 0
+var move_count: int = 0
 var mistake_count: int = 0
 var hints_left: int = 5
 var hints_at_level_start: int = 5
@@ -15,13 +18,22 @@ var lives_left: int = 3
 var total_pieces: int = 0
 var remaining_pieces: int = 0
 var input_locked: bool = false
+var pause_menu: PauseMenu = null
 var level_data_list: Array[PuzzleLevelData] = []
+
+const TOP_RESERVED := 190.0
+const BOTTOM_RESERVED := 190.0
+const SIDE_MARGIN := 24.0
+const MAX_BOARD_SCALE := 1.25
 
 func _ready() -> void:
 	_load_levels()
+	board.piece_selected.connect(_on_piece_tapped)
 	hud.restart_pressed.connect(_on_restart_pressed)
 	hud.hint_pressed.connect(_on_hint_pressed)
 	hud.back_pressed.connect(_on_back_pressed)
+	hud.settings_pressed.connect(_on_settings_pressed)
+	get_viewport().size_changed.connect(_update_layout)
 
 	if level_data_list.is_empty():
 		push_error("No Pathbreak levels could be loaded.")
@@ -33,23 +45,35 @@ func _ready() -> void:
 
 func _load_levels() -> void:
 	level_data_list.clear()
-	for level_number in range(1, 11):
+	for level_number in range(1, 1000):
+		var has_resource := ResourceLoader.exists("res://data/levels/level_%d.tres" % level_number)
+		var has_json := FileAccess.file_exists("res://data/level%d.json" % level_number)
+		if not has_resource and not has_json:
+			break
 		var level := _load_level_resource(level_number)
-		if level != null:
-			level_data_list.append(level)
+		if level == null:
+			push_error("Stopped loading the level pack at invalid level %d." % level_number)
+			break
+		level_data_list.append(level)
 
 func _load_level_resource(level_number: int) -> PuzzleLevelData:
+	# JSON is the canonical, diff-friendly production format. Resources remain a temporary fallback.
+	var json_path := "res://data/level%d.json" % level_number
+	if FileAccess.file_exists(json_path):
+		var json_level := _load_json_level(json_path, level_number)
+		if json_level != null:
+			return json_level
+
 	var resource_path := "res://data/levels/level_%d.tres" % level_number
 	if ResourceLoader.exists(resource_path):
 		var resource_level := load(resource_path) as PuzzleLevelData
-		if resource_level != null:
+		if resource_level != null and _validate_level(resource_level, resource_path):
 			return resource_level
 
-	var json_path := "res://data/level%d.json" % level_number
-	if not FileAccess.file_exists(json_path):
-		push_warning("Missing level definition: %s" % json_path)
-		return null
+	push_warning("No valid level definition for level %d" % level_number)
+	return null
 
+func _load_json_level(json_path: String, level_number: int) -> PuzzleLevelData:
 	var file := FileAccess.open(json_path, FileAccess.READ)
 	if file == null:
 		push_warning("Could not open level definition: %s" % json_path)
@@ -83,7 +107,15 @@ func _load_level_resource(level_number: int) -> PuzzleLevelData:
 			level.pieces.append(piece)
 			piece_id += 1
 
+	if not _validate_level(level, json_path):
+		return null
 	return level
+
+func _validate_level(level: PuzzleLevelData, source: String) -> bool:
+	var errors := LevelDataValidator.validate(level)
+	for error in errors:
+		push_warning("%s: %s" % [source, error])
+	return errors.is_empty()
 
 func _difficulty_for_level(level_number: int) -> String:
 	if level_number <= 3:
@@ -96,12 +128,16 @@ func load_level(index: int) -> void:
 	if level_data_list.is_empty():
 		return
 
+	_close_pause_menu(false)
 	input_locked = false
+	board.set_input_enabled(true)
+	hud.set_controls_enabled(true)
 	current_level_idx = clampi(index, 0, level_data_list.size() - 1)
 	SaveManager.current_level = current_level_idx
 	SaveManager.save_game()
 
 	var level_data := level_data_list[current_level_idx]
+	move_count = 0
 	mistake_count = 0
 	lives_left = maxi(level_data.starting_lives, 1)
 	hints_at_level_start = hints_left
@@ -110,39 +146,44 @@ func load_level(index: int) -> void:
 	board.setup_level(level_data)
 	total_pieces = level_data.pieces.size()
 	remaining_pieces = total_pieces
-
-	for piece in board.pieces:
-		piece.piece_tapped.connect(_on_piece_tapped)
-
 	hud.update_hud(level_data.level_id, level_data.difficulty, lives_left, hints_left)
-	board.update_idle_pulses()
+	board.update_assist_pulses(current_level_idx == 0 and not SaveManager.tutorial_completed)
+	_update_layout()
 
 func _on_piece_tapped(piece: PuzzlePiece) -> void:
 	if input_locked or piece.is_removed or piece.is_animating:
 		return
 
+	move_count += 1
 	if board.can_piece_escape(piece):
 		AudioManager.play_move_sound()
+		SettingsManager.play_haptic(&"success")
 		board.remove_piece_occupancy(piece)
 		piece.animate_successful_escape()
 		remaining_pieces -= 1
 
 		get_tree().create_timer(0.35).timeout.connect(func() -> void:
 			if not input_locked:
-				board.update_idle_pulses()
+				board.update_assist_pulses(current_level_idx == 0 and not SaveManager.tutorial_completed)
 		)
 
 		if remaining_pieces <= 0:
-			input_locked = true
+			_lock_gameplay()
 			get_tree().create_timer(0.28).timeout.connect(_on_level_completed)
 	else:
 		AudioManager.play_blocked_sound()
+		SettingsManager.play_haptic(&"error")
 		mistake_count += 1
 		lives_left = maxi(lives_left - 1, 0)
-		hud.update_hud(level_data_list[current_level_idx].level_id, level_data_list[current_level_idx].difficulty, lives_left, hints_left)
+		hud.update_hud(
+			level_data_list[current_level_idx].level_id,
+			level_data_list[current_level_idx].difficulty,
+			lives_left,
+			hints_left
+		)
 		piece.animate_blocked_tap()
 		if lives_left <= 0:
-			input_locked = true
+			_lock_gameplay()
 			get_tree().create_timer(0.35).timeout.connect(_show_fail_screen)
 
 func _show_fail_screen() -> void:
@@ -161,8 +202,9 @@ func _show_fail_screen() -> void:
 
 func _on_level_completed() -> void:
 	AudioManager.play_win_sound()
+	SettingsManager.play_haptic(&"celebration")
 	var elapsed_seconds := (Time.get_ticks_msec() - level_start_msec) / 1000.0
-	var stars := _calculate_stars(mistake_count, lives_left)
+	var stars := _calculate_stars(mistake_count)
 	var hints_used := maxi(hints_at_level_start - hints_left, 0)
 
 	SaveManager.hint_count = hints_left
@@ -170,13 +212,20 @@ func _on_level_completed() -> void:
 		current_level_idx,
 		stars,
 		elapsed_seconds,
+		move_count,
 		mistake_count,
 		level_data_list.size()
 	)
 
 	var popup = ResultPopupScene.instantiate()
 	add_child(popup)
-	popup.show_popup(current_level_idx + 1, elapsed_seconds, mistake_count, hints_used)
+	popup.show_popup(
+		current_level_idx + 1,
+		elapsed_seconds,
+		move_count,
+		mistake_count,
+		hints_used
+	)
 
 	popup.next_pressed.connect(func() -> void:
 		popup.queue_free()
@@ -190,10 +239,10 @@ func _on_level_completed() -> void:
 		load_level(current_level_idx)
 	)
 
-func _calculate_stars(mistakes: int, remaining_lives: int) -> int:
+func _calculate_stars(mistakes: int) -> int:
 	if mistakes == 0:
 		return 3
-	if remaining_lives > 0:
+	if mistakes <= 2:
 		return 2
 	return 1
 
@@ -206,27 +255,108 @@ func _on_hint_pressed() -> void:
 	if input_locked or hints_left <= 0:
 		return
 
-	var candidate: PuzzlePiece = null
-	for piece in board.pieces:
-		if is_instance_valid(piece) and not piece.is_removed and board.can_piece_escape(piece):
-			candidate = piece
-			break
-
+	var candidate: PuzzlePiece = board.get_first_escapable_piece()
 	if candidate == null:
 		return
 
 	hints_left -= 1
 	SaveManager.hint_count = hints_left
 	SaveManager.save_game()
-	hud.update_hud(level_data_list[current_level_idx].level_id, level_data_list[current_level_idx].difficulty, lives_left, hints_left)
+	hud.update_hud(
+		level_data_list[current_level_idx].level_id,
+		level_data_list[current_level_idx].difficulty,
+		lives_left,
+		hints_left
+	)
+	candidate.play_hint_pulse()
+	SettingsManager.play_haptic(&"light")
 
-	var tween := create_tween()
-	tween.tween_property(candidate.line, "default_color", Color("#3978F6"), 0.2)
-	tween.tween_property(candidate.line, "default_color", Color("#172033"), 0.2)
-	tween.set_loops(3)
+func _on_settings_pressed() -> void:
+	_open_pause_menu()
+
+func _open_pause_menu() -> void:
+	if pause_menu != null or input_locked:
+		return
+	input_locked = true
+	board.set_input_enabled(false)
+	hud.set_controls_enabled(false)
+	pause_menu = PauseMenuScene.instantiate() as PauseMenu
+	if pause_menu == null:
+		push_error("Pause menu scene does not use PauseMenu script.")
+		input_locked = false
+		board.set_input_enabled(true)
+		hud.set_controls_enabled(true)
+		return
+	add_child(pause_menu)
+	pause_menu.resume_pressed.connect(_resume_from_pause)
+	pause_menu.restart_pressed.connect(_restart_from_pause)
+	pause_menu.menu_pressed.connect(_menu_from_pause)
+	get_tree().paused = true
+
+func _resume_from_pause() -> void:
+	_close_pause_menu(true)
+
+func _restart_from_pause() -> void:
+	_close_pause_menu(false)
+	load_level(current_level_idx)
+
+func _menu_from_pause() -> void:
+	get_tree().paused = false
+	SaveManager.current_level = current_level_idx
+	SaveManager.hint_count = hints_left
+	SaveManager.save_game()
+	if pause_menu != null:
+		pause_menu.queue_free()
+		pause_menu = null
+	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+
+func _close_pause_menu(resume_gameplay: bool) -> void:
+	if get_tree().paused:
+		get_tree().paused = false
+	if pause_menu != null:
+		pause_menu.queue_free()
+		pause_menu = null
+	if resume_gameplay:
+		input_locked = false
+		board.set_input_enabled(true)
+		hud.set_controls_enabled(true)
+
+func _lock_gameplay() -> void:
+	input_locked = true
+	board.set_input_enabled(false)
+	hud.set_controls_enabled(false)
+	board.update_assist_pulses(false)
 
 func _on_back_pressed() -> void:
 	SaveManager.current_level = current_level_idx
 	SaveManager.hint_count = hints_left
 	SaveManager.save_game()
 	get_tree().change_scene_to_file("res://scenes/MainMenu.tscn")
+
+func _unhandled_input(event: InputEvent) -> void:
+	if not event.is_action_pressed("ui_cancel"):
+		return
+	if pause_menu != null:
+		_resume_from_pause()
+	elif not input_locked:
+		_open_pause_menu()
+	get_viewport().set_input_as_handled()
+
+func _update_layout() -> void:
+	if board == null or board_pivot == null:
+		return
+	var viewport_size := get_viewport_rect().size
+	var top_space := minf(TOP_RESERVED, viewport_size.y * 0.22)
+	var bottom_space := minf(BOTTOM_RESERVED, viewport_size.y * 0.22)
+	var available_size := Vector2(
+		maxf(viewport_size.x - SIDE_MARGIN * 2.0, 240.0),
+		maxf(viewport_size.y - top_space - bottom_space, 240.0)
+	)
+	board_pivot.position = Vector2(viewport_size.x * 0.5, top_space + available_size.y * 0.5)
+
+	var visual_size: Vector2 = board.get_visual_size()
+	if visual_size.x <= 0.0 or visual_size.y <= 0.0:
+		return
+	var scale_factor := minf(available_size.x / visual_size.x, available_size.y / visual_size.y)
+	scale_factor = clampf(scale_factor, 0.35, MAX_BOARD_SCALE)
+	board_pivot.scale = Vector2.ONE * scale_factor

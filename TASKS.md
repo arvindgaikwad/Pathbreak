@@ -1,44 +1,74 @@
 # Pathbreak — Task Tracker
 
-## Current Phase: Phase 1 — Core Playable Prototype (COMPLETED)
+## Current phase: Vertical Slice Foundation
 
-### In Progress
-- [ ] Phase 2 preparation
+### In progress
 
-### Testing
-- [x] MovementValidator edge case test suite execution (10/10 passed)
-- [x] Multi-viewport scaling verification (360×800, 393×873, 412×915, 800×1280, 1200×1920 verified)
+- [ ] Open the project in Godot 4.7.1 and fix any parser/runtime errors from the foundation branch.
+- [ ] Manually validate levels 1–5 on Android.
+- [ ] Verify pause, settings, Android back, save/load, failure, and completion flows.
+- [ ] Tune the first five levels to the quality gate in `docs/VERTICAL_SLICE.md`.
 
-### Completed (Phase 1)
-- [x] Project inspection & directory structure reorganization (`scenes/game/`, `scripts/gameplay/`, `scripts/ui/`, `data/levels/`, `tests/`, `docs/`)
-- [x] Creation of documentation suite (`GAME_DESIGN.md`, `TECHNICAL_PLAN.md`, `LEVEL_FORMAT.md`, `ART_DIRECTION.md`, `TESTING_CHECKLIST.md`, `DECISIONS.md`, `TASKS.md`, `CHANGELOG.md`, `README.md`)
-- [x] Core resource models `PuzzleLevelData` & `PuzzlePieceData` (`scripts/gameplay/`)
-- [x] Ray-casting `MovementValidator` engine (`scripts/gameplay/movement_validator.gd`)
-- [x] Automated unit test suite with 10 test scenarios (`tests/test_movement_validator.gd`)
-- [x] Programmatic straight & bent path renderer + arrowhead (`scripts/gameplay/puzzle_piece.gd` & `scenes/game/puzzle_piece.tscn`)
-- [x] Board Manager with white card surface `#FFFFFF` & grid dots `#DDE3EC` (`scripts/gameplay/board_manager.gd` & `scenes/game/board.tscn`)
-- [x] Responsive HUD & Result Popup overlay (`scripts/ui/hud.gd`, `scripts/ui/result_popup.gd`)
-- [x] Level Manager with mistake tracking, elapsed level timer, and level restart logic (`scripts/gameplay/level_manager.gd` & `scenes/game/game_screen.tscn`)
-- [x] 5 handcrafted Phase 1 `PuzzleLevelData` `.tres` resources in `data/levels/`
+### Implemented in the current foundation pass
+
+- [x] Route the product through the modular gameplay stack.
+- [x] Remove obsolete `Main.tscn`, duplicate `PuzzlePiece.tscn`, legacy `GameManager.gd`, and legacy victory flow.
+- [x] Add responsive board positioning and scaling.
+- [x] Replace overlapping per-piece input with nearest-path touch selection.
+- [x] Restrict automatic valid-move pulsing to the unfinished tutorial.
+- [x] Add persistent sound, haptics, reduce-motion, and high-contrast settings.
+- [x] Add a functional pause/settings overlay.
+- [x] Add haptic feedback hooks for success, errors, hints, and completion.
+- [x] Track moves and mistakes independently.
+- [x] Version save data and record best moves, mistakes, and completion times.
+- [x] Make JSON the canonical runtime level format with `.tres` fallback.
+- [x] Add reusable level schema validation and automated tests.
+- [x] Stop level-pack loading when an invalid level would shift progression indexes.
+- [x] Document the five-level vertical-slice acceptance criteria.
+
+### Testing pending
+
+- [ ] Run `godot --headless --script tests/test_movement_validator.gd`.
+- [ ] Run `godot --headless --script tests/test_level_data_validator.gd`.
+- [ ] Test 360×800, 393×873, 412×915, 800×1280, and 1200×1920.
+- [ ] Test touch ambiguity near two closely spaced paths.
+- [ ] Test rapid repeated input during escape and blocked animations.
+- [ ] Test pause/resume, background/resume, and Android back.
+- [ ] Test corrupt save and settings files.
 
 ---
 
-## Backlog
+## Next milestones
 
-### Phase 2 — Level-Resource System
-- [ ] Expand level loading & progression system
-- [ ] Implement local progress saving per level resource
-- [ ] Support dynamic board dimensions (N×M)
-- [ ] Author 10+ levels
+### Milestone 1 — Approve the vertical slice
 
-### Phase 3 — Level Editor & Validator
-- [ ] Build internal level authoring tool with solvability validation
+- [ ] Final tutorial presentation.
+- [ ] Five polished and manually reviewed levels.
+- [ ] Final-quality interaction sounds for the slice.
+- [ ] Device-tested haptics and motion.
+- [ ] No critical gameplay or progress bugs.
 
-### Phase 4 — Game Loop & UI
-- [ ] Main menu, level selection, pause, settings, tutorial
+### Milestone 2 — Level production tools
 
-### Phase 5 — Content & Polish
-- [ ] 50-75 original levels, audio polish, particle effects
+- [ ] Replace the old experimental editor with a modular level editor.
+- [ ] Add schema validation in the editor.
+- [ ] Add a solvability solver.
+- [ ] Add difficulty measurements and playtest notes.
+- [ ] Export versioned JSON level packs.
 
-### Phase 6 — Commercial Systems
-- [ ] Ads, IAP, Google Play Store configuration (Deferred)
+### Milestone 3 — Content production
+
+- [ ] 5 tutorial/showcase levels.
+- [ ] 20 easy levels.
+- [ ] 25 normal levels.
+- [ ] 20 hard levels.
+- [ ] 5 mechanic showcase levels.
+
+### Milestone 4 — Launch preparation
+
+- [ ] Final name, icon, logo, store artwork, audio, and copy.
+- [ ] Analytics and crash reporting.
+- [ ] Android performance and interruption testing.
+- [ ] Signed Android App Bundle.
+- [ ] Privacy policy, Data Safety, content rating, and closed testing.
+- [ ] Rewarded ads and optional remove-ads purchase only after retention validation.
