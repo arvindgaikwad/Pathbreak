@@ -2,7 +2,7 @@ extends Node2D
 
 signal piece_selected(piece: PuzzlePiece)
 
-var PuzzlePieceScene = preload("res://scenes/game/puzzle_piece.tscn")
+var PuzzlePieceScene: PackedScene = preload("res://scenes/game/puzzle_piece.tscn")
 
 var board_size := Vector2i(8, 8)
 var grid_size := 64.0
@@ -94,6 +94,16 @@ func get_first_escapable_piece() -> PuzzlePiece:
 		if is_instance_valid(piece) and not piece.is_removed and can_piece_escape(piece):
 			return piece
 	return null
+
+func get_only_remaining_piece() -> PuzzlePiece:
+	var candidate: PuzzlePiece = null
+	for piece in pieces:
+		if not is_instance_valid(piece) or piece.is_removed:
+			continue
+		if candidate != null:
+			return null
+		candidate = piece
+	return candidate
 
 func update_assist_pulses(enabled: bool) -> void:
 	for piece in pieces:
