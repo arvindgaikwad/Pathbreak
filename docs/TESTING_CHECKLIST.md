@@ -10,149 +10,170 @@ Run from the project root:
 
 ```bash
 godot --headless --path . --editor --quit
+godot --headless --path . --script tools/path_level_migration_preview.gd
+godot --headless --path . --script tests/test_path_visual_geometry.gd
 godot --headless --path . --script tests/test_movement_validator.gd
 godot --headless --path . --script tests/test_level_data_validator.gd
 godot --headless --path . --script tests/test_vertical_slice_levels.gd
 ```
 
 - [ ] Editor scan completes with zero parser errors and zero warnings.
+- [ ] Migration preview reports `reversible=0 ambiguous=0`.
+- [ ] Ordered path geometry suite passes.
 - [ ] Movement validator suite passes.
 - [ ] Level data validator suite passes.
 - [ ] Vertical-slice structure/solver suite passes.
+- [ ] Level 1–5 opening and solution counts remain at the expected values.
 
-Every box above must be rerun after the current menu, path-readability, and automatic-final-clear changes.
+## 2. Ordered path and arrow invariant
 
-## 2. Fresh-save tutorial
+For every inspected path:
 
-- [ ] Reset or remove the save before testing.
-- [ ] Main Menu starts at Level 1.
+- [ ] Cells form one ordered non-branching cardinal path.
+- [ ] First cell is the tail endpoint.
+- [ ] Final cell is the head endpoint.
+- [ ] Head direction equals `cells[-1] - cells[-2]`.
+- [ ] Movement direction equals the visible head direction.
+- [ ] Bent paths do not use first-to-last direction.
+- [ ] Triangle is attached to the final endpoint.
+- [ ] Shaft stops cleanly beneath the triangle.
+- [ ] Tail marker is on the opposite endpoint.
+- [ ] No per-level rotation offset or negative-scale flip is present.
+
+Check at least one path for each final segment:
+
+- [ ] Right.
+- [ ] Down.
+- [ ] Left.
+- [ ] Up.
+- [ ] L-shape ending right.
+- [ ] L-shape ending down.
+- [ ] L-shape ending left.
+- [ ] L-shape ending up.
+
+## 3. Fresh-save tutorial
+
+Already verified before the latest migration; rerun once after the ordered-path correction:
+
+- [ ] Reset or remove the save.
 - [ ] Main Menu displays `Start Level 1`.
 - [ ] Main-menu board displays `TAP THE BOARD TO START`.
-- [ ] Tapping the main-menu board starts Level 1.
-- [ ] The primary Start button also starts Level 1.
-- [ ] Repeated or near-simultaneous taps do not trigger duplicate navigation.
-- [ ] Level 1 displays `FREE` in the hint card.
+- [ ] Board and primary button both start Level 1.
+- [ ] Repeated taps do not trigger duplicate navigation.
+- [ ] Level 1 displays `FREE`.
 - [ ] Tutorial instruction is visible.
-- [ ] A moving accent marker travels from tail toward the arrowhead.
-- [ ] Tutorial assistance identifies a valid path without blocking input.
-- [ ] Using the free tutorial hint does not reduce the persistent hint bank.
+- [ ] Directional marker follows the final segment toward the head.
+- [ ] Tutorial assistance identifies a valid path.
+- [ ] Free hint does not reduce the persistent bank.
 - [ ] Completing Level 1 marks the tutorial complete.
-- [ ] Replaying Level 1 displays the real hint count rather than `FREE`.
+- [ ] Replaying Level 1 displays the real hint count.
 
-## 3. Hint inventory and refill
+## 4. Hint inventory and refill
 
-- [ ] A normal hint highlights an escapable path in blue.
-- [ ] The moving marker travels from tail to arrowhead on the hinted path.
-- [ ] The HUD says `Follow the blue light to the arrow`.
+- [ ] Normal hint highlights an escapable path.
+- [ ] Small marker triangle points toward the same head used by movement.
+- [ ] Marker cannot be mistaken for another tail dot.
+- [ ] HUD message remains understandable.
 - [ ] Each normal hint decreases the bank exactly once.
-- [ ] The decreased count survives returning to Menu and reopening gameplay.
-- [ ] At zero, the HUD displays `+3` and the title `Refill`.
-- [ ] Tapping the empty hint card opens the refill popup.
-- [ ] `Not now`, backdrop tap, and Android/system Back close the popup without adding hints.
-- [ ] Gameplay input is blocked while the popup is open.
-- [ ] `Refill 3 Hints` restores exactly three hints.
-- [ ] The restored count saves immediately.
-- [ ] The next hint consumes one and displays two remaining.
-- [ ] Result `Hints used` remains correct after a refill during the level.
-- [ ] `No path can leave yet` remains visible when a board state has no valid move.
+- [ ] Count persists through Menu and reopen.
+- [ ] At zero, HUD displays `+3 / Refill`.
+- [ ] Popup opens and blocks gameplay input.
+- [ ] Cancel/backdrop/Back closes without adding hints.
+- [ ] Refill restores exactly three and saves immediately.
+- [ ] Next hint consumes one.
+- [ ] Result `Hints used` remains correct after refill.
+- [ ] `No path can leave yet` still appears when appropriate.
 
-## 4. Gameplay rules and input
+## 5. Gameplay and input
 
-- [ ] Valid path tap escapes the selected path.
-- [ ] Blocked path tap reduces one life and records one mistake.
-- [ ] Rapid repeated taps do not remove or count the same path twice.
-- [ ] Close parallel paths select the nearest intended path.
-- [ ] Input remains accurate after board scaling.
+- [ ] Valid path escapes in its visible head direction.
+- [ ] Blocked path loses one life and records one mistake.
+- [ ] Rapid repeated taps do not count twice.
+- [ ] Close paths select the nearest intended path.
+- [ ] Input remains accurate after scaling.
 - [ ] Restart rebuilds the board and clears active animation state.
-- [ ] Arrowheads are visually more prominent than tail dots.
-- [ ] With two paths remaining, clearing the second-last path locks further board input.
-- [ ] The final valid path previews in blue and clears automatically.
-- [ ] Automatic final clear does not increase Moves.
-- [ ] Automatic final clear triggers completion exactly once.
-- [ ] An inconsistent or blocked final state returns control instead of silently completing.
+- [ ] Arrowhead is more prominent than the tail.
+- [ ] Final valid path previews and clears automatically.
+- [ ] Automatic final clear adds no Move.
+- [ ] Completion triggers exactly once.
+- [ ] Blocked/inconsistent final state returns control.
 - [ ] Zero lives triggers failure exactly once.
 
-## 5. Connected flow
+## 6. Connected flow
 
-- [ ] Main Menu recommends the first uncleared unlocked level.
-- [ ] Tapping the living board opens that same recommended level.
-- [ ] The board prompt names the recommended level for returning players.
-- [ ] Level Select locked/current/completed states match save data.
-- [ ] Back returns safely without losing hint state.
-- [ ] Pause resumes the same board.
-- [ ] Pause Restart creates a fresh attempt.
-- [ ] Pause Menu returns safely.
-- [ ] Failure Retry works.
-- [ ] Failure Menu works.
-- [ ] Result Replay works.
-- [ ] Result Next Level works.
+- [ ] Main Menu recommends the first uncleared level.
+- [ ] Living board opens the same level as Continue.
+- [ ] Returning prompt names the recommended level.
+- [ ] Level Select states match save data.
+- [ ] Back preserves hint state.
+- [ ] Pause Resume, Restart, and Menu work.
+- [ ] Failure Retry and Menu work.
+- [ ] Result Replay and Next Level work.
 - [ ] Final available level returns to Level Select.
 
-## 6. Accessibility and settings
+## 7. Accessibility and settings
 
-- [ ] Sound toggle persists after restart.
-- [ ] Haptics toggle persists after restart.
-- [ ] Reduce Motion stops the travelling menu/path marker.
-- [ ] Reduce Motion shortens the automatic final-clear preview.
-- [ ] High Contrast changes path rendering.
+- [ ] Sound persists after restart.
+- [ ] Haptics persist after restart.
+- [ ] Reduce Motion removes travelling cues without hiding direction.
+- [ ] Reduce Motion shortens final-clear preview.
+- [ ] High Contrast keeps shaft, triangle, tail, and hint marker readable.
 - [ ] Settings remain independent from progress reset.
-- [ ] No information depends only on color.
-- [ ] Static arrowhead shape still communicates direction with Reduce Motion enabled.
+- [ ] Direction does not depend only on color.
 
-## 7. Portrait layout matrix
+## 8. Portrait layout matrix
 
-Test the full menu → gameplay → overlay → result loop at each target:
+Test menu → gameplay → overlay → result at:
 
-- [ ] 360 × 800 compact phone.
-- [ ] 393 × 873 standard phone.
-- [ ] 412 × 915 tall phone.
-- [ ] 800 × 1280 tablet portrait.
-- [ ] 1200 × 1920 high-resolution tablet portrait.
+- [ ] 360 × 800.
+- [ ] 393 × 873.
+- [ ] 412 × 915.
+- [ ] 800 × 1280.
+- [ ] 1200 × 1920.
 
-For every size verify:
+Verify:
 
-- [ ] No clipped title, board, board prompt, HUD card, button, or popup.
-- [ ] Board remains centered in the playable area.
-- [ ] The menu demonstration remains fully tappable.
+- [ ] No clipped title, board, prompt, HUD, button, or popup.
+- [ ] Board is centered.
+- [ ] Menu board remains tappable.
 - [ ] Touch targets remain comfortable.
-- [ ] Popup buttons remain visible without scrolling.
+- [ ] Popup buttons remain visible.
 
-## 8. Level review
+## 9. Level review after migration
 
-- [ ] Level 1 fresh-player tutorial test.
-- [ ] Level 2 blocking comprehension retest.
-- [ ] Level 3 bent-path comprehension retest.
-- [ ] Level 4 external playtest after readability changes.
-- [ ] Level 5 external difficulty test after readability changes.
-- [ ] Three new testers complete or attempt all five levels without verbal explanation.
-- [ ] Record first menu tap, completion time, moves, mistakes, hints, confusion points, and abandonment.
-- [ ] Ask whether the arrowhead/tail distinction is understood.
-- [ ] Ask whether automatic final clear feels satisfying or surprising.
+- [ ] Level 1 left/right heads and two openings.
+- [ ] Level 2 migrated L-path still teaches blocking.
+- [ ] Level 3 migrated paths still teach bent-path reading.
+- [ ] Level 4 reversed upward path renders and moves correctly.
+- [ ] Level 5 all eight heads follow their final segments.
+- [ ] Three new testers attempt Levels 1–5 without explanation.
+- [ ] Record first menu tap, time, moves, mistakes, hints, confusion, and abandonment.
+- [ ] Ask whether head/tail distinction is understood.
+- [ ] Ask whether automatic final clear feels satisfying.
 
-## 9. Android device checks
+## 10. Android checks
 
 - [ ] Install debug APK on phone.
 - [ ] Install debug APK on tablet.
 - [ ] Single-touch path selection.
-- [ ] Main-menu board starts the game with touch input.
-- [ ] Multi-touch does not produce duplicate actions.
-- [ ] System Back closes refill/pause before leaving gameplay.
+- [ ] Menu board starts with touch.
+- [ ] Multi-touch does not duplicate actions.
+- [ ] System Back closes refill/pause first.
 - [ ] Sound routes correctly.
-- [ ] Haptics feel appropriate and respect the toggle.
-- [ ] Suspend/resume does not corrupt the level.
-- [ ] Closing/reopening preserves save and settings.
+- [ ] Haptics respect the toggle.
+- [ ] Suspend/resume remains stable.
+- [ ] Close/reopen preserves save and settings.
 
-## 10. Approval
+## 11. Approval
 
 The slice remains unapproved until:
 
-- [ ] Automated checks pass on the current head commit.
-- [ ] Main-menu start hierarchy passes new-player testing.
-- [ ] Path direction is understood without verbal explanation.
-- [ ] Automatic final clear is manually verified.
-- [ ] Hint refill is manually verified.
-- [ ] Tutorial is verified from a fresh save.
-- [ ] All five levels pass director review.
-- [ ] External playtest evidence is recorded.
+- [ ] Current head passes parser, migration preview, and all suites.
+- [ ] Ordered path/head invariant is visually confirmed.
+- [ ] Main-menu hierarchy passes new-player testing.
+- [ ] Direction is understood without explanation.
+- [ ] Hint refill and automatic final clear remain verified.
+- [ ] Fresh-save tutorial passes after migration.
+- [ ] Levels 1–5 pass director review.
 - [ ] Phone and tablet checks pass.
-- [ ] Remaining defects are documented with owners and severity.
+- [ ] Remaining defects have severity and owner.
