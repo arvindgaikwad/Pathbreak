@@ -1,6 +1,29 @@
 # Pathbreak — Changelog
 
-## [0.3.1] - Unreleased
+## [0.3.2] - Unreleased
+
+### Changed
+
+- Rebalanced the main-menu composition with a compact original mark, progress-aware copy, and clearer primary and secondary actions.
+- Replaced decorative menu clutter with fewer, softer directional accents that respect reduced-motion settings.
+- Changed level-select progress to measure completed levels instead of merely unlocked levels.
+- Added clear `NEXT`, `PLAY`, completed-star, and `LOCKED` states to level cards.
+- Removed the non-functional level-select settings button and restored a clear back-navigation pattern.
+- Reduced gameplay HUD height and converted the oversized bottom cards into compact, responsive controls.
+- Replaced platform-dependent emoji icons in the gameplay HUD and result screen with consistent monochrome symbols.
+- Clarified the free Level 1 tutorial hint state in the HUD.
+- Rebuilt the completion card with a compact stat panel, a proper circular star badge, performance copy, and cleaner button hierarchy.
+- Replaced unclear pause-menu switch graphics with explicit `ON` and `OFF` capsule controls.
+- Removed the unfinished music row from the pause menu until a real music system exists.
+
+### Verification required
+
+- Run a Godot 4.7.1 parser scan after pulling the UI-polish branch.
+- Re-run both headless validator suites.
+- Inspect main menu, level select, gameplay HUD, pause menu, and result card at phone and tablet resolutions.
+- Complete levels 1–5 and confirm progression, replay, next level, and save/load behavior.
+
+## [0.3.1] - 2026-08-06
 
 ### Fixed
 
@@ -12,11 +35,12 @@
 - Added temporary HUD guidance for the tutorial, blocked paths, unavailable hints, and highlighted paths.
 - Fixed strict Godot 4.7 integer-division warnings in procedural audio generation and result time formatting.
 
-### Verified locally before the gameplay-input follow-up
+### Verified locally
 
 - Godot 4.7.1 editor scan: 0 parser warnings and 0 errors.
 - MovementValidator tests: 10/10 passed.
 - LevelDataValidator tests: 8/8 passed.
+- Level 1 gameplay, completion, replay, and next-level button rendered successfully.
 
 ## [0.3.0] - 2026-08-06
 
