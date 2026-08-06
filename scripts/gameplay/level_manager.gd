@@ -3,6 +3,7 @@ extends Control
 var ResultPopupScene: PackedScene = preload("res://scenes/game/result_popup.tscn")
 var FailScreenScene: PackedScene = preload("res://scenes/GameOverScreen.tscn")
 var PauseMenuScene: PackedScene = preload("res://scenes/game/pause_menu.tscn")
+var HintRefillPopupScene: PackedScene = preload("res://scenes/game/hint_refill_popup.tscn")
 
 @onready var board_pivot: Node2D = $BoardPivot
 @onready var board = $BoardPivot/Board
@@ -19,12 +20,14 @@ var total_pieces: int = 0
 var remaining_pieces: int = 0
 var input_locked: bool = false
 var pause_menu: PauseMenu = null
+var hint_refill_popup: HintRefillPopup = null
 var level_data_list: Array[PuzzleLevelData] = []
 
 const TOP_RESERVED := 190.0
 const BOTTOM_RESERVED := 190.0
 const SIDE_MARGIN := 24.0
 const MAX_BOARD_SCALE := 1.25
+const HINT_REFILL_AMOUNT := 3
 
 func _ready() -> void:
 	_load_levels()
@@ -129,6 +132,7 @@ func load_level(index: int) -> void:
 		return
 
 	_close_pause_menu(false)
+	_close_hint_refill_popup(false)
 	input_locked = false
 	board.set_input_enabled(true)
 	hud.set_controls_enabled(true)
@@ -264,7 +268,7 @@ func _on_hint_pressed() -> void:
 
 	var free_tutorial_hint := current_level_idx == 0 and not SaveManager.tutorial_completed
 	if not free_tutorial_hint and hints_left <= 0:
-		hud.show_message("No hints left")
+		_open_hint_refill_popup()
 		return
 
 	var candidate: PuzzlePiece = board.get_first_escapable_piece()
@@ -287,11 +291,57 @@ func _on_hint_pressed() -> void:
 	hud.show_message("Tap the blue path", true)
 	SettingsManager.play_haptic(&"light")
 
+func _open_hint_refill_popup() -> void:
+	if hint_refill_popup != null or input_locked:
+		return
+
+	input_locked = true
+	board.set_input_enabled(false)
+	hud.set_controls_enabled(false)
+	hint_refill_popup = HintRefillPopupScene.instantiate() as HintRefillPopup
+	if hint_refill_popup == null:
+		push_error("Hint refill scene does not use HintRefillPopup script.")
+		input_locked = false
+		board.set_input_enabled(true)
+		hud.set_controls_enabled(true)
+		return
+
+	add_child(hint_refill_popup)
+	hint_refill_popup.refill_pressed.connect(_on_hint_refill_confirmed)
+	hint_refill_popup.cancelled.connect(_on_hint_refill_cancelled)
+
+func _on_hint_refill_confirmed() -> void:
+	hints_left = HINT_REFILL_AMOUNT
+	hints_at_level_start = maxi(hints_at_level_start, hints_left)
+	SaveManager.hint_count = hints_left
+	SaveManager.save_game()
+	hud.update_hud(
+		level_data_list[current_level_idx].level_id,
+		level_data_list[current_level_idx].difficulty,
+		lives_left,
+		hints_left
+	)
+	_close_hint_refill_popup(true)
+	hud.show_message("3 hints added", true)
+	SettingsManager.play_haptic(&"success")
+
+func _on_hint_refill_cancelled() -> void:
+	_close_hint_refill_popup(true)
+
+func _close_hint_refill_popup(resume_gameplay: bool) -> void:
+	if hint_refill_popup != null:
+		hint_refill_popup.queue_free()
+		hint_refill_popup = null
+	if resume_gameplay:
+		input_locked = false
+		board.set_input_enabled(true)
+		hud.set_controls_enabled(true)
+
 func _on_settings_pressed() -> void:
 	_open_pause_menu()
 
 func _open_pause_menu() -> void:
-	if pause_menu != null or input_locked:
+	if pause_menu != null or hint_refill_popup != null or input_locked:
 		return
 	input_locked = true
 	board.set_input_enabled(false)
@@ -352,7 +402,9 @@ func _on_back_pressed() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed("ui_cancel"):
 		return
-	if pause_menu != null:
+	if hint_refill_popup != null:
+		_on_hint_refill_cancelled()
+	elif pause_menu != null:
 		_resume_from_pause()
 	elif not input_locked:
 		_open_pause_menu()
