@@ -5,11 +5,12 @@ Branch: `codex/vertical-slice-level-review`
 
 ## Evidence sources
 
-Three kinds of evidence were received:
+Four kinds of evidence were received:
 
 1. A returning developer/tester familiar with the game.
 2. New players who interacted without being taught the menu or puzzle rules first.
 3. A local interaction-clarity verification pass after the revised menu, direction cues, and automatic final clear were implemented.
+4. A clean-save tutorial verification pass.
 
 ## Returning-tester evidence
 
@@ -68,23 +69,59 @@ The user confirmed these behaviours work in the local Godot build:
 
 **Verification boundary:** this confirms the listed manual flows. Exact parser output and automated test output were not supplied with this report, so formal parser/test verification remains open. New-player comprehension of the revised arrow/tail language also remains open.
 
+## Clean-save tutorial verification — 2026-08-07
+
+The user reset the save and supplied screenshots confirming:
+
+- Main Menu entered the new-player state.
+- Star count started at zero.
+- Main CTA displayed `Start Level 1`.
+- Hero prompt displayed `TAP THE BOARD TO START`.
+- Level 1 displayed `FREE` in the Hint card.
+- Level 2 displayed the normal five-hint inventory.
+- Replaying Level 1 displayed the real hint count instead of `FREE`.
+
+**Status:** the clean-save tutorial hint-state gate is approved.
+
+## Arrow visual defects observed in the clean-save screenshots
+
+The latest screenshots reveal visual-language issues even though the underlying interactions work:
+
+1. The travelling blue hint marker can overlap or sit directly beside the arrowhead, making the endpoint resemble a second tail dot.
+2. The current notched four-point arrowhead can read like a fish tail, fork, or decorative shape instead of a clean directional arrow, especially on left-facing paths.
+3. Arrowhead size and line weight feel inconsistent across straight and bent paths.
+4. Some bent-path arrowheads meet the line awkwardly and appear oversized at compact board scales.
+5. The menu demonstration temporarily mixes blue and navy across one path in a way that looks visually split rather than clearly animated.
+
+**Director decision:** the next implementation pass is a path-glyph cleanup before another external comprehension test.
+
+Planned correction:
+
+- replace the notched arrowhead with a simple filled triangle;
+- use one consistent arrowhead proportion for all four directions;
+- slightly reduce tail-dot size again;
+- stop the travelling marker before it reaches the arrowhead, then highlight the full path;
+- keep the marker smaller than the line width so it reads as motion, not another endpoint;
+- align the menu demonstration and gameplay renderer to the same visual rules;
+- preserve current movement logic, touch selection, solver, and level data.
+
 ## Level review
 
 ### Level 1
 
 - The two opening paths remain suitable for rule discovery.
-- `FREE` did not appear in the captured run.
-- The supplied menu showed Level 10 progress and 26 stars, proving this was not a clean save.
-- The current rule only shows `FREE` while `tutorial_completed` is false.
+- Clean-save `FREE` behaviour is verified.
+- Replaying Level 1 correctly uses the normal persistent hint count.
 
-**Status:** no Level 1 hint bug is proven. A clean-save test remains required.
+**Status:** tutorial state approved; path-glyph readability pass pending.
 
 ### Level 2
 
 - Blocking was understood by new players.
 - The tightened 6×6 board is readable.
+- Normal hint inventory correctly displayed after Level 1.
 
-**Status:** teaching purpose provisionally approved; confirm revised arrow/tail language with new players.
+**Status:** teaching purpose provisionally approved; confirm revised arrow language with new players.
 
 ### Level 3
 
@@ -114,18 +151,19 @@ The user confirmed these behaviours work in the local Godot build:
 - Hint and Restart cards moved from custom `gui_input` parsing to native Button hit targets.
 - Hint refill was confirmed working after the native-button correction.
 - Menu board start interaction, directional hint cue, automatic final clear, and Reduce Motion alternatives were manually confirmed working.
+- Clean-save tutorial hint-state behaviour was manually confirmed.
 
 ## Remaining vertical-slice gates
 
 1. Run and record the current parser scan and all automated suites.
-2. Perform a clean-save Level 1 test showing `FREE` and no normal-hint consumption.
+2. Implement and verify the path-glyph cleanup.
 3. Verify rapid menu taps do not double-navigate.
 4. Verify prompt placement and layout at compact phone and tablet sizes.
 5. Verify High Contrast, Sound persistence, and Haptics persistence.
-6. Repeat no-explanation testing with new players using the revised arrowhead, tail dot, and direction motion.
+6. Repeat no-explanation testing with new players using the cleaned arrowhead, tail dot, and direction motion.
 7. Tune Levels 4–5 only after readability is accepted.
 8. Complete Android phone/tablet input, Back, lifecycle, performance, sound, and haptic testing.
 
 ## Current decision
 
-The interaction-clarity implementation is manually functional. The next process is formal parser/test evidence and a clean-save tutorial pass, followed by revised new-player comprehension and Android-device testing. The vertical slice remains unapproved until those gates pass.
+The clean-save tutorial and interaction-clarity behaviours are manually functional. The next development pass is path-glyph cleanup, followed by formal parser/test evidence and another new-player comprehension test. The vertical slice remains unapproved until those gates pass.
