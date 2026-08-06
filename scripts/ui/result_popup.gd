@@ -46,7 +46,7 @@ func show_popup(
 	sub_label.text = "Level %d completed" % level_number
 
 	var total_seconds := maxi(int(elapsed_seconds), 0)
-	var minutes := int(total_seconds / 60)
+	var minutes := int(floor(float(total_seconds) / 60.0))
 	var seconds := total_seconds % 60
 	time_value.text = "%02d:%02d" % [minutes, seconds]
 	moves_value.text = str(maxi(moves, 0))
