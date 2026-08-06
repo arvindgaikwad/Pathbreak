@@ -85,25 +85,28 @@ The user reset the save and supplied screenshots confirming:
 
 ## Arrow visual defects observed in the clean-save screenshots
 
-The latest screenshots reveal visual-language issues even though the underlying interactions work:
+The latest screenshots revealed visual-language issues even though the underlying interactions worked:
 
-1. The travelling blue hint marker can overlap or sit directly beside the arrowhead, making the endpoint resemble a second tail dot.
-2. The current notched four-point arrowhead can read like a fish tail, fork, or decorative shape instead of a clean directional arrow, especially on left-facing paths.
-3. Arrowhead size and line weight feel inconsistent across straight and bent paths.
-4. Some bent-path arrowheads meet the line awkwardly and appear oversized at compact board scales.
-5. The menu demonstration temporarily mixes blue and navy across one path in a way that looks visually split rather than clearly animated.
+1. The travelling blue hint marker could overlap or sit directly beside the arrowhead, making the endpoint resemble a second tail dot.
+2. The notched four-point arrowhead could read like a fish tail, fork, or decorative shape instead of a clean directional arrow, especially on left-facing paths.
+3. Arrowhead size and line weight felt inconsistent across straight and bent paths.
+4. Some bent-path arrowheads met the line awkwardly and appeared oversized at compact board scales.
+5. The menu demonstration temporarily mixed blue and navy across one path in a way that looked visually split rather than clearly animated.
 
-**Director decision:** the next implementation pass is a path-glyph cleanup before another external comprehension test.
+## Arrow-language cleanup implementation — pending local verification
 
-Planned correction:
+The branch now contains the targeted path-glyph cleanup:
 
-- replace the notched arrowhead with a simple filled triangle;
-- use one consistent arrowhead proportion for all four directions;
-- slightly reduce tail-dot size again;
-- stop the travelling marker before it reaches the arrowhead, then highlight the full path;
-- keep the marker smaller than the line width so it reads as motion, not another endpoint;
-- align the menu demonstration and gameplay renderer to the same visual rules;
-- preserve current movement logic, touch selection, solver, and level data.
+- gameplay and menu arrowheads use a simple filled triangle with no notch;
+- triangle proportions are consistent across left, right, up, and down;
+- tail dots are slightly smaller;
+- hint/tutorial markers stop before the arrowhead region;
+- the complete path turns blue after the travelling marker reaches its stopping point;
+- the menu demonstration uses one travelling marker rather than a partially blue path segment;
+- marker size remains below the main line width so it reads as motion rather than another endpoint;
+- movement rules, touch selection, solver, level data, progression, and hint inventory were not changed.
+
+**Verification boundary:** this code has not yet been parsed or visually reviewed in the user's local Godot 4.7.1 build.
 
 ## Level review
 
@@ -113,7 +116,7 @@ Planned correction:
 - Clean-save `FREE` behaviour is verified.
 - Replaying Level 1 correctly uses the normal persistent hint count.
 
-**Status:** tutorial state approved; path-glyph readability pass pending.
+**Status:** tutorial state approved; cleaned path glyph requires visual review.
 
 ### Level 2
 
@@ -121,20 +124,20 @@ Planned correction:
 - The tightened 6×6 board is readable.
 - Normal hint inventory correctly displayed after Level 1.
 
-**Status:** teaching purpose provisionally approved; confirm revised arrow language with new players.
+**Status:** teaching purpose provisionally approved; confirm cleaned arrow language with new players.
 
 ### Level 3
 
 - Bent-path reading was understood.
 
-**Status:** teaching purpose provisionally approved; confirm revised direction cue with new players.
+**Status:** teaching purpose provisionally approved; confirm cleaned direction cue with new players.
 
 ### Levels 4–5
 
 - Functional and enjoyable.
 - Too quick to represent the intended middle-game challenge.
 
-**Status:** retain mechanics; tune after revised path comprehension is accepted.
+**Status:** retain mechanics; tune after cleaned path comprehension is accepted.
 
 ### Levels 9–10
 
@@ -156,14 +159,16 @@ Planned correction:
 ## Remaining vertical-slice gates
 
 1. Run and record the current parser scan and all automated suites.
-2. Implement and verify the path-glyph cleanup.
-3. Verify rapid menu taps do not double-navigate.
-4. Verify prompt placement and layout at compact phone and tablet sizes.
-5. Verify High Contrast, Sound persistence, and Haptics persistence.
-6. Repeat no-explanation testing with new players using the cleaned arrowhead, tail dot, and direction motion.
-7. Tune Levels 4–5 only after readability is accepted.
-8. Complete Android phone/tablet input, Back, lifecycle, performance, sound, and haptic testing.
+2. Verify the simple-triangle glyph in all four directions.
+3. Verify the marker stops before the arrowhead and never resembles a second endpoint.
+4. Verify the menu path no longer appears split between navy and blue.
+5. Verify rapid menu taps do not double-navigate.
+6. Verify prompt placement and layout at compact phone and tablet sizes.
+7. Verify High Contrast, Sound persistence, and Haptics persistence.
+8. Repeat no-explanation testing with new players using the cleaned arrowhead, tail dot, and direction motion.
+9. Tune Levels 4–5 only after readability is accepted.
+10. Complete Android phone/tablet input, Back, lifecycle, performance, sound, and haptic testing.
 
 ## Current decision
 
-The clean-save tutorial and interaction-clarity behaviours are manually functional. The next development pass is path-glyph cleanup, followed by formal parser/test evidence and another new-player comprehension test. The vertical slice remains unapproved until those gates pass.
+The clean-save tutorial and interaction-clarity behaviours are manually functional. The cleaned path language is implemented and awaits parser, visual, and new-player verification. The vertical slice remains unapproved until those gates pass.
