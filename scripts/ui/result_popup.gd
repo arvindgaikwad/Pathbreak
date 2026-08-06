@@ -18,7 +18,6 @@ signal replay_pressed
 var mistakes_value: Label
 
 const COLOR_ACCENT := Color("#2563EB")
-const COLOR_PRIMARY_TEXT := Color("#1B2538")
 const COLOR_SECONDARY_TEXT := Color("#717D93")
 const COLOR_ERROR := Color("#EF5B5B")
 
@@ -46,8 +45,9 @@ func show_popup(
 	title_label.text = "Well done!"
 	sub_label.text = "Level %d completed" % level_number
 
-	var minutes := int(elapsed_seconds) / 60
-	var seconds := int(elapsed_seconds) % 60
+	var total_seconds := maxi(int(elapsed_seconds), 0)
+	var minutes := int(total_seconds / 60)
+	var seconds := total_seconds % 60
 	time_value.text = "%02d:%02d" % [minutes, seconds]
 	moves_value.text = str(maxi(moves, 0))
 	mistakes_value.text = str(maxi(mistakes, 0))
