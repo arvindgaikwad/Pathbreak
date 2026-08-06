@@ -4,10 +4,13 @@
 [ext_resource type="FontFile" path="res://assets/fonts/OpenSans-Bold.ttf" id="2_1"]
 
 [node name="MainMenu" type="Control"]
-script = ExtResource("1_1")
+layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_1")
 
 [node name="Background" type="ColorRect" parent="."]
 layout_mode = 1
@@ -16,13 +19,16 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.968, 0.968, 0.957, 1.0)
+mouse_filter = 2
+color = Color(0.968, 0.968, 0.957, 1)
 
 [node name="FloatingArrows" type="Control" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 
 [node name="UI" type="CenterContainer" parent="."]
@@ -30,41 +36,72 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = -56.0
+offset_bottom = -56.0
 grow_horizontal = 2
 grow_vertical = 2
 
 [node name="VBox" type="VBoxContainer" parent="UI"]
-custom_minimum_size = Vector2(560, 0)
-theme_override_constants/separation = 24
+custom_minimum_size = Vector2(500, 0)
+layout_mode = 2
+theme_override_constants/separation = 16
 alignment = 1
 
+[node name="LogoMark" type="Label" parent="UI/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.224, 0.471, 0.965, 1)
+theme_override_font_sizes/font_size = 44
+theme_override_fonts/font = ExtResource("2_1")
+text = "↗"
+horizontal_alignment = 1
+
 [node name="TitleLabel" type="Label" parent="UI/VBox"]
+layout_mode = 2
 theme_override_colors/font_color = Color(0.125, 0.149, 0.204, 1)
-theme_override_font_sizes/font_size = 56
+theme_override_font_sizes/font_size = 52
 theme_override_fonts/font = ExtResource("2_1")
 text = "Pathbreak"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="SubtitleLabel" type="Label" parent="UI/VBox"]
+layout_mode = 2
 theme_override_colors/font_color = Color(0.447, 0.482, 0.549, 1)
-theme_override_font_sizes/font_size = 20
-text = "Unblock & escape all directional paths"
+theme_override_font_sizes/font_size = 18
+text = "Clear every path. Keep every move intentional."
 horizontal_alignment = 1
 
+[node name="ProgressPill" type="Label" parent="UI/VBox"]
+custom_minimum_size = Vector2(0, 42)
+layout_mode = 2
+theme_override_colors/font_color = Color(0.231, 0.51, 0.965, 1)
+theme_override_font_sizes/font_size = 15
+text = "10 handcrafted levels · No timers"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="Spacer" type="Control" parent="UI/VBox"]
-custom_minimum_size = Vector2(0, 32)
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
 
 [node name="PlayButton" type="Button" parent="UI/VBox"]
-custom_minimum_size = Vector2(560, 80)
+custom_minimum_size = Vector2(500, 74)
+layout_mode = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 32
+theme_override_font_sizes/font_size = 28
 theme_override_fonts/font = ExtResource("2_1")
-text = "Play Game"
+text = "Start Journey"
 
 [node name="LevelsButton" type="Button" parent="UI/VBox"]
-custom_minimum_size = Vector2(560, 60)
+custom_minimum_size = Vector2(500, 58)
+layout_mode = 2
 theme_override_colors/font_color = Color(0.125, 0.149, 0.204, 1)
-theme_override_font_sizes/font_size = 22
-text = "Level Select"
-flat = false
+theme_override_font_sizes/font_size = 20
+text = "Choose Level"
+
+[node name="FooterLabel" type="Label" parent="UI/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.59, 0.67, 1)
+theme_override_font_sizes/font_size = 13
+text = "Offline puzzle · Calm pace · Precise touch"
+horizontal_alignment = 1
