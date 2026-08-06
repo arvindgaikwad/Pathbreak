@@ -1,7 +1,7 @@
 # Pathbreak — Vertical-Slice Testing Checklist
 
 **Status:** Active manual test matrix  
-**Last reviewed:** 2026-08-06  
+**Last reviewed:** 2026-08-07  
 **Rule:** Do not mark a test complete from code inspection alone. Record the device/build and observed result.
 
 ## 1. Automated checks
@@ -20,15 +20,21 @@ godot --headless --path . --script tests/test_vertical_slice_levels.gd
 - [ ] Level data validator suite passes.
 - [ ] Vertical-slice structure/solver suite passes.
 
-Previous runs passed the original movement and data-validator suites, but every box above must be rerun after the current hint-refill and documentation branch changes.
+Every box above must be rerun after the current menu, path-readability, and automatic-final-clear changes.
 
 ## 2. Fresh-save tutorial
 
 - [ ] Reset or remove the save before testing.
 - [ ] Main Menu starts at Level 1.
+- [ ] Main Menu displays `Start Level 1`.
+- [ ] Main-menu board displays `TAP THE BOARD TO START`.
+- [ ] Tapping the main-menu board starts Level 1.
+- [ ] The primary Start button also starts Level 1.
+- [ ] Repeated or near-simultaneous taps do not trigger duplicate navigation.
 - [ ] Level 1 displays `FREE` in the hint card.
 - [ ] Tutorial instruction is visible.
-- [ ] Tutorial assist pulse identifies a valid path without blocking input.
+- [ ] A moving accent marker travels from tail toward the arrowhead.
+- [ ] Tutorial assistance identifies a valid path without blocking input.
 - [ ] Using the free tutorial hint does not reduce the persistent hint bank.
 - [ ] Completing Level 1 marks the tutorial complete.
 - [ ] Replaying Level 1 displays the real hint count rather than `FREE`.
@@ -36,7 +42,8 @@ Previous runs passed the original movement and data-validator suites, but every 
 ## 3. Hint inventory and refill
 
 - [ ] A normal hint highlights an escapable path in blue.
-- [ ] The HUD says `Tap the blue path`.
+- [ ] The moving marker travels from tail to arrowhead on the hinted path.
+- [ ] The HUD says `Follow the blue light to the arrow`.
 - [ ] Each normal hint decreases the bank exactly once.
 - [ ] The decreased count survives returning to Menu and reopening gameplay.
 - [ ] At zero, the HUD displays `+3` and the title `Refill`.
@@ -47,6 +54,7 @@ Previous runs passed the original movement and data-validator suites, but every 
 - [ ] The restored count saves immediately.
 - [ ] The next hint consumes one and displays two remaining.
 - [ ] Result `Hints used` remains correct after a refill during the level.
+- [ ] `No path can leave yet` remains visible when a board state has no valid move.
 
 ## 4. Gameplay rules and input
 
@@ -56,12 +64,19 @@ Previous runs passed the original movement and data-validator suites, but every 
 - [ ] Close parallel paths select the nearest intended path.
 - [ ] Input remains accurate after board scaling.
 - [ ] Restart rebuilds the board and clears active animation state.
-- [ ] Last path triggers completion exactly once.
+- [ ] Arrowheads are visually more prominent than tail dots.
+- [ ] With two paths remaining, clearing the second-last path locks further board input.
+- [ ] The final valid path previews in blue and clears automatically.
+- [ ] Automatic final clear does not increase Moves.
+- [ ] Automatic final clear triggers completion exactly once.
+- [ ] An inconsistent or blocked final state returns control instead of silently completing.
 - [ ] Zero lives triggers failure exactly once.
 
 ## 5. Connected flow
 
 - [ ] Main Menu recommends the first uncleared unlocked level.
+- [ ] Tapping the living board opens that same recommended level.
+- [ ] The board prompt names the recommended level for returning players.
 - [ ] Level Select locked/current/completed states match save data.
 - [ ] Back returns safely without losing hint state.
 - [ ] Pause resumes the same board.
@@ -77,10 +92,12 @@ Previous runs passed the original movement and data-validator suites, but every 
 
 - [ ] Sound toggle persists after restart.
 - [ ] Haptics toggle persists after restart.
-- [ ] Reduce Motion shortens/removes decorative motion.
+- [ ] Reduce Motion stops the travelling menu/path marker.
+- [ ] Reduce Motion shortens the automatic final-clear preview.
 - [ ] High Contrast changes path rendering.
 - [ ] Settings remain independent from progress reset.
 - [ ] No information depends only on color.
+- [ ] Static arrowhead shape still communicates direction with Reduce Motion enabled.
 
 ## 7. Portrait layout matrix
 
@@ -94,26 +111,30 @@ Test the full menu → gameplay → overlay → result loop at each target:
 
 For every size verify:
 
-- [ ] No clipped title, board, HUD card, button, or popup.
+- [ ] No clipped title, board, board prompt, HUD card, button, or popup.
 - [ ] Board remains centered in the playable area.
+- [ ] The menu demonstration remains fully tappable.
 - [ ] Touch targets remain comfortable.
 - [ ] Popup buttons remain visible without scrolling.
 
 ## 8. Level review
 
 - [ ] Level 1 fresh-player tutorial test.
-- [ ] Level 2 natural replay and starting-board capture.
-- [ ] Level 3 natural replay and starting-board capture.
-- [ ] Level 4 external playtest.
-- [ ] Level 5 external difficulty test.
-- [ ] Three new testers complete or attempt all five levels.
-- [ ] Record completion time, moves, mistakes, hints, confusion points, and abandonment.
+- [ ] Level 2 blocking comprehension retest.
+- [ ] Level 3 bent-path comprehension retest.
+- [ ] Level 4 external playtest after readability changes.
+- [ ] Level 5 external difficulty test after readability changes.
+- [ ] Three new testers complete or attempt all five levels without verbal explanation.
+- [ ] Record first menu tap, completion time, moves, mistakes, hints, confusion points, and abandonment.
+- [ ] Ask whether the arrowhead/tail distinction is understood.
+- [ ] Ask whether automatic final clear feels satisfying or surprising.
 
 ## 9. Android device checks
 
 - [ ] Install debug APK on phone.
 - [ ] Install debug APK on tablet.
 - [ ] Single-touch path selection.
+- [ ] Main-menu board starts the game with touch input.
 - [ ] Multi-touch does not produce duplicate actions.
 - [ ] System Back closes refill/pause before leaving gameplay.
 - [ ] Sound routes correctly.
@@ -126,6 +147,9 @@ For every size verify:
 The slice remains unapproved until:
 
 - [ ] Automated checks pass on the current head commit.
+- [ ] Main-menu start hierarchy passes new-player testing.
+- [ ] Path direction is understood without verbal explanation.
+- [ ] Automatic final clear is manually verified.
 - [ ] Hint refill is manually verified.
 - [ ] Tutorial is verified from a fresh save.
 - [ ] All five levels pass director review.
