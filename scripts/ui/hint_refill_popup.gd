@@ -6,13 +6,12 @@ signal cancelled
 
 @onready var backdrop: ColorRect = $Backdrop
 @onready var panel: PanelContainer = $Panel
+@onready var amount_card: PanelContainer = $Panel/Margin/VBox/AmountCard
 @onready var refill_button: Button = $Panel/Margin/VBox/RefillButton
 @onready var cancel_button: Button = $Panel/Margin/VBox/CancelButton
 
 const COLOR_ACCENT := Color("#3B82F6")
 const COLOR_ACCENT_PRESSED := Color("#2563EB")
-const COLOR_PRIMARY_TEXT := Color("#1B2538")
-const COLOR_SECONDARY_TEXT := Color("#717D93")
 const COLOR_BORDER := Color("#E7EBF1")
 
 func _ready() -> void:
@@ -39,6 +38,19 @@ func _apply_styles() -> void:
 	panel_style.shadow_size = 18
 	panel_style.shadow_offset = Vector2(0, 8)
 	panel.add_theme_stylebox_override("panel", panel_style)
+
+	var amount_style := StyleBoxFlat.new()
+	amount_style.bg_color = Color("#EEF4FF")
+	amount_style.border_color = Color("#D9E7FF")
+	amount_style.border_width_left = 1
+	amount_style.border_width_top = 1
+	amount_style.border_width_right = 1
+	amount_style.border_width_bottom = 1
+	amount_style.corner_radius_top_left = 18
+	amount_style.corner_radius_top_right = 18
+	amount_style.corner_radius_bottom_left = 18
+	amount_style.corner_radius_bottom_right = 18
+	amount_card.add_theme_stylebox_override("panel", amount_style)
 
 	var refill_normal := StyleBoxFlat.new()
 	refill_normal.bg_color = COLOR_ACCENT
