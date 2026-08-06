@@ -1,16 +1,54 @@
 # Pathbreak — Changelog
 
+## [0.3.0] - Unreleased
+
+### Added
+
+- Responsive gameplay-board positioning and uniform scaling for phone and tablet viewports.
+- Central nearest-path touch selection with scale-adjusted tap tolerance.
+- Persistent `SettingsManager` for sound, music state, haptics, reduced motion, and high contrast.
+- Pause/settings overlay with resume, restart, and main-menu actions.
+- Haptic hooks for path escape, blocked taps, hints, and level completion.
+- Independent tracking for moves, mistakes, hints used, and completion time.
+- Version 2 save data with tutorial state and best-move records.
+- Canonical JSON-first level loading with resource fallback.
+- `LevelDataValidator` and a headless validation test suite.
+- Five-level vertical-slice production specification.
+
+### Changed
+
+- Automatic valid-move pulsing is now limited to the unfinished tutorial.
+- Completion results display moves and mistakes separately.
+- Audio playback respects the sound setting.
+- Invalid level packs stop loading instead of silently shifting level indexes.
+- Gameplay uses the modular `scenes/game/` and `scripts/gameplay/` architecture only.
+
+### Removed
+
+- Obsolete monolithic `scenes/Main.tscn`.
+- Duplicate root-level `scenes/PuzzlePiece.tscn`.
+- Legacy `scripts/GameManager.gd` and its UID.
+- Legacy victory scene/controller and its UID.
+
+### Verification required before merge
+
+- Open the branch in Godot 4.7.1 and fix all parser/runtime errors.
+- Run both headless test suites.
+- Test touch input, pause/settings, Android back, save/load, failure, and completion on devices.
+- Validate levels 1–5 against `docs/VERTICAL_SLICE.md`.
+
 ## [0.2.0] - 2026-08-06
 
 ### Added
-- **UI Redesign matching Reference Image**:
-  - **Path Tail Dots**: Added solid round dot rendering (`_draw_tail_dot()`) at the start cell of each path line (`cells[0]`) matching Screen 1.
-  - **Action Control Cards**: Redesigned bottom bar with 3 elevated white cards: "Lives" (`❤️ 3`), "Hint" (`💡` + blue badge `2`), and "Restart" (`↺`).
-  - **Header & Title Bar**: Centered "Level X" title with "Medium" difficulty pill below it, circular back button (`←`), settings button (`⚙`), and subtitle "Clear all paths".
-  - **Level Select Overhaul**: World progress card ("Progress 36 / 120", `30%`), World section title ("World 1 · Beginnings"), 4-column level grid with level numbers and star ratings.
-  - **Victory Overlay Overhaul**: Floating gold star `⭐` badge, "Well done!" header, stats table (Time `00:45`, Mistakes `0`, Hints used `1`), star rating, outline Replay button, and vibrant blue Next Level button (`#2563EB`).
-  - **Palette Update**: Warm cream canvas `#F8F6F0`, pure white 32px rounded cards `#FFFFFF`, deep navy `#1B2538`, vibrant blue `#3B82F6` / `#2563EB`.
+
+- Path tail dots at the start of each line.
+- Three-card bottom action bar for lives, hint, and restart.
+- Centered level header, difficulty label, back control, settings control, and objective subtitle.
+- Level-selection progress card and level grid.
+- Light-mode completion card with time, mistakes, hints, rating, replay, and next-level actions.
+- Warm cream, white, navy, and blue visual palette.
 
 ### Fixed
-- Fixed node paths in `scripts/ui/hud.gd`.
-- Verified 0 errors across 5 portrait resolutions: 360×800, 393×873, 412×915, 800×1280, 1200×1920.
+
+- Corrected HUD node paths.
+- Initial multi-viewport layout checks for common portrait sizes.
