@@ -20,6 +20,8 @@ const COLOR_PRIMARY_PATH := Color("#1B2538")
 const COLOR_HIGH_CONTRAST_PATH := Color("#07101F")
 const COLOR_ACCENT := Color("#3B82F6")
 const COLOR_ERROR := Color("#EF5B5B")
+const MARKER_START_PROGRESS := 0.06
+const MARKER_END_PROGRESS := 0.78
 
 func init_from_data(data: PuzzlePieceData, new_grid_size: float = 64.0) -> void:
 	piece_data = data
@@ -68,7 +70,7 @@ func set_color(color: Color) -> void:
 func _draw_tail_dot() -> void:
 	var tail_position := _cell_center(cells[0])
 	var points := PackedVector2Array()
-	var radius := clampf(grid_size * 0.095, 5.0, 7.0)
+	var radius := clampf(grid_size * 0.075, 4.5, 6.0)
 	for point_index in range(18):
 		var angle := (float(point_index) / 18.0) * TAU
 		points.append(tail_position + Vector2(cos(angle), sin(angle)) * radius)
@@ -78,20 +80,22 @@ func _draw_tail_dot() -> void:
 func _draw_arrowhead() -> void:
 	var head_position := _cell_center(cells[-1])
 	var angle := Vector2(exit_direction).angle()
-	var length := clampf(grid_size * 0.50, 27.0, 35.0)
-	var half_height := clampf(grid_size * 0.25, 14.0, 18.0)
-	var notch := clampf(grid_size * 0.055, 3.0, 4.5)
+	var length := clampf(grid_size * 0.42, 24.0, 30.0)
+	var half_height := clampf(grid_size * 0.22, 13.0, 16.0)
+	var base_offset := clampf(grid_size * 0.10, 5.0, 7.0)
+
+	# A simple filled triangle stays readable in every cardinal direction and
+	# avoids the forked/fish-tail silhouette created by the previous notch.
 	arrow_head.polygon = PackedVector2Array([
 		Vector2(length, 0.0).rotated(angle) + head_position,
-		Vector2(-notch, -half_height).rotated(angle) + head_position,
-		Vector2(notch, 0.0).rotated(angle) + head_position,
-		Vector2(-notch, half_height).rotated(angle) + head_position
+		Vector2(-base_offset, -half_height).rotated(angle) + head_position,
+		Vector2(-base_offset, half_height).rotated(angle) + head_position
 	])
 	arrow_head.color = _normal_color()
 
 func _create_direction_marker() -> void:
 	direction_marker = Polygon2D.new()
-	direction_marker.polygon = _circle_polygon(clampf(grid_size * 0.105, 6.0, 8.0))
+	direction_marker.polygon = _circle_polygon(clampf(grid_size * 0.075, 4.5, 6.0))
 	direction_marker.color = COLOR_ACCENT
 	direction_marker.visible = false
 	add_child(direction_marker)
@@ -137,7 +141,7 @@ func _set_direction_marker_progress(progress: float) -> void:
 	if direction_marker == null or line.points.is_empty():
 		return
 	direction_marker.visible = true
-	direction_marker.position = _point_on_path(clampf(progress, 0.0, 1.0))
+	direction_marker.position = _point_on_path(clampf(progress, MARKER_START_PROGRESS, MARKER_END_PROGRESS))
 
 func _point_on_path(progress: float) -> Vector2:
 	if line.points.is_empty():
@@ -223,30 +227,46 @@ func play_hint_pulse() -> void:
 	if is_removed:
 		return
 	_stop_pulse()
-	set_color(COLOR_ACCENT)
+	reset_color()
 	if SettingsManager.reduce_motion:
+		set_color(COLOR_ACCENT)
 		var color_timer := get_tree().create_timer(0.55)
 		color_timer.timeout.connect(reset_color)
 		return
 
-	direction_tween = create_tween().set_loops(3)
-	direction_tween.tween_method(_set_direction_marker_progress, 0.0, 1.0, 0.62).set_trans(Tween.TRANS_SINE)
-	direction_tween.tween_interval(0.12)
-	direction_tween.finished.connect(func() -> void:
+	direction_tween = create_tween()
+	direction_tween.tween_method(
+		_set_direction_marker_progress,
+		MARKER_START_PROGRESS,
+		MARKER_END_PROGRESS,
+		0.62
+	).set_trans(Tween.TRANS_SINE)
+	direction_tween.tween_callback(func() -> void:
 		_hide_direction_marker()
-		reset_color()
+		set_color(COLOR_ACCENT)
 	)
+	direction_tween.tween_interval(0.62)
+	direction_tween.tween_callback(reset_color)
 
 func play_final_clear_preview() -> void:
 	if is_removed:
 		return
 	_stop_pulse()
-	set_color(COLOR_ACCENT)
+	reset_color()
 	if SettingsManager.reduce_motion:
+		set_color(COLOR_ACCENT)
 		return
 	direction_tween = create_tween()
-	direction_tween.tween_method(_set_direction_marker_progress, 0.0, 1.0, 0.42).set_trans(Tween.TRANS_SINE)
-	direction_tween.finished.connect(_hide_direction_marker)
+	direction_tween.tween_method(
+		_set_direction_marker_progress,
+		MARKER_START_PROGRESS,
+		MARKER_END_PROGRESS,
+		0.38
+	).set_trans(Tween.TRANS_SINE)
+	direction_tween.tween_callback(func() -> void:
+		_hide_direction_marker()
+		set_color(COLOR_ACCENT)
+	)
 
 func set_idle_pulse(enabled: bool) -> void:
 	_stop_pulse()
@@ -260,8 +280,14 @@ func set_idle_pulse(enabled: bool) -> void:
 
 	reset_color()
 	direction_tween = create_tween().set_loops()
-	direction_tween.tween_method(_set_direction_marker_progress, 0.0, 1.0, 0.95).set_trans(Tween.TRANS_SINE)
-	direction_tween.tween_interval(0.55)
+	direction_tween.tween_method(
+		_set_direction_marker_progress,
+		MARKER_START_PROGRESS,
+		MARKER_END_PROGRESS,
+		0.82
+	).set_trans(Tween.TRANS_SINE)
+	direction_tween.tween_callback(_hide_direction_marker)
+	direction_tween.tween_interval(0.48)
 
 func _hide_direction_marker() -> void:
 	if direction_marker != null:
