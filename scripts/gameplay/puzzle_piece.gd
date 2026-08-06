@@ -6,7 +6,8 @@ const PathVisualGeometryScript = preload("res://scripts/gameplay/path_visual_geo
 var piece_data: PuzzlePieceData
 var piece_id: int
 var cells: Array[Vector2i] = []
-var exit_direction: Vector2i
+var exit_direction: Vector2i = Vector2i.ZERO
+var head_endpoint: int = PathVisualGeometry.HeadEndpoint.END
 var is_removed: bool = false
 var is_animating: bool = false
 var grid_size: float = 64.0
@@ -29,8 +30,17 @@ func init_from_data(data: PuzzlePieceData, new_grid_size: float = 64.0) -> void:
 	piece_data = data
 	piece_id = data.piece_id
 	cells = data.cells.duplicate()
-	exit_direction = data.exit_direction
+	head_endpoint = data.head_endpoint
+	exit_direction = PathVisualGeometryScript.direction_from_cells(cells, head_endpoint)
 	grid_size = new_grid_size
+	if data.exit_direction != Vector2i.ZERO and data.exit_direction != exit_direction:
+		push_warning(
+			"Piece %d data direction %s differs from ordered path direction %s." % [
+				piece_id,
+				data.exit_direction,
+				exit_direction
+			]
+		)
 
 func _ready() -> void:
 	if area != null:
@@ -39,8 +49,12 @@ func _ready() -> void:
 	_create_direction_marker()
 
 func _update_visuals() -> void:
-	if cells.is_empty():
+	if cells.size() < 2:
 		return
+
+	var source_points := PackedVector2Array()
+	for cell in cells:
+		source_points.append(_cell_center(cell))
 
 	line.clear_points()
 	line.default_color = _normal_color()
@@ -48,11 +62,19 @@ func _update_visuals() -> void:
 	line.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	line.end_cap_mode = Line2D.LINE_CAP_ROUND
 	line.joint_mode = Line2D.LINE_JOINT_ROUND
-	for cell in cells:
-		line.add_point(_cell_center(cell))
 
-	_draw_tail_dot()
-	_draw_arrowhead()
+	var head_length := clampf(grid_size * 0.38, 22.0, 28.0)
+	var shaft_trim := head_length * 0.44
+	var render_points := PathVisualGeometryScript.trim_shaft_for_head(
+		source_points,
+		shaft_trim,
+		head_endpoint
+	)
+	for point in render_points:
+		line.add_point(point)
+
+	_draw_tail_dot(source_points)
+	_draw_arrowhead(source_points, head_length)
 	_clear_legacy_collisions()
 
 func _cell_center(cell: Vector2i) -> Vector2:
@@ -60,14 +82,6 @@ func _cell_center(cell: Vector2i) -> Vector2:
 
 func _direction_vector() -> Vector2:
 	return Vector2(exit_direction).normalized()
-
-func _leading_cell_center() -> Vector2:
-	var index: int = PathVisualGeometryScript.leading_cell_index(cells, exit_direction)
-	return _cell_center(cells[index]) if index >= 0 else Vector2.ZERO
-
-func _trailing_cell_center() -> Vector2:
-	var index: int = PathVisualGeometryScript.trailing_cell_index(cells, exit_direction)
-	return _cell_center(cells[index]) if index >= 0 else Vector2.ZERO
 
 func _normal_color() -> Color:
 	return COLOR_HIGH_CONTRAST_PATH if SettingsManager.high_contrast else COLOR_PRIMARY_PATH
@@ -80,9 +94,8 @@ func set_color(color: Color) -> void:
 	arrow_head.color = color
 	tail_dot.color = color
 
-func _draw_tail_dot() -> void:
-	var direction: Vector2 = _direction_vector()
-	var tail_position: Vector2 = _trailing_cell_center() - direction * line.width * 0.10
+func _draw_tail_dot(source_points: PackedVector2Array) -> void:
+	var tail_position := PathVisualGeometryScript.tail_point(source_points, head_endpoint)
 	var points := PackedVector2Array()
 	var radius := clampf(grid_size * 0.070, 4.0, 5.5)
 	for point_index in range(18):
@@ -91,17 +104,15 @@ func _draw_tail_dot() -> void:
 	tail_dot.polygon = points
 	tail_dot.color = _normal_color()
 
-func _draw_arrowhead() -> void:
-	var direction: Vector2 = _direction_vector()
-	var head_position: Vector2 = _leading_cell_center()
-	var length := clampf(grid_size * 0.38, 22.0, 28.0)
+func _draw_arrowhead(source_points: PackedVector2Array, head_length: float) -> void:
+	var direction := PathVisualGeometryScript.direction_from_points(source_points, head_endpoint)
+	var head_anchor := PathVisualGeometryScript.head_point(source_points, head_endpoint)
 	var half_height := clampf(grid_size * 0.19, 11.0, 14.0)
-	var base_center: Vector2 = head_position + direction * line.width * 0.32
-
-	arrow_head.polygon = PathVisualGeometryScript.make_triangle(
-		base_center,
+	var tip := head_anchor + direction * head_length * 0.56
+	arrow_head.polygon = PathVisualGeometryScript.make_triangle_from_tip(
+		tip,
 		direction,
-		length,
+		head_length,
 		half_height
 	)
 	arrow_head.color = _normal_color()
@@ -110,12 +121,13 @@ func _create_direction_marker() -> void:
 	direction_marker = Polygon2D.new()
 	var marker_length := clampf(grid_size * 0.13, 7.0, 9.0)
 	var marker_half_height := clampf(grid_size * 0.075, 4.0, 5.5)
-	direction_marker.polygon = PathVisualGeometryScript.make_triangle(
-		Vector2.ZERO,
-		_direction_vector(),
+	direction_marker.polygon = PathVisualGeometryScript.make_triangle_from_tip(
+		Vector2(marker_length, 0.0),
+		Vector2.RIGHT,
 		marker_length,
 		marker_half_height
 	)
+	direction_marker.rotation = _direction_vector().angle()
 	direction_marker.color = COLOR_ACCENT
 	direction_marker.visible = false
 	add_child(direction_marker)
@@ -138,8 +150,17 @@ func distance_to_path(local_point: Vector2) -> float:
 			closest_distance,
 			_distance_to_segment(local_point, line.points[point_index], line.points[point_index + 1])
 		)
-	closest_distance = minf(closest_distance, local_point.distance_to(line.points[0]))
-	closest_distance = minf(closest_distance, local_point.distance_to(line.points[-1]))
+	var source_points := PackedVector2Array()
+	for cell in cells:
+		source_points.append(_cell_center(cell))
+	closest_distance = minf(
+		closest_distance,
+		local_point.distance_to(PathVisualGeometryScript.head_point(source_points, head_endpoint))
+	)
+	closest_distance = minf(
+		closest_distance,
+		local_point.distance_to(PathVisualGeometryScript.tail_point(source_points, head_endpoint))
+	)
 	return closest_distance
 
 func _distance_to_segment(point: Vector2, start: Vector2, end: Vector2) -> float:
@@ -151,12 +172,16 @@ func _distance_to_segment(point: Vector2, start: Vector2, end: Vector2) -> float
 	return point.distance_to(start + segment * amount)
 
 func _set_direction_marker_progress(progress: float) -> void:
-	if direction_marker == null or cells.is_empty():
+	if direction_marker == null or cells.size() < 2:
 		return
-	var direction: Vector2 = _direction_vector()
-	var head_position: Vector2 = _leading_cell_center()
-	var start_position: Vector2 = head_position - direction * grid_size * 0.46
-	var end_position: Vector2 = head_position - direction * line.width * 0.72
+	var source_points := PackedVector2Array()
+	for cell in cells:
+		source_points.append(_cell_center(cell))
+	var neighbour := PathVisualGeometryScript.neighbour_point(source_points, head_endpoint)
+	var head := PathVisualGeometryScript.head_point(source_points, head_endpoint)
+	var direction := PathVisualGeometryScript.direction_from_points(source_points, head_endpoint)
+	var start_position := neighbour.lerp(head, 0.32)
+	var end_position := head - direction * clampf(grid_size * 0.22, 10.0, 15.0)
 	direction_marker.visible = true
 	direction_marker.position = start_position.lerp(
 		end_position,
@@ -182,15 +207,15 @@ func animate_successful_escape() -> void:
 	tween.tween_callback(queue_free)
 
 func _spawn_escape_trail() -> void:
-	if cells.is_empty() or get_parent() == null:
+	if line.points.is_empty() or get_parent() == null:
 		return
 	var trail := Line2D.new()
 	trail.width = maxf(line.width - 5.0, 6.0)
 	trail.default_color = Color(COLOR_ACCENT.r, COLOR_ACCENT.g, COLOR_ACCENT.b, 0.35)
 	trail.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	trail.end_cap_mode = Line2D.LINE_CAP_ROUND
-	for cell in cells:
-		trail.add_point(_cell_center(cell))
+	for point in line.points:
+		trail.add_point(point)
 	get_parent().add_child(trail)
 	trail.position = position
 
