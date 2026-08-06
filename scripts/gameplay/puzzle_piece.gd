@@ -1,6 +1,8 @@
 extends Node2D
 class_name PuzzlePiece
 
+const PathVisualGeometryScript = preload("res://scripts/gameplay/path_visual_geometry.gd")
+
 var piece_data: PuzzlePieceData
 var piece_id: int
 var cells: Array[Vector2i] = []
@@ -20,8 +22,8 @@ const COLOR_PRIMARY_PATH := Color("#1B2538")
 const COLOR_HIGH_CONTRAST_PATH := Color("#07101F")
 const COLOR_ACCENT := Color("#3B82F6")
 const COLOR_ERROR := Color("#EF5B5B")
-const MARKER_START_PROGRESS := 0.06
-const MARKER_END_PROGRESS := 0.78
+const MARKER_START_PROGRESS := 0.0
+const MARKER_END_PROGRESS := 1.0
 
 func init_from_data(data: PuzzlePieceData, new_grid_size: float = 64.0) -> void:
 	piece_data = data
@@ -56,6 +58,17 @@ func _update_visuals() -> void:
 func _cell_center(cell: Vector2i) -> Vector2:
 	return Vector2(cell.x * grid_size + grid_size * 0.5, cell.y * grid_size + grid_size * 0.5)
 
+func _direction_vector() -> Vector2:
+	return Vector2(exit_direction).normalized()
+
+func _leading_cell_center() -> Vector2:
+	var index: int = PathVisualGeometryScript.leading_cell_index(cells, exit_direction)
+	return _cell_center(cells[index]) if index >= 0 else Vector2.ZERO
+
+func _trailing_cell_center() -> Vector2:
+	var index: int = PathVisualGeometryScript.trailing_cell_index(cells, exit_direction)
+	return _cell_center(cells[index]) if index >= 0 else Vector2.ZERO
+
 func _normal_color() -> Color:
 	return COLOR_HIGH_CONTRAST_PATH if SettingsManager.high_contrast else COLOR_PRIMARY_PATH
 
@@ -68,9 +81,10 @@ func set_color(color: Color) -> void:
 	tail_dot.color = color
 
 func _draw_tail_dot() -> void:
-	var tail_position := _cell_center(cells[0])
+	var direction: Vector2 = _direction_vector()
+	var tail_position: Vector2 = _trailing_cell_center() - direction * line.width * 0.10
 	var points := PackedVector2Array()
-	var radius := clampf(grid_size * 0.075, 4.5, 6.0)
+	var radius := clampf(grid_size * 0.070, 4.0, 5.5)
 	for point_index in range(18):
 		var angle := (float(point_index) / 18.0) * TAU
 		points.append(tail_position + Vector2(cos(angle), sin(angle)) * radius)
@@ -78,34 +92,33 @@ func _draw_tail_dot() -> void:
 	tail_dot.color = _normal_color()
 
 func _draw_arrowhead() -> void:
-	var head_position := _cell_center(cells[-1])
-	var angle := Vector2(exit_direction).angle()
-	var length := clampf(grid_size * 0.42, 24.0, 30.0)
-	var half_height := clampf(grid_size * 0.22, 13.0, 16.0)
-	var base_offset := clampf(grid_size * 0.10, 5.0, 7.0)
+	var direction: Vector2 = _direction_vector()
+	var head_position: Vector2 = _leading_cell_center()
+	var length := clampf(grid_size * 0.38, 22.0, 28.0)
+	var half_height := clampf(grid_size * 0.19, 11.0, 14.0)
+	var base_center: Vector2 = head_position + direction * line.width * 0.32
 
-	# A simple filled triangle stays readable in every cardinal direction and
-	# avoids the forked/fish-tail silhouette created by the previous notch.
-	arrow_head.polygon = PackedVector2Array([
-		Vector2(length, 0.0).rotated(angle) + head_position,
-		Vector2(-base_offset, -half_height).rotated(angle) + head_position,
-		Vector2(-base_offset, half_height).rotated(angle) + head_position
-	])
+	arrow_head.polygon = PathVisualGeometryScript.make_triangle(
+		base_center,
+		direction,
+		length,
+		half_height
+	)
 	arrow_head.color = _normal_color()
 
 func _create_direction_marker() -> void:
 	direction_marker = Polygon2D.new()
-	direction_marker.polygon = _circle_polygon(clampf(grid_size * 0.075, 4.5, 6.0))
+	var marker_length := clampf(grid_size * 0.13, 7.0, 9.0)
+	var marker_half_height := clampf(grid_size * 0.075, 4.0, 5.5)
+	direction_marker.polygon = PathVisualGeometryScript.make_triangle(
+		Vector2.ZERO,
+		_direction_vector(),
+		marker_length,
+		marker_half_height
+	)
 	direction_marker.color = COLOR_ACCENT
 	direction_marker.visible = false
 	add_child(direction_marker)
-
-func _circle_polygon(radius: float) -> PackedVector2Array:
-	var points := PackedVector2Array()
-	for point_index in range(20):
-		var angle := (float(point_index) / 20.0) * TAU
-		points.append(Vector2(cos(angle), sin(angle)) * radius)
-	return points
 
 func _clear_legacy_collisions() -> void:
 	if area == null:
@@ -138,36 +151,17 @@ func _distance_to_segment(point: Vector2, start: Vector2, end: Vector2) -> float
 	return point.distance_to(start + segment * amount)
 
 func _set_direction_marker_progress(progress: float) -> void:
-	if direction_marker == null or line.points.is_empty():
+	if direction_marker == null or cells.is_empty():
 		return
+	var direction: Vector2 = _direction_vector()
+	var head_position: Vector2 = _leading_cell_center()
+	var start_position: Vector2 = head_position - direction * grid_size * 0.46
+	var end_position: Vector2 = head_position - direction * line.width * 0.72
 	direction_marker.visible = true
-	direction_marker.position = _point_on_path(clampf(progress, MARKER_START_PROGRESS, MARKER_END_PROGRESS))
-
-func _point_on_path(progress: float) -> Vector2:
-	if line.points.is_empty():
-		return Vector2.ZERO
-	if line.points.size() == 1:
-		return line.points[0]
-
-	var total_length := 0.0
-	for index in range(line.points.size() - 1):
-		total_length += line.points[index].distance_to(line.points[index + 1])
-
-	var target_distance := total_length * progress
-	var traveled := 0.0
-	for index in range(line.points.size() - 1):
-		var start: Vector2 = line.points[index]
-		var finish: Vector2 = line.points[index + 1]
-		var segment_length := start.distance_to(finish)
-		if target_distance <= traveled + segment_length:
-			var amount := clampf(
-				(target_distance - traveled) / maxf(segment_length, 0.001),
-				0.0,
-				1.0
-			)
-			return start.lerp(finish, amount)
-		traveled += segment_length
-	return line.points[-1]
+	direction_marker.position = start_position.lerp(
+		end_position,
+		clampf(progress, MARKER_START_PROGRESS, MARKER_END_PROGRESS)
+	)
 
 func animate_successful_escape() -> void:
 	if is_removed:
