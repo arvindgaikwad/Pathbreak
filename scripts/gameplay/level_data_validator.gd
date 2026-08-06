@@ -53,13 +53,6 @@ static func validate(level: PuzzleLevelData) -> PackedStringArray:
 					"Piece %d has non-adjacent cells %s and %s." % [piece.piece_id, previous_cell, cell]
 				)
 
-		if piece.cells.size() > 1 and piece.exit_direction in VALID_DIRECTIONS:
-			var final_segment := piece.cells[-1] - piece.cells[-2]
-			if final_segment != piece.exit_direction:
-				errors.append(
-					"Piece %d exit direction must follow its final path segment." % piece.piece_id
-				)
-
 	return errors
 
 static func is_valid(level: PuzzleLevelData) -> bool:
