@@ -66,6 +66,79 @@ static func tail_point(points: PackedVector2Array, head_endpoint: int = HeadEndp
 		return Vector2.ZERO
 	return points[-1] if head_endpoint == HeadEndpoint.START else points[0]
 
+static func points_tail_to_head(
+	points: PackedVector2Array,
+	head_endpoint: int = HeadEndpoint.END
+) -> PackedVector2Array:
+	var ordered := PackedVector2Array()
+	if head_endpoint == HeadEndpoint.START:
+		for index in range(points.size() - 1, -1, -1):
+			ordered.append(points[index])
+	else:
+		ordered = points.duplicate()
+	return ordered
+
+static func polyline_length(points: PackedVector2Array) -> float:
+	var total := 0.0
+	for index in range(points.size() - 1):
+		total += points[index].distance_to(points[index + 1])
+	return total
+
+static func point_at_distance(points: PackedVector2Array, distance: float) -> Vector2:
+	if points.is_empty():
+		return Vector2.ZERO
+	if points.size() == 1:
+		return points[0]
+
+	var total_length := polyline_length(points)
+	var target := clampf(distance, 0.0, total_length)
+	var travelled := 0.0
+	for index in range(points.size() - 1):
+		var start: Vector2 = points[index]
+		var finish: Vector2 = points[index + 1]
+		var segment_length := start.distance_to(finish)
+		if target <= travelled + segment_length:
+			var amount := clampf(
+				(target - travelled) / maxf(segment_length, 0.001),
+				0.0,
+				1.0
+			)
+			return start.lerp(finish, amount)
+		travelled += segment_length
+	return points[-1]
+
+static func densify_polyline(
+	points: PackedVector2Array,
+	maximum_spacing: float
+) -> PackedVector2Array:
+	var dense := PackedVector2Array()
+	if points.is_empty():
+		return dense
+	dense.append(points[0])
+	var safe_spacing := maxf(maximum_spacing, 1.0)
+	for index in range(points.size() - 1):
+		var start: Vector2 = points[index]
+		var finish: Vector2 = points[index + 1]
+		var segment_length := start.distance_to(finish)
+		if segment_length <= 0.001:
+			continue
+		var steps := maxi(int(ceil(segment_length / safe_spacing)), 1)
+		for step_index in range(1, steps + 1):
+			var amount := float(step_index) / float(steps)
+			dense.append(start.lerp(finish, amount))
+	return dense
+
+static func cumulative_distances(points: PackedVector2Array) -> Array[float]:
+	var distances: Array[float] = []
+	if points.is_empty():
+		return distances
+	distances.append(0.0)
+	var travelled := 0.0
+	for index in range(1, points.size()):
+		travelled += points[index - 1].distance_to(points[index])
+		distances.append(travelled)
+	return distances
+
 static func trim_shaft_for_head(
 	points: PackedVector2Array,
 	trim_distance: float,
