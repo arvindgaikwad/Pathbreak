@@ -10,8 +10,9 @@ This file defines which documents should be trusted for the current build. A doc
 2. `VERTICAL_SLICE_REVIEW.md` for the approval gate and level status.
 3. The latest dated vertical-slice playtest record.
 4. `DECISIONS.md` for accepted architecture and product decisions.
-5. The focused specification documents below.
-6. Historical pull-request descriptions and older conversation notes.
+5. `AI_ANTI_SLOP_STANDARD.md` for the production quality bar applied to AI-assisted work.
+6. The focused specification documents below.
+7. Historical pull-request descriptions and older conversation notes.
 
 When documents disagree, update the stale document rather than guessing which statement is intended.
 
@@ -22,6 +23,7 @@ When documents disagree, update the stale document rather than guessing which st
 | `VERTICAL_SLICE_REVIEW.md` | Current | Approval criteria and Levels 1–5 review |
 | `VERTICAL_SLICE_PLAYTEST_2026-08-06.md` | Current evidence | Observed playtest results and limitations |
 | `DECISIONS.md` | Current | Architecture and product decision log |
+| `AI_ANTI_SLOP_STANDARD.md` | Active standard | Quality gate for AI-assisted design, code, levels, writing, and verification |
 | `GAME_DESIGN.md` | Current slice | Rules, connected loop, progression, roadmap |
 | `TECHNICAL_PLAN.md` | Current slice | Runtime architecture, persistence, input, tests |
 | `LEVEL_FORMAT.md` | Current | Canonical JSON authoring contract |
@@ -39,6 +41,8 @@ When documents disagree, update the stale document rather than guessing which st
 - The first incomplete Level 1 tutorial hint is free.
 - Normal hints are persistent and consumable.
 - At zero, the current testing build offers a functional `Refill +3` flow.
+- AI-generated output must pass the anti-slop intent, craft, and verification checks.
+- Parser warnings are defects and untested work must remain labelled unverified.
 - Final art direction and launch monetization are not approved.
 
 ## Documentation maintenance rule
