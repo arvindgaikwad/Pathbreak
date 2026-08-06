@@ -51,8 +51,10 @@ func _load_levels() -> void:
 		if not has_resource and not has_json:
 			break
 		var level := _load_level_resource(level_number)
-		if level != null:
-			level_data_list.append(level)
+		if level == null:
+			push_error("Stopped loading the level pack at invalid level %d." % level_number)
+			break
+		level_data_list.append(level)
 
 func _load_level_resource(level_number: int) -> PuzzleLevelData:
 	# JSON is the canonical, diff-friendly production format. Resources remain a temporary fallback.
@@ -65,7 +67,7 @@ func _load_level_resource(level_number: int) -> PuzzleLevelData:
 	var resource_path := "res://data/levels/level_%d.tres" % level_number
 	if ResourceLoader.exists(resource_path):
 		var resource_level := load(resource_path) as PuzzleLevelData
-		if resource_level != null and _is_level_data_valid(resource_level):
+		if resource_level != null and _validate_level(resource_level, resource_path):
 			return resource_level
 
 	push_warning("No valid level definition for level %d" % level_number)
@@ -105,33 +107,15 @@ func _load_json_level(json_path: String, level_number: int) -> PuzzleLevelData:
 			level.pieces.append(piece)
 			piece_id += 1
 
-	if not _is_level_data_valid(level):
-		push_warning("Rejected invalid level definition: %s" % json_path)
+	if not _validate_level(level, json_path):
 		return null
 	return level
 
-func _is_level_data_valid(level: PuzzleLevelData) -> bool:
-	if level.board_size.x <= 0 or level.board_size.y <= 0 or level.pieces.is_empty():
-		return false
-	var occupied_cells: Dictionary = {}
-	for piece in level.pieces:
-		if piece == null or piece.cells.is_empty():
-			return false
-		if piece.exit_direction not in [Vector2i.UP, Vector2i.DOWN, Vector2i.LEFT, Vector2i.RIGHT]:
-			return false
-		for cell_index in range(piece.cells.size()):
-			var cell := piece.cells[cell_index]
-			if not MovementValidator.is_inside_board(cell, level.board_size):
-				return false
-			if occupied_cells.has(cell):
-				return false
-			occupied_cells[cell] = piece.piece_id
-			if cell_index > 0:
-				var previous_cell := piece.cells[cell_index - 1]
-				var manhattan_distance := abs(cell.x - previous_cell.x) + abs(cell.y - previous_cell.y)
-				if manhattan_distance != 1:
-					return false
-	return true
+func _validate_level(level: PuzzleLevelData, source: String) -> bool:
+	var errors := LevelDataValidator.validate(level)
+	for error in errors:
+		push_warning("%s: %s" % [source, error])
+	return errors.is_empty()
 
 func _difficulty_for_level(level_number: int) -> String:
 	if level_number <= 3:
@@ -220,7 +204,7 @@ func _on_level_completed() -> void:
 	AudioManager.play_win_sound()
 	SettingsManager.play_haptic(&"celebration")
 	var elapsed_seconds := (Time.get_ticks_msec() - level_start_msec) / 1000.0
-	var stars := _calculate_stars(mistake_count, lives_left)
+	var stars := _calculate_stars(mistake_count)
 	var hints_used := maxi(hints_at_level_start - hints_left, 0)
 
 	SaveManager.hint_count = hints_left
@@ -255,10 +239,10 @@ func _on_level_completed() -> void:
 		load_level(current_level_idx)
 	)
 
-func _calculate_stars(mistakes: int, remaining_lives: int) -> int:
+func _calculate_stars(mistakes: int) -> int:
 	if mistakes == 0:
 		return 3
-	if remaining_lives > 0:
+	if mistakes <= 2:
 		return 2
 	return 1
 
