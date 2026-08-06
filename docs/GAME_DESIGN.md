@@ -1,22 +1,121 @@
 # Pathbreak — Game Design Document
 
-## 1. Executive Summary
-**Pathbreak** is an original Android puzzle game based on the concept of directional paths escaping an obstructed grid board. Players tap paths to escape the board. An unblocked path accelerates off the board in its exit direction; a blocked path produces tactile error feedback (coral red flash & shake).
+**Status:** Current vertical-slice design  
+**Last reviewed:** 2026-08-06
 
-## 2. Core Mechanics & Rules
-- **Grid Board**: N×M grid of cells containing 1 or more directional paths.
-- **Paths**: Occupy 1 or more grid cells. Paths can be straight or contain 90-degree bends.
-- **Arrowhead & Exit Direction**: Each path has an arrowhead indicating its exit direction (`Vector2i.UP`, `Vector2i.DOWN`, `Vector2i.LEFT`, `Vector2i.RIGHT`).
-- **Movement Rule**: A path can only move straight in its designated exit direction.
-- **Escape Validation**: A path can escape if no other path occupies any cell along its movement ray out of the board. Self-occupancy (cells belonging to the same path) is ignored during traversal checks.
-- **Unblocked Tap**: Disables path input, transitions to primary accent color (`#3978F6`), clears grid occupancy, accelerates off board with a fading trail, and plays a soft escape chime.
-- **Blocked Tap**: Triggers coral red flash (`#EF5B5B`), shakes position for 0.25s, records mistake count, and returns to primary navy (`#172033`). Does not end or fail the level during testing.
-- **Level Objective**: Clear all paths from the board.
+## 1. Product statement
 
-## 3. Progression & Phase Roadmap
-- **Phase 1**: Core Playable Prototype (5 handcrafted levels, responsive board, occupancy system, movement validator, unit tests).
-- **Phase 2**: Level Resource System & Progress Persistence (`PuzzleLevelData` resources, 10+ levels).
-- **Phase 3**: In-engine Level Editor & Solvability Validator.
-- **Phase 4**: Full Game Loop & Menus (Main Menu, Level Select, Results, Settings).
-- **Phase 5**: Content Expansion (50–75 levels, audio polish, particle effects).
-- **Phase 6**: Commercial Systems (Ads, IAP, Google Play Store configuration).
+Pathbreak is an original portrait puzzle game for Android. Players study a board of directional paths and tap paths in an order that lets every path escape without colliding with another path.
+
+The immediate product goal is not a large content library. It is a polished, device-tested five-level vertical slice that proves the core interaction, tutorial, feedback, menus, accessibility, saving, and progression.
+
+## 2. Core rules
+
+- A level contains an integer grid and one or more paths.
+- Each path occupies one or more cells and may contain orthogonal bends.
+- The path's arrowhead defines one cardinal escape direction.
+- A path can escape only when every ray extending from its occupied cells in that direction is free of other paths.
+- Cells belonging to the same path do not block that path.
+- Tapping an escapable path removes its occupancy and animates it off the board.
+- Tapping a blocked path records a move and mistake, removes one life, and shows error feedback.
+- The level is completed when every path has escaped.
+- The level fails when lives reach zero.
+
+## 3. Player feedback
+
+### Successful tap
+
+- Soft move sound.
+- Success haptic when enabled.
+- Path changes to blue.
+- Path escapes in its arrow direction.
+- A short trail is shown unless Reduce Motion is enabled.
+
+### Blocked tap
+
+- Error sound and haptic.
+- Coral path flash.
+- Short directional shake.
+- Life and mistake count update.
+- `That path is blocked` message.
+
+### Hint
+
+- Selects the first currently escapable path.
+- Pulses that path in blue.
+- Shows `Tap the blue path`.
+- The first Level 1 tutorial hint is free until the tutorial is completed.
+- Other hints consume the persistent hint bank.
+- At zero hints, the card becomes a `Refill +3` action and opens a confirmation popup.
+
+The current free three-hint refill exists to keep vertical-slice testing unblocked. The launch economy is not yet approved.
+
+## 4. Current connected game loop
+
+1. Open Main Menu.
+2. Continue to the first uncleared unlocked level or open Level Select.
+3. Play the board using touch or mouse.
+4. Use Hint, Restart, Back, or Settings as needed.
+5. Fail and retry when lives reach zero, or clear all paths.
+6. Review completion time, moves, mistakes, hints used, and stars.
+7. Replay or continue to the next level.
+8. Persist progress, best results, hint inventory, and settings.
+
+## 5. Progression
+
+- Current slice: Levels 1–5.
+- Level 1: tutorial board with two obvious safe openings.
+- Levels 2–3: compact introductory dependency patterns.
+- Level 4: representative mid-slice puzzle and failure/retry test.
+- Level 5: single-opening dependency-chain candidate.
+- Stars are based on mistakes:
+  - 3 stars: zero mistakes.
+  - 2 stars: one or two mistakes.
+  - 1 star: three or more mistakes while still completing the level.
+- Completing a level unlocks the next available level.
+
+Exact final difficulty, star thresholds, hint economy, and chapter pacing remain subject to playtesting.
+
+## 6. Current quality gate
+
+The five-level slice is approved only after:
+
+- All automated tests pass without parser warnings.
+- Fresh-save Level 1 tutorial behavior is verified.
+- Levels 1–5 are replayed naturally and recorded.
+- At least three people unfamiliar with the boards test the slice.
+- Android phone and tablet touch are verified.
+- Back button, pause, sound, haptics, Reduce Motion, and High Contrast are verified.
+- Hint depletion and refill are verified.
+- No clipping or unreadable layout appears at target portrait sizes.
+
+## 7. Production roadmap
+
+### Stage A — Approve vertical slice
+
+Finalize gameplay feel, Levels 1–5, tutorial, hint refill, accessibility, and device behavior.
+
+### Stage B — Build internal content tools
+
+Create a level editor, validator, solver-assisted audit, import/export, and batch test workflow.
+
+### Stage C — Produce launch content
+
+Author and test chapters, difficulty pacing, onboarding, and a launch-sized level pack.
+
+### Stage D — Final art and audio direction
+
+Approve branding, app icon, typography, chapter themes, particles, transitions, sound design, and store presentation.
+
+### Stage E — Commercial systems
+
+Decide and implement ads, purchases, analytics, privacy/consent, crash reporting, and Google Play configuration only after retention and product quality justify them.
+
+## 8. Explicit non-goals for the current branch
+
+- Seventy-five production levels.
+- Final monetization economy.
+- Online accounts or cloud saves.
+- Multiplayer or social features.
+- Final logo and marketing campaign.
+- Copying another game's boards, visuals, naming, UI, or assets.
