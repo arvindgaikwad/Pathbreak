@@ -1,6 +1,6 @@
 extends Node2D
 
-var PuzzlePieceScene = preload("res://scenes/PuzzlePiece.tscn")
+var PuzzlePieceScene = preload("res://scenes/game/puzzle_piece.tscn")
 
 var board_bounds := Rect2i(0, 0, 8, 8)
 var grid_size := 64.0
@@ -14,7 +14,7 @@ var is_drawing := false
 @onready var validate_label = $UI/Sidebar/ValidateLabel
 
 func _ready():
-	grid_dots.set_script(preload("res://scripts/GridDots.gd"))
+	grid_dots.set_script(preload("res://scripts/gameplay/board_manager.gd"))
 	grid_dots.update_grid(board_bounds, grid_size)
 	
 	$UI/Sidebar/SaveButton.pressed.connect(_on_save_pressed)
