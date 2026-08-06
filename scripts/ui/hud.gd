@@ -75,7 +75,7 @@ func _apply_styles() -> void:
 func _on_card_input(event: InputEvent, card: Control, callback: Callable) -> void:
 	if interaction_locked or not controls_enabled:
 		return
-	var activated := (
+	var activated: bool = (
 		event is InputEventMouseButton
 		and event.button_index == MOUSE_BUTTON_LEFT
 		and event.pressed
