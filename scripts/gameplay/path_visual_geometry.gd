@@ -1,157 +1,154 @@
 class_name PathVisualGeometry
 extends RefCounted
 
-const PROJECTION_EPSILON := 0.001
+enum HeadEndpoint {
+	START,
+	END
+}
 
-static func leading_cell_index(cells: Array[Vector2i], direction: Vector2i) -> int:
-	return _select_cell_index(cells, direction, true)
+const VALID_CARDINAL_DIRECTIONS: Array[Vector2i] = [
+	Vector2i.RIGHT,
+	Vector2i.DOWN,
+	Vector2i.LEFT,
+	Vector2i.UP
+]
 
-static func trailing_cell_index(cells: Array[Vector2i], direction: Vector2i) -> int:
-	return _select_cell_index(cells, direction, false)
+static func direction_from_cells(
+	cells: Array[Vector2i],
+	head_endpoint: HeadEndpoint = HeadEndpoint.END
+) -> Vector2i:
+	if cells.size() < 2:
+		return Vector2i.ZERO
+	if head_endpoint == HeadEndpoint.START:
+		return cells[0] - cells[1]
+	return cells[-1] - cells[-2]
 
-static func leading_point(points: PackedVector2Array, direction: Vector2) -> Vector2:
-	return _select_point(points, direction, true)
+static func direction_from_points(
+	points: PackedVector2Array,
+	head_endpoint: HeadEndpoint = HeadEndpoint.END
+) -> Vector2:
+	if points.size() < 2:
+		return Vector2.ZERO
+	var direction := points[0] - points[1] if head_endpoint == HeadEndpoint.START else points[-1] - points[-2]
+	return direction.normalized()
 
-static func trailing_point(points: PackedVector2Array, direction: Vector2) -> Vector2:
-	return _select_point(points, direction, false)
+static func head_cell_index(
+	cells: Array[Vector2i],
+	head_endpoint: HeadEndpoint = HeadEndpoint.END
+) -> int:
+	if cells.is_empty():
+		return -1
+	return 0 if head_endpoint == HeadEndpoint.START else cells.size() - 1
 
-static func cell_projection_span(cells: Array[Vector2i], direction: Vector2i) -> int:
-	if cells.is_empty() or direction == Vector2i.ZERO:
-		return 0
-	var minimum_projection: int = _cell_projection(cells[0], direction)
-	var maximum_projection: int = minimum_projection
-	for cell in cells:
-		var projection: int = _cell_projection(cell, direction)
-		minimum_projection = mini(minimum_projection, projection)
-		maximum_projection = maxi(maximum_projection, projection)
-	return maximum_projection - minimum_projection
+static func neighbour_cell_index(
+	cells: Array[Vector2i],
+	head_endpoint: HeadEndpoint = HeadEndpoint.END
+) -> int:
+	if cells.size() < 2:
+		return -1
+	return 1 if head_endpoint == HeadEndpoint.START else cells.size() - 2
 
-static func make_triangle(
-	base_center: Vector2,
+static func tail_cell_index(
+	cells: Array[Vector2i],
+	head_endpoint: HeadEndpoint = HeadEndpoint.END
+) -> int:
+	if cells.is_empty():
+		return -1
+	return cells.size() - 1 if head_endpoint == HeadEndpoint.START else 0
+
+static func head_point(
+	points: PackedVector2Array,
+	head_endpoint: HeadEndpoint = HeadEndpoint.END
+) -> Vector2:
+	if points.is_empty():
+		return Vector2.ZERO
+	return points[0] if head_endpoint == HeadEndpoint.START else points[-1]
+
+static func neighbour_point(
+	points: PackedVector2Array,
+	head_endpoint: HeadEndpoint = HeadEndpoint.END
+) -> Vector2:
+	if points.size() < 2:
+		return Vector2.ZERO
+	return points[1] if head_endpoint == HeadEndpoint.START else points[-2]
+
+static func tail_point(
+	points: PackedVector2Array,
+	head_endpoint: HeadEndpoint = HeadEndpoint.END
+) -> Vector2:
+	if points.is_empty():
+		return Vector2.ZERO
+	return points[-1] if head_endpoint == HeadEndpoint.START else points[0]
+
+static func trim_shaft_for_head(
+	points: PackedVector2Array,
+	trim_distance: float,
+	head_endpoint: HeadEndpoint = HeadEndpoint.END
+) -> PackedVector2Array:
+	var trimmed := points.duplicate()
+	if trimmed.size() < 2:
+		return trimmed
+	var direction := direction_from_points(trimmed, head_endpoint)
+	if direction.is_zero_approx():
+		return trimmed
+	var head_index := 0 if head_endpoint == HeadEndpoint.START else trimmed.size() - 1
+	trimmed[head_index] -= direction * maxf(trim_distance, 0.0)
+	return trimmed
+
+static func make_triangle_from_tip(
+	tip: Vector2,
 	direction: Vector2,
 	length: float,
 	half_height: float
 ) -> PackedVector2Array:
-	var points := PackedVector2Array()
+	var triangle := PackedVector2Array()
 	if direction.length_squared() <= 0.0001:
-		return points
-	var forward: Vector2 = direction.normalized()
-	var side: Vector2 = forward.orthogonal()
-	points.append(base_center + forward * length)
-	points.append(base_center + side * half_height)
-	points.append(base_center - side * half_height)
-	return points
+		return triangle
+	var forward := direction.normalized()
+	var side := forward.orthogonal()
+	var base_center := tip - forward * length
+	triangle.append(tip)
+	triangle.append(base_center + side * half_height)
+	triangle.append(base_center - side * half_height)
+	return triangle
 
-static func _select_cell_index(
-	cells: Array[Vector2i],
-	direction: Vector2i,
-	leading: bool
-) -> int:
-	if cells.is_empty() or direction == Vector2i.ZERO:
-		return -1
-	if cells.size() == 1:
-		return 0
+static func validate_ordered_cells(cells: Array[Vector2i]) -> PackedStringArray:
+	var errors := PackedStringArray()
+	if cells.size() < 2:
+		errors.append("Path requires at least two ordered cells.")
+		return errors
 
-	var target_projection: int = _cell_projection(cells[0], direction)
-	for cell in cells:
-		var projection: int = _cell_projection(cell, direction)
-		if leading:
-			target_projection = maxi(target_projection, projection)
+	var seen: Dictionary = {}
+	for cell_index in range(cells.size()):
+		var cell := cells[cell_index]
+		if seen.has(cell):
+			errors.append("Path contains duplicate cell %s." % cell)
 		else:
-			target_projection = mini(target_projection, projection)
+			seen[cell] = true
+		if cell_index == 0:
+			continue
+		var step := cell - cells[cell_index - 1]
+		if step not in VALID_CARDINAL_DIRECTIONS:
+			errors.append(
+				"Cells %s and %s are not cardinally adjacent." % [
+					cells[cell_index - 1],
+					cell
+				]
+			)
 
-	var candidates: Array[int] = []
-	for index in range(cells.size()):
-		if _cell_projection(cells[index], direction) == target_projection:
-			candidates.append(index)
+	var direction := direction_from_cells(cells)
+	if direction not in VALID_CARDINAL_DIRECTIONS:
+		errors.append("Final segment does not produce a valid cardinal head direction.")
+	return errors
 
-	# Prefer an authored endpoint when it is already on the leading/trailing edge.
-	# For projection ties this preserves the previous last=head, first=tail rule.
-	var preferred_endpoints: Array[int] = []
-	if leading:
-		preferred_endpoints.append(cells.size() - 1)
-		preferred_endpoints.append(0)
-	else:
-		preferred_endpoints.append(0)
-		preferred_endpoints.append(cells.size() - 1)
-	for endpoint_index in preferred_endpoints:
-		if endpoint_index in candidates:
-			return endpoint_index
-
-	return _closest_cell_to_perpendicular_center(cells, candidates, direction)
-
-static func _closest_cell_to_perpendicular_center(
+static func legacy_head_endpoint(
 	cells: Array[Vector2i],
-	candidates: Array[int],
-	direction: Vector2i
+	legacy_direction: Vector2i
 ) -> int:
-	if candidates.is_empty():
+	if cells.size() < 2:
 		return -1
-	var perpendicular := Vector2(-float(direction.y), float(direction.x))
-	var center_projection := 0.0
-	for cell in cells:
-		center_projection += Vector2(cell).dot(perpendicular)
-	center_projection /= float(cells.size())
-
-	var best_index: int = candidates[0]
-	var best_distance := INF
-	for candidate_index in candidates:
-		var candidate_projection: float = Vector2(cells[candidate_index]).dot(perpendicular)
-		var distance := absf(candidate_projection - center_projection)
-		if distance < best_distance:
-			best_distance = distance
-			best_index = candidate_index
-	return best_index
-
-static func _select_point(
-	points: PackedVector2Array,
-	direction: Vector2,
-	leading: bool
-) -> Vector2:
-	if points.is_empty() or direction.length_squared() <= 0.0001:
-		return Vector2.ZERO
-	if points.size() == 1:
-		return points[0]
-
-	var forward: Vector2 = direction.normalized()
-	var target_projection: float = points[0].dot(forward)
-	for point in points:
-		var projection: float = point.dot(forward)
-		if leading:
-			target_projection = maxf(target_projection, projection)
-		else:
-			target_projection = minf(target_projection, projection)
-
-	var candidates: Array[int] = []
-	for index in range(points.size()):
-		if absf(points[index].dot(forward) - target_projection) <= PROJECTION_EPSILON:
-			candidates.append(index)
-
-	var preferred_endpoints: Array[int] = []
-	if leading:
-		preferred_endpoints.append(points.size() - 1)
-		preferred_endpoints.append(0)
-	else:
-		preferred_endpoints.append(0)
-		preferred_endpoints.append(points.size() - 1)
-	for endpoint_index in preferred_endpoints:
-		if endpoint_index in candidates:
-			return points[endpoint_index]
-
-	var perpendicular: Vector2 = forward.orthogonal()
-	var center_projection := 0.0
-	for point in points:
-		center_projection += point.dot(perpendicular)
-	center_projection /= float(points.size())
-
-	var best_index: int = candidates[0]
-	var best_distance := INF
-	for candidate_index in candidates:
-		var distance := absf(points[candidate_index].dot(perpendicular) - center_projection)
-		if distance < best_distance:
-			best_distance = distance
-			best_index = candidate_index
-	return points[best_index]
-
-static func _cell_projection(cell: Vector2i, direction: Vector2i) -> int:
-	return cell.x * direction.x + cell.y * direction.y
+	if legacy_direction == direction_from_cells(cells, HeadEndpoint.END):
+		return HeadEndpoint.END
+	if legacy_direction == direction_from_cells(cells, HeadEndpoint.START):
+		return HeadEndpoint.START
+	return -1
