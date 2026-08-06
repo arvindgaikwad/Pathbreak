@@ -1,0 +1,19 @@
+{
+  "width": 8,
+  "height": 8,
+  "lives": 3,
+  "pieces": [
+    {
+      "cells": [[2, 2], [3, 2]],
+      "direction": [1, 0]
+    },
+    {
+      "cells": [[4, 2], [4, 3], [5, 3]],
+      "direction": [0, 1]
+    },
+    {
+      "cells": [[3, 4], [4, 4]],
+      "direction": [-1, 0]
+    }
+  ]
+}

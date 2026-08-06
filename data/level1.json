@@ -1,0 +1,15 @@
+{
+  "width": 6,
+  "height": 6,
+  "lives": 3,
+  "pieces": [
+    {
+      "cells": [[2, 2], [3, 2]],
+      "direction": [1, 0]
+    },
+    {
+      "cells": [[4, 2], [4, 3]],
+      "direction": [0, -1]
+    }
+  ]
+}

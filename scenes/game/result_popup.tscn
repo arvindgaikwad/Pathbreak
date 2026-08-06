@@ -1,0 +1,200 @@
+[gd_scene load_steps=3 format=3 uid="uid://resultpopup001"]
+
+[ext_resource type="Script" path="res://scripts/ui/result_popup.gd" id="1_1"]
+[ext_resource type="FontFile" path="res://assets/fonts/OpenSans-Bold.ttf" id="2_1"]
+
+[node name="ResultPopup" type="CanvasLayer"]
+script = ExtResource("1_1")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.4, 0.42, 0.45, 0.5)
+
+[node name="Panel" type="PanelContainer" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -320.0
+offset_right = 300.0
+offset_bottom = 320.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(300, 320)
+
+[node name="Margin" type="MarginContainer" parent="Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 36
+theme_override_constants/margin_top = 48
+theme_override_constants/margin_right = 36
+theme_override_constants/margin_bottom = 36
+
+[node name="VBox" type="VBoxContainer" parent="Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="TitleLabel" type="Label" parent="Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
+theme_override_font_sizes/font_size = 36
+theme_override_fonts/font = ExtResource("2_1")
+text = "Well done!"
+horizontal_alignment = 1
+
+[node name="SubLabel" type="Label" parent="Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.443, 0.49, 0.576, 1)
+theme_override_font_sizes/font_size = 18
+text = "Level 1 completed"
+horizontal_alignment = 1
+
+[node name="StatsContainer" type="MarginContainer" parent="Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="VBox" type="VBoxContainer" parent="Panel/Margin/VBox/StatsContainer"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="TimeRow" type="HBoxContainer" parent="Panel/Margin/VBox/StatsContainer/VBox"]
+layout_mode = 2
+
+[node name="TimeLabel" type="Label" parent="Panel/Margin/VBox/StatsContainer/VBox/TimeRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.443, 0.49, 0.576, 1)
+theme_override_font_sizes/font_size = 18
+text = "⏱  Time"
+
+[node name="TimeValue" type="Label" parent="Panel/Margin/VBox/StatsContainer/VBox/TimeRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_fonts/font = ExtResource("2_1")
+text = "00:45"
+
+[node name="MovesRow" type="HBoxContainer" parent="Panel/Margin/VBox/StatsContainer/VBox"]
+layout_mode = 2
+
+[node name="MovesLabel" type="Label" parent="Panel/Margin/VBox/StatsContainer/VBox/MovesRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.443, 0.49, 0.576, 1)
+theme_override_font_sizes/font_size = 18
+text = "⇄  Mistakes"
+
+[node name="MovesValue" type="Label" parent="Panel/Margin/VBox/StatsContainer/VBox/MovesRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_fonts/font = ExtResource("2_1")
+text = "0"
+
+[node name="HintsRow" type="HBoxContainer" parent="Panel/Margin/VBox/StatsContainer/VBox"]
+layout_mode = 2
+
+[node name="HintsLabel" type="Label" parent="Panel/Margin/VBox/StatsContainer/VBox/HintsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.443, 0.49, 0.576, 1)
+theme_override_font_sizes/font_size = 18
+text = "💡  Hints used"
+
+[node name="HintsValue" type="Label" parent="Panel/Margin/VBox/StatsContainer/VBox/HintsRow"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.106, 0.145, 0.22, 1)
+theme_override_font_sizes/font_size = 18
+theme_override_fonts/font = ExtResource("2_1")
+text = "0"
+
+[node name="StarRating" type="CenterContainer" parent="Panel/Margin/VBox"]
+layout_mode = 2
+
+[node name="StarsLabel" type="Label" parent="Panel/Margin/VBox/StarRating"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.96, 0.65, 0.13, 1)
+theme_override_font_sizes/font_size = 36
+text = "★★★"
+
+[node name="Spacer" type="Control" parent="Panel/Margin/VBox"]
+custom_minimum_size = Vector2(0, 8)
+layout_mode = 2
+
+[node name="HBoxButtons" type="HBoxContainer" parent="Panel/Margin/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="ReplayButton" type="Button" parent="Panel/Margin/VBox/HBoxButtons"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(0.145, 0.388, 0.922, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_fonts/font = ExtResource("2_1")
+text = "↺ Replay"
+
+[node name="NextButton" type="Button" parent="Panel/Margin/VBox/HBoxButtons"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_font_sizes/font_size = 20
+theme_override_fonts/font = ExtResource("2_1")
+text = "Next Level →"
+
+[node name="StarBadge" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_top = -320.0
+offset_bottom = -320.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BadgeCircle" type="ColorRect" parent="StarBadge"]
+custom_minimum_size = Vector2(80, 80)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -40.0
+offset_top = -40.0
+offset_right = 40.0
+offset_bottom = 40.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 1, 1)
+
+[node name="StarIcon" type="Label" parent="StarBadge"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -24.0
+offset_top = -24.0
+offset_right = 24.0
+offset_bottom = 24.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.96, 0.65, 0.13, 1)
+theme_override_font_sizes/font_size = 36
+text = "⭐"
+horizontal_alignment = 1
+vertical_alignment = 1

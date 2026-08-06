@@ -1,0 +1,42 @@
+[gd_resource type="Resource" script_class="PuzzleLevelData" load_steps=7 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/puzzle_piece_data.gd" id="1_1"]
+[ext_resource type="Script" path="res://scripts/gameplay/puzzle_level_data.gd" id="2_1"]
+
+[sub_resource type="Resource" id="Piece_1"]
+script = ExtResource("1_1")
+piece_id = 1
+cells = Array[Vector2i]([Vector2i(2, 1), Vector2i(2, 2)])
+exit_direction = Vector2i(0, -1)
+
+[sub_resource type="Resource" id="Piece_2"]
+script = ExtResource("1_1")
+piece_id = 2
+cells = Array[Vector2i]([Vector2i(5, 2), Vector2i(5, 3)])
+exit_direction = Vector2i(1, 0)
+
+[sub_resource type="Resource" id="Piece_3"]
+script = ExtResource("1_1")
+piece_id = 3
+cells = Array[Vector2i]([Vector2i(1, 4), Vector2i(2, 4), Vector2i(3, 4)])
+exit_direction = Vector2i(-1, 0)
+
+[sub_resource type="Resource" id="Piece_4"]
+script = ExtResource("1_1")
+piece_id = 4
+cells = Array[Vector2i]([Vector2i(4, 5), Vector2i(4, 6)])
+exit_direction = Vector2i(0, 1)
+
+[sub_resource type="Resource" id="Piece_5"]
+script = ExtResource("1_1")
+piece_id = 5
+cells = Array[Vector2i]([Vector2i(6, 4), Vector2i(6, 5)])
+exit_direction = Vector2i(0, 1)
+
+[resource]
+script = ExtResource("2_1")
+level_id = 3
+board_size = Vector2i(8, 8)
+difficulty = "Normal"
+starting_lives = 3
+pieces = Array[ExtResource("1_1")]([SubResource("Piece_1"), SubResource("Piece_2"), SubResource("Piece_3"), SubResource("Piece_4"), SubResource("Piece_5")])
