@@ -10,6 +10,7 @@ signal settings_pressed
 @onready var subtitle_label: Label = $TopBar/Margin/VBox/SubtitleLabel
 @onready var lives_count_label: Label = $BottomBar/Margin/HBox/LivesCard/VBox/IconBox/CountLabel
 @onready var hint_count_badge: Label = $BottomBar/Margin/HBox/HintCard/VBox/IconBox/BadgeLabel
+@onready var hint_title_label: Label = $BottomBar/Margin/HBox/HintCard/VBox/TitleLabel
 @onready var lives_card: PanelContainer = $BottomBar/Margin/HBox/LivesCard
 @onready var hint_card: PanelContainer = $BottomBar/Margin/HBox/HintCard
 @onready var restart_card: PanelContainer = $BottomBar/Margin/HBox/RestartCard
@@ -127,13 +128,16 @@ func update_hud(level_num: int, difficulty: String, lives: int, hints: int) -> v
 	var tutorial_hint_available := level_num == 1 and not SaveManager.tutorial_completed
 	if tutorial_hint_available:
 		hint_count_badge.text = "FREE"
+		hint_title_label.text = "Hint"
 	elif hints > 0:
 		hint_count_badge.text = "×%d" % hints
+		hint_title_label.text = "Hint"
 	else:
-		hint_count_badge.text = "0"
+		hint_count_badge.text = "+3"
+		hint_title_label.text = "Refill"
 
-	var hint_available := hints > 0 or tutorial_hint_available
-	hint_card.modulate = Color.WHITE if hint_available else Color(1.0, 1.0, 1.0, 0.5)
+	# The card remains active at zero because it opens the refill flow.
+	hint_card.modulate = Color.WHITE
 
 func show_message(message: String, accent: bool = false) -> void:
 	if message_tween != null and message_tween.is_valid():
