@@ -14,6 +14,13 @@ var grid_size: float = 64.0
 var direction_marker: Polygon2D = null
 var direction_tween: Tween = null
 
+var snake_route := PackedVector2Array()
+var snake_sample_distances: Array[float] = []
+var snake_body_length: float = 0.0
+var snake_travel_distance: float = 0.0
+var snake_head_length: float = 0.0
+var snake_shaft_trim: float = 0.0
+
 @onready var line: Line2D = $Line2D
 @onready var arrow_head: Polygon2D = $ArrowHead
 @onready var tail_dot: Polygon2D = $TailDot
@@ -25,6 +32,7 @@ const COLOR_ACCENT := Color("#3B82F6")
 const COLOR_ERROR := Color("#EF5B5B")
 const MARKER_START_PROGRESS := 0.0
 const MARKER_END_PROGRESS := 1.0
+const SNAKE_ESCAPE_DURATION := 0.28
 
 func init_from_data(data: PuzzlePieceData, new_grid_size: float = 64.0) -> void:
 	piece_data = data
@@ -52,10 +60,7 @@ func _update_visuals() -> void:
 	if cells.size() < 2:
 		return
 
-	var source_points := PackedVector2Array()
-	for cell in cells:
-		source_points.append(_cell_center(cell))
-
+	var source_points := _source_points()
 	line.clear_points()
 	line.default_color = _normal_color()
 	line.width = clampf(grid_size * 0.23, 12.0, 17.0)
@@ -70,12 +75,21 @@ func _update_visuals() -> void:
 		shaft_trim,
 		head_endpoint
 	)
-	for point in render_points:
-		line.add_point(point)
+	line.points = render_points
 
-	_draw_tail_dot(source_points)
-	_draw_arrowhead(source_points, head_length)
+	_set_tail_dot_center(PathVisualGeometryScript.tail_point(source_points, head_endpoint))
+	_set_arrowhead_geometry(
+		PathVisualGeometryScript.head_point(source_points, head_endpoint),
+		PathVisualGeometryScript.direction_from_points(source_points, head_endpoint),
+		head_length
+	)
 	_clear_legacy_collisions()
+
+func _source_points() -> PackedVector2Array:
+	var source_points := PackedVector2Array()
+	for cell in cells:
+		source_points.append(_cell_center(cell))
+	return source_points
 
 func _cell_center(cell: Vector2i) -> Vector2:
 	return Vector2(cell.x * grid_size + grid_size * 0.5, cell.y * grid_size + grid_size * 0.5)
@@ -94,19 +108,20 @@ func set_color(color: Color) -> void:
 	arrow_head.color = color
 	tail_dot.color = color
 
-func _draw_tail_dot(source_points: PackedVector2Array) -> void:
-	var tail_position := PathVisualGeometryScript.tail_point(source_points, head_endpoint)
+func _set_tail_dot_center(tail_position: Vector2) -> void:
 	var points := PackedVector2Array()
 	var radius := clampf(grid_size * 0.070, 4.0, 5.5)
 	for point_index in range(18):
 		var angle := (float(point_index) / 18.0) * TAU
 		points.append(tail_position + Vector2(cos(angle), sin(angle)) * radius)
 	tail_dot.polygon = points
-	tail_dot.color = _normal_color()
+	tail_dot.color = line.default_color
 
-func _draw_arrowhead(source_points: PackedVector2Array, head_length: float) -> void:
-	var direction := PathVisualGeometryScript.direction_from_points(source_points, head_endpoint)
-	var head_anchor := PathVisualGeometryScript.head_point(source_points, head_endpoint)
+func _set_arrowhead_geometry(
+	head_anchor: Vector2,
+	direction: Vector2,
+	head_length: float
+) -> void:
 	var half_height := clampf(grid_size * 0.19, 11.0, 14.0)
 	var tip := head_anchor + direction * head_length * 0.56
 	arrow_head.polygon = PathVisualGeometryScript.make_triangle_from_tip(
@@ -115,7 +130,7 @@ func _draw_arrowhead(source_points: PackedVector2Array, head_length: float) -> v
 		head_length,
 		half_height
 	)
-	arrow_head.color = _normal_color()
+	arrow_head.color = line.default_color
 
 func _create_direction_marker() -> void:
 	direction_marker = Polygon2D.new()
@@ -150,9 +165,7 @@ func distance_to_path(local_point: Vector2) -> float:
 			closest_distance,
 			_distance_to_segment(local_point, line.points[point_index], line.points[point_index + 1])
 		)
-	var source_points := PackedVector2Array()
-	for cell in cells:
-		source_points.append(_cell_center(cell))
+	var source_points := _source_points()
 	closest_distance = minf(
 		closest_distance,
 		local_point.distance_to(PathVisualGeometryScript.head_point(source_points, head_endpoint))
@@ -174,9 +187,7 @@ func _distance_to_segment(point: Vector2, start: Vector2, end: Vector2) -> float
 func _set_direction_marker_progress(progress: float) -> void:
 	if direction_marker == null or cells.size() < 2:
 		return
-	var source_points := PackedVector2Array()
-	for cell in cells:
-		source_points.append(_cell_center(cell))
+	var source_points := _source_points()
 	var neighbour := PathVisualGeometryScript.neighbour_point(source_points, head_endpoint)
 	var head := PathVisualGeometryScript.head_point(source_points, head_endpoint)
 	var direction := PathVisualGeometryScript.direction_from_points(source_points, head_endpoint)
@@ -188,6 +199,9 @@ func _set_direction_marker_progress(progress: float) -> void:
 		clampf(progress, MARKER_START_PROGRESS, MARKER_END_PROGRESS)
 	)
 
+func get_escape_animation_duration() -> float:
+	return 0.18 if SettingsManager.reduce_motion else SNAKE_ESCAPE_DURATION
+
 func animate_successful_escape() -> void:
 	if is_removed:
 		return
@@ -195,33 +209,96 @@ func animate_successful_escape() -> void:
 	is_animating = true
 	_stop_pulse()
 	set_color(COLOR_ACCENT)
-	if not SettingsManager.reduce_motion:
-		_spawn_escape_trail()
 
-	var duration := 0.18 if SettingsManager.reduce_motion else 0.35
+	if SettingsManager.reduce_motion or not _prepare_snake_escape():
+		_animate_reduced_motion_escape()
+		return
+
+	var tween := create_tween()
+	tween.tween_method(
+		_set_snake_escape_progress,
+		0.0,
+		1.0,
+		SNAKE_ESCAPE_DURATION
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_callback(queue_free)
+
+func _prepare_snake_escape() -> bool:
+	var source_points := _source_points()
+	var ordered_points := PathVisualGeometryScript.points_tail_to_head(
+		source_points,
+		head_endpoint
+	)
+	if ordered_points.size() < 2:
+		return false
+
+	var sample_spacing := clampf(grid_size * 0.10, 5.0, 8.0)
+	var dense_points := PathVisualGeometryScript.densify_polyline(
+		ordered_points,
+		sample_spacing
+	)
+	if dense_points.size() < 2:
+		return false
+
+	snake_sample_distances = PathVisualGeometryScript.cumulative_distances(dense_points)
+	if snake_sample_distances.is_empty():
+		return false
+
+	snake_body_length = snake_sample_distances[-1]
+	snake_head_length = clampf(grid_size * 0.38, 22.0, 28.0)
+	snake_shaft_trim = snake_head_length * 0.44
+	var offscreen_distance := grid_size * 12.0
+	snake_travel_distance = snake_body_length + offscreen_distance
+	snake_route = ordered_points.duplicate()
+	snake_route.append(ordered_points[-1] + _direction_vector() * snake_travel_distance)
+	_set_snake_escape_progress(0.0)
+	return true
+
+func _set_snake_escape_progress(progress: float) -> void:
+	if snake_route.size() < 2 or snake_sample_distances.is_empty():
+		return
+
+	var travel := snake_travel_distance * clampf(progress, 0.0, 1.0)
+	var moving_points := PackedVector2Array()
+	for sample_distance in snake_sample_distances:
+		moving_points.append(
+			PathVisualGeometryScript.point_at_distance(
+				snake_route,
+				sample_distance + travel
+			)
+		)
+	if moving_points.size() < 2:
+		return
+
+	var direction := _direction_vector()
+	var head_anchor: Vector2 = moving_points[-1]
+	var tail_anchor: Vector2 = moving_points[0]
+	var render_points := PackedVector2Array()
+	for point_index in range(moving_points.size()):
+		var distance_from_head := snake_body_length - snake_sample_distances[point_index]
+		if distance_from_head > snake_shaft_trim:
+			render_points.append(moving_points[point_index])
+
+	var trimmed_head := head_anchor - direction * snake_shaft_trim
+	if render_points.is_empty():
+		render_points.append(trimmed_head)
+	elif render_points[-1].distance_to(trimmed_head) > 0.1:
+		render_points.append(trimmed_head)
+	else:
+		render_points[render_points.size() - 1] = trimmed_head
+
+	line.points = render_points
+	_set_tail_dot_center(tail_anchor)
+	_set_arrowhead_geometry(head_anchor, direction, snake_head_length)
+
+func _animate_reduced_motion_escape() -> void:
+	var duration := 0.18
 	var escape_distance := grid_size * 12.0
 	var final_position := position + Vector2(exit_direction) * escape_distance
 	var tween := create_tween()
 	tween.tween_property(self, "position", final_position, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	tween.parallel().tween_property(self, "modulate:a", 0.0, duration * 0.75)
 	tween.tween_callback(queue_free)
-
-func _spawn_escape_trail() -> void:
-	if line.points.is_empty() or get_parent() == null:
-		return
-	var trail := Line2D.new()
-	trail.width = maxf(line.width - 5.0, 6.0)
-	trail.default_color = Color(COLOR_ACCENT.r, COLOR_ACCENT.g, COLOR_ACCENT.b, 0.35)
-	trail.begin_cap_mode = Line2D.LINE_CAP_ROUND
-	trail.end_cap_mode = Line2D.LINE_CAP_ROUND
-	for point in line.points:
-		trail.add_point(point)
-	get_parent().add_child(trail)
-	trail.position = position
-
-	var tween := create_tween()
-	tween.tween_property(trail, "modulate:a", 0.0, 0.28)
-	tween.tween_callback(trail.queue_free)
 
 func animate_blocked_tap() -> void:
 	if is_removed or is_animating:
