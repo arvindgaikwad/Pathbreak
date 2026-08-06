@@ -50,11 +50,11 @@ func _prepare_clickable_card(card: Control) -> void:
 	card.mouse_filter = Control.MOUSE_FILTER_STOP
 	_set_descendant_mouse_filter(card, Control.MOUSE_FILTER_IGNORE)
 
-func _set_descendant_mouse_filter(root: Node, filter: Control.MouseFilter) -> void:
+func _set_descendant_mouse_filter(root: Node, filter_value: int) -> void:
 	for child in root.get_children():
 		if child is Control:
-			(child as Control).mouse_filter = filter
-		_set_descendant_mouse_filter(child, filter)
+			(child as Control).mouse_filter = filter_value
+		_set_descendant_mouse_filter(child, filter_value)
 
 func _apply_styles() -> void:
 	var card_style := StyleBoxFlat.new()
