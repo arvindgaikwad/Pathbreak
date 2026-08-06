@@ -92,3 +92,10 @@
 - **Status:** Active
 - **Decision:** `docs/README.md` identifies which documents are current, provisional, historical, or pending validation.
 - **Reason:** Dates alone do not prevent stale documents from being mistaken for current implementation truth.
+
+## Record 015 — AI-assisted output must pass an anti-slop quality gate
+
+- **Status:** Active
+- **Decision:** Apply `docs/AI_ANTI_SLOP_STANDARD.md` to code, levels, UI, art, writing, monetization, documentation, and pull-request review.
+- **Reason:** AI speed is useful only when authorship, specificity, consistency, and verification are preserved.
+- **Consequences:** Parser warnings are defects; generic or placeholder presentation must be removed or labelled provisional; levels require authored decisions rather than quantity; untested changes cannot be described as verified; features without a Pathbreak-specific player purpose should be rejected.
