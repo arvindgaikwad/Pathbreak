@@ -8,42 +8,43 @@ This file defines which documents should be trusted for the current build. A doc
 
 Read these files in order:
 
-1. `PROJECT_HANDOFF.md` — current project state, decisions, commands, and continuation prompt.
-2. `../TASKS.md` — prioritised execution checklist.
-3. This documentation index.
-4. `DECISIONS.md` and `AI_ANTI_SLOP_STANDARD.md`.
-5. The latest playtest record and testing checklist.
+1. `PROJECT_HANDOFF.md`
+2. `../TASKS.md`
+3. `ARROW_SYSTEM_AUDIT.md`
+4. This index
+5. `DECISIONS.md` and `AI_ANTI_SLOP_STANDARD.md`
+6. Latest playtest and testing checklist
 
 ## Source-of-truth order
 
 1. Current code and automated tests on the active branch.
-2. `PROJECT_HANDOFF.md` for the current recovery summary and continuation context.
+2. `PROJECT_HANDOFF.md` for recovery context.
 3. `../TASKS.md` for execution order.
-4. `VERTICAL_SLICE_REVIEW.md` for the approval gate and level status.
-5. The latest dated vertical-slice playtest record.
-6. `DECISIONS.md` for accepted architecture and product decisions.
-7. `AI_ANTI_SLOP_STANDARD.md` for the production quality bar applied to AI-assisted work.
-8. The focused specification documents below.
-9. Historical pull-request descriptions and older conversation notes.
+4. `ARROW_SYSTEM_AUDIT.md` for the ordered path/head correction.
+5. `VERTICAL_SLICE_REVIEW.md` for approval gates.
+6. Latest dated playtest evidence.
+7. `DECISIONS.md` and focused specifications.
+8. Historical PR descriptions and old conversation notes.
 
-When documents disagree, update the stale document rather than guessing which statement is intended.
+When documents disagree, update the stale document rather than guessing.
 
 ## Current documents
 
 | Document | Status | Purpose |
 |---|---|---|
-| `PROJECT_HANDOFF.md` | Current recovery guide | Durable project context, commands, next actions, and new-chat prompt |
-| `../TASKS.md` | Current tracker | Prioritised implementation, testing, design, content, and launch TODOs |
+| `PROJECT_HANDOFF.md` | Current | Recovery guide, commands, next actions, continuation prompt |
+| `../TASKS.md` | Current | Prioritised execution tracker |
+| `ARROW_SYSTEM_AUDIT.md` | Current, pending verification | Root cause, ordered-path migration, tests, risks |
 | `VERTICAL_SLICE_REVIEW.md` | Current | Approval criteria and Levels 1–5 review |
-| `VERTICAL_SLICE_PLAYTEST_2026-08-06.md` | Current evidence | Observed playtest results and limitations |
-| `DECISIONS.md` | Current | Architecture and product decision log |
-| `AI_ANTI_SLOP_STANDARD.md` | Active standard | Quality gate for AI-assisted design, code, levels, writing, and verification |
-| `GAME_DESIGN.md` | Current slice | Rules, connected loop, progression, roadmap |
-| `TECHNICAL_PLAN.md` | Current slice | Runtime architecture, persistence, input, tests |
-| `LEVEL_FORMAT.md` | Current | Canonical JSON authoring contract |
-| `TESTING_CHECKLIST.md` | Current | Manual and automated verification matrix |
-| `ART_DIRECTION.md` | Provisional | Current visual baseline; not final launch art |
-| `PRODUCTION_WORKFLOW.md` | Process reference | Working method; implementation facts still require code verification |
+| `VERTICAL_SLICE_PLAYTEST_2026-08-06.md` | Current evidence | Playtest observations and verification boundaries |
+| `DECISIONS.md` | Current | Architecture and product decisions |
+| `AI_ANTI_SLOP_STANDARD.md` | Active standard | Quality gate for AI-assisted work |
+| `GAME_DESIGN.md` | Current slice | Rules and progression |
+| `TECHNICAL_PLAN.md` | Current slice | Runtime architecture and persistence |
+| `LEVEL_FORMAT.md` | Current | Ordered tail-to-head JSON contract |
+| `TESTING_CHECKLIST.md` | Current | Verification matrix |
+| `ART_DIRECTION.md` | Provisional | Current visual baseline, not final art |
+| `PRODUCTION_WORKFLOW.md` | Process reference | Working method |
 
 ## Important current facts
 
@@ -51,23 +52,22 @@ When documents disagree, update the stale document rather than guessing which st
 - Active branch: `codex/vertical-slice-level-review`.
 - Active draft PR: `#8`.
 - Godot 4.7.1, typed GDScript, Android portrait target.
-- One modular gameplay architecture.
-- JSON is the canonical level format; `.tres` is fallback only.
-- The current production gate is a five-level vertical slice.
-- Main Menu, Level Select, gameplay HUD, Pause/Settings, failure, result, and hint refill are part of the slice.
-- The first incomplete Level 1 tutorial hint is free.
-- Normal hints are persistent and consumable.
-- At zero, the current testing build offers a functional `Refill +3` flow.
-- The latest menu/path readability and automatic-final-clear implementation is pending local verification.
-- AI-generated output must pass the anti-slop intent, craft, and verification checks.
-- Parser warnings are defects and untested work must remain labelled unverified.
+- One modular gameplay architecture and one shared `PuzzlePiece` renderer.
+- JSON is canonical; `.tres` is fallback only.
+- Current path format is ordered `tail → ... → head`.
+- Final segment direction must equal arrowhead and movement direction.
+- Levels 1–5 were migrated to the ordered endpoint rule.
+- Migration preview, parser, automated tests, screenshots, and Android checks remain pending.
+- Clean-save `FREE`, normal hint inventory, refill, restart, menu-board start, and automatic final clear were manually verified before the latest migration.
+- AI-generated output must pass intent, craft, and verification checks.
+- Parser warnings are defects.
 - Final art direction and launch monetization are not approved.
 
 ## Documentation maintenance rule
 
-Every feature PR that changes player-visible behavior, save data, level format, architecture, or test requirements must update at least one relevant document and the testing checklist.
+Every change to player-visible behavior, level data, architecture, persistence, or testing must update the relevant document and checklist.
 
-Use explicit labels such as:
+Use explicit labels:
 
 - `Current`
 - `Provisional`
@@ -75,4 +75,4 @@ Use explicit labels such as:
 - `Superseded`
 - `Pending verification`
 
-Do not present untested implementation as verified behavior.
+Never present untested implementation as verified.
