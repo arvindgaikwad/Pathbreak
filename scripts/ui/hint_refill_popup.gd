@@ -103,7 +103,7 @@ func _on_cancel_pressed() -> void:
 	cancelled.emit()
 
 func _on_backdrop_input(event: InputEvent) -> void:
-	var activated := (
+	var activated: bool = (
 		event is InputEventMouseButton
 		and event.button_index == MOUSE_BUTTON_LEFT
 		and event.pressed
