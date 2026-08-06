@@ -11,11 +11,27 @@ Read `docs/PROJECT_HANDOFF.md` before continuing after a lost conversation.
 
 Approve a complete, understandable, stable, device-tested vertical slice before building the level-production pipeline, final art, or monetization.
 
+## Latest manual verification — 2026-08-07
+
+The user confirmed the following interaction-clarity behaviours work in the local Godot build:
+
+- [x] Tapping the animated menu board opens the recommended level.
+- [x] The normal Start/Continue button opens the same recommended level.
+- [x] The travelling blue menu animation plays.
+- [x] A hint sends the blue marker toward the arrowhead.
+- [x] The final remaining valid path clears automatically.
+- [x] Automatic final clear does not add a player Move.
+- [x] Reduce Motion provides working alternatives for the menu, hint, and final clear.
+- [x] Restart still functions.
+- [x] Hint refill still functions.
+
+These checks verify the listed manual flows only. Parser health, automated suites, fresh-save tutorial, revised new-player comprehension, High Contrast, and Android device checks remain open.
+
 ---
 
 ## P0 — Do next
 
-### A. Verify the latest interaction-clarity build
+### A. Run formal parser and automated verification
 
 - [ ] Pull the latest active branch.
 - [ ] Run the Godot 4.7.1 headless editor/parser scan.
@@ -25,36 +41,36 @@ Approve a complete, understandable, stable, device-tested vertical slice before 
 - [ ] Run `tests/test_vertical_slice_levels.gd`.
 - [ ] Record exact test output in the playtest/verification document.
 
-### B. Main-menu acceptance
+### B. Complete remaining main-menu acceptance
 
-- [ ] Confirm tapping the hero board opens the same recommended level as Start/Continue.
+- [x] Confirm tapping the hero board opens the same recommended level as Start/Continue.
+- [x] Confirm the travelling direction pulse is visible.
 - [ ] Confirm rapid taps do not trigger double navigation.
-- [ ] Confirm the state-aware prompt is readable and does not overlap paths.
-- [ ] Confirm the travelling direction pulse communicates movement toward the arrowhead.
-- [ ] Confirm new-player state says Start Level 1.
-- [ ] Confirm returning-player state recommends the first uncleared unlocked level.
+- [ ] Confirm the state-aware prompt is readable and does not overlap paths at all target sizes.
+- [ ] Confirm new-player state says Start Level 1 after a clean save.
+- [x] Confirm returning-player state recommends the first uncleared unlocked level.
 - [ ] Confirm chapter-complete state remains understandable.
 - [ ] Test menu at 360×800 and 800×1280 first.
 
-### C. Gameplay readability and final clear
+### C. Complete gameplay-readability acceptance
 
-- [ ] Review larger arrowheads and smaller tail dots on Levels 1–5.
-- [ ] Use a hint and confirm the directional marker travels from tail toward arrowhead.
-- [ ] Confirm the marker never suggests the wrong direction.
-- [ ] Clear the second-last path and confirm the final valid path previews in blue.
-- [ ] Confirm the final path clears automatically exactly once.
-- [ ] Confirm automatic final clear does not add a player Move.
-- [ ] Confirm result timing, stars, hints used, and progression remain correct.
-- [ ] Confirm `No path can leave yet` still appears when appropriate.
+- [ ] Review larger arrowheads and smaller tail dots on Levels 1–5 with new players.
+- [x] Use a hint and confirm the directional marker travels from tail toward arrowhead.
+- [ ] Confirm the marker never suggests the wrong direction across all path orientations.
+- [x] Clear the second-last path and confirm the final valid path previews and clears automatically.
+- [x] Confirm the final path clears automatically exactly once.
+- [x] Confirm automatic final clear does not add a player Move.
+- [ ] Confirm result timing, stars, hints used, and progression remain correct across repeated attempts.
+- [x] Confirm `No path can leave yet` still appears when appropriate.
 
 ### D. Accessibility regression
 
-- [ ] Enable Reduce Motion and repeat menu animation, hint, and automatic final-clear tests.
-- [ ] Confirm Reduce Motion remains understandable without travelling animation.
+- [x] Enable Reduce Motion and repeat menu animation, hint, and automatic final-clear tests.
+- [x] Confirm Reduce Motion remains understandable without travelling animation.
 - [ ] Enable High Contrast and verify paths, arrowheads, tail markers, and hints remain readable.
-- [ ] Verify Sound and Haptics toggles persist.
+- [ ] Verify Sound and Haptics toggles persist after restarting the app.
 
-### E. Fresh-save tutorial
+### E. Fresh-save tutorial — next manual gate
 
 - [ ] Back up and remove the current save.
 - [ ] Confirm Main Menu shows the new-player Start state.
@@ -133,7 +149,7 @@ Decision rules:
 
 - [x] Tightened to a 6×6 board.
 - [x] New players understood bent-path reading in the recorded test.
-- [ ] Confirm revised direction cue.
+- [ ] Confirm revised direction cue with new players.
 
 ### Level 4
 
@@ -246,6 +262,10 @@ Do not manually produce the full pack before the editor and solver workflow are 
 - [x] Zero hints remain actionable through the refill flow.
 - [x] Hint refill was confirmed working after the native-button correction.
 - [x] Restart was moved to the same reliable native-button system.
+- [x] Menu board and primary CTA both start the recommended level.
+- [x] Directional menu and hint cues work in the local build.
+- [x] Automatic final clear works and excludes the automatic move.
+- [x] Reduce Motion alternatives work for the latest interaction pass.
 - [x] AI anti-slop standard is active.
 - [x] Current light UI is explicitly provisional.
 
