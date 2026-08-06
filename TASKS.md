@@ -11,87 +11,94 @@ Read `docs/PROJECT_HANDOFF.md` before continuing after a lost conversation.
 
 Approve a complete, understandable, stable, device-tested vertical slice before building the level-production pipeline, final art, or monetization.
 
-## Latest manual verification — 2026-08-07
-
-The user confirmed the following interaction-clarity behaviours work in the local Godot build:
+## Latest verified manual behaviours
 
 - [x] Tapping the animated menu board opens the recommended level.
-- [x] The normal Start/Continue button opens the same recommended level.
-- [x] The travelling blue menu animation plays.
-- [x] A hint sends the blue marker toward the arrowhead.
-- [x] The final remaining valid path clears automatically.
-- [x] Automatic final clear does not add a player Move.
-- [x] Reduce Motion provides working alternatives for the menu, hint, and final clear.
-- [x] Restart still functions.
-- [x] Hint refill still functions.
+- [x] Start/Continue opens the same recommended level.
+- [x] Travelling blue menu animation plays.
+- [x] Hint direction cue moves toward the arrowhead.
+- [x] Final valid path clears automatically.
+- [x] Automatic final clear does not add a Move.
+- [x] Reduce Motion alternatives work for menu, hint, and final clear.
+- [x] Restart and hint refill work.
+- [x] Clean-save menu shows `Start Level 1`.
+- [x] First Level 1 hint shows `FREE`.
+- [x] Level 2 starts with the normal five-hint inventory.
+- [x] Replaying Level 1 shows the real hint count rather than `FREE`.
 
-These checks verify the listed manual flows only. Parser health, automated suites, fresh-save tutorial, revised new-player comprehension, High Contrast, and Android device checks remain open.
+## Latest implemented work — pending local verification
+
+The shared arrow/path renderer was corrected at the root:
+
+- [x] Added `scripts/gameplay/path_visual_geometry.gd`.
+- [x] Arrowhead anchor now comes from the movement-leading edge, not `cells[-1]`.
+- [x] Tail anchor now comes from the movement-trailing edge, not `cells[0]`.
+- [x] Menu and gameplay share the same triangle/anchor rules.
+- [x] Hint/tutorial marker is now a small directional triangle near the resolved head.
+- [x] Added non-destructive visual orientation audit.
+- [x] Added `tests/test_path_visual_geometry.gd`.
+- [x] Added `docs/ARROW_SYSTEM_AUDIT.md`.
+
+These items are implemented but are not verified until the parser, automated suite, and manual visual checks pass.
 
 ---
 
 ## P0 — Do next
 
-### A. Run formal parser and automated verification
+### A. Formal parser and automated verification
 
 - [ ] Pull the latest active branch.
 - [ ] Run the Godot 4.7.1 headless editor/parser scan.
 - [ ] Confirm zero parser errors and no new warnings.
+- [ ] Run `tests/test_path_visual_geometry.gd`.
 - [ ] Run `tests/test_movement_validator.gd`.
 - [ ] Run `tests/test_level_data_validator.gd`.
 - [ ] Run `tests/test_vertical_slice_levels.gd`.
-- [ ] Record exact test output in the playtest/verification document.
+- [ ] Record exact output in the playtest/verification document.
 
-### B. Complete remaining main-menu acceptance
+### B. Centralized arrow/path visual acceptance
 
-- [x] Confirm tapping the hero board opens the same recommended level as Start/Continue.
-- [x] Confirm the travelling direction pulse is visible.
+- [ ] Confirm Level 5 arrowheads attach to the true movement-leading side.
+- [ ] Confirm JSON first/last cell order no longer controls head placement.
+- [ ] Confirm left, right, up, and down heads use identical proportions.
+- [ ] Confirm bent paths remain readable.
+- [ ] Confirm the tail marker is on the movement-trailing side.
+- [ ] Confirm the hint marker cannot be mistaken for a second tail dot.
+- [ ] Confirm the marker points in the actual escape direction.
+- [ ] Confirm the menu demonstration uses the same visual rules.
+- [ ] Confirm movement, touch selection, hints, restart, and automatic final clear did not regress.
+- [ ] Review projection-tie warnings produced by the visual audit.
+
+### C. Remaining main-menu acceptance
+
+- [x] Hero board and Start/Continue open the same recommended level.
+- [x] Travelling direction cue is visible.
+- [x] Clean-save state says `Start Level 1`.
+- [x] Returning-player state recommends the first uncleared unlocked level.
 - [ ] Confirm rapid taps do not trigger double navigation.
-- [ ] Confirm the state-aware prompt is readable and does not overlap paths at all target sizes.
-- [ ] Confirm new-player state says Start Level 1 after a clean save.
-- [x] Confirm returning-player state recommends the first uncleared unlocked level.
-- [ ] Confirm chapter-complete state remains understandable.
-- [ ] Test menu at 360×800 and 800×1280 first.
-
-### C. Complete gameplay-readability acceptance
-
-- [ ] Review larger arrowheads and smaller tail dots on Levels 1–5 with new players.
-- [x] Use a hint and confirm the directional marker travels from tail toward arrowhead.
-- [ ] Confirm the marker never suggests the wrong direction across all path orientations.
-- [x] Clear the second-last path and confirm the final valid path previews and clears automatically.
-- [x] Confirm the final path clears automatically exactly once.
-- [x] Confirm automatic final clear does not add a player Move.
-- [ ] Confirm result timing, stars, hints used, and progression remain correct across repeated attempts.
-- [x] Confirm `No path can leave yet` still appears when appropriate.
+- [ ] Confirm the board prompt does not overlap at target sizes.
+- [ ] Confirm chapter-complete state is understandable.
+- [ ] Test 360×800 and 800×1280 first.
 
 ### D. Accessibility regression
 
-- [x] Enable Reduce Motion and repeat menu animation, hint, and automatic final-clear tests.
-- [x] Confirm Reduce Motion remains understandable without travelling animation.
-- [ ] Enable High Contrast and verify paths, arrowheads, tail markers, and hints remain readable.
+- [x] Reduce Motion alternatives work for the interaction-clarity pass.
+- [ ] Verify Reduce Motion after the centralized arrow resolver.
+- [ ] Enable High Contrast and verify line, head, tail, and hint marker readability.
 - [ ] Verify Sound and Haptics toggles persist after restarting the app.
-
-### E. Fresh-save tutorial — next manual gate
-
-- [ ] Back up and remove the current save.
-- [ ] Confirm Main Menu shows the new-player Start state.
-- [ ] Confirm Level 1 displays `FREE`.
-- [ ] Confirm the free hint highlights an escapable path.
-- [ ] Confirm the free hint does not consume a normal hint.
-- [ ] Confirm completing Level 1 marks the tutorial complete.
-- [ ] Confirm replaying Level 1 displays the real hint count.
 
 ---
 
 ## P1 — Repeat external playtesting
 
-Test with at least three players who have not seen the revised menu or path visuals.
+Test with at least three players who have not seen the corrected arrow system.
 
 For every tester record:
 
-- [ ] First thing tapped on the Main Menu.
-- [ ] Whether they understood that the board and Start button both begin play.
-- [ ] Whether they identified the arrow direction without verbal explanation.
-- [ ] Whether tail dots confused them.
+- [ ] First Main Menu target tapped.
+- [ ] Whether board and Start button were both understood.
+- [ ] Whether arrow direction was identified without explanation.
+- [ ] Whether tail markers caused confusion.
 - [ ] Completion time for Levels 1–5.
 - [ ] Moves and mistakes.
 - [ ] Hint usage.
@@ -100,11 +107,10 @@ For every tester record:
 
 Decision rules:
 
-- [ ] Do not increase difficulty until direction readability improves.
+- [ ] Do not create difficulty through unclear arrow visuals.
 - [ ] Keep Level 2 if blocking remains understandable.
 - [ ] Keep Level 3 if bent-path reading remains understandable.
-- [ ] Tune Levels 4–5 if first-time players still clear them automatically or in roughly 10 seconds.
-- [ ] Do not use visual confusion as difficulty.
+- [ ] Tune Levels 4–5 if new players still clear them automatically or in roughly 10 seconds.
 
 ---
 
@@ -113,22 +119,19 @@ Decision rules:
 ### Phone
 
 - [ ] Export and install a debug APK.
-- [ ] Verify portrait layout.
-- [ ] Verify nearest-path touch selection.
+- [ ] Verify portrait layout and nearest-path touch selection.
 - [ ] Verify close paths do not select the wrong path.
 - [ ] Verify multi-touch does not create duplicate actions.
-- [ ] Verify Android Back closes popup/pause before leaving gameplay.
-- [ ] Verify suspend/resume.
-- [ ] Verify force-close/reopen save persistence.
+- [ ] Verify Android Back closes popup/pause first.
+- [ ] Verify suspend/resume and force-close/reopen persistence.
 - [ ] Verify sound and haptics.
 
 ### Tablet
 
-- [ ] Install on Samsung Galaxy Tab S6 Lite or another available Android tablet.
+- [ ] Install on Samsung Galaxy Tab S6 Lite or another Android tablet.
 - [ ] Verify board scale and centring.
-- [ ] Verify touch tolerance with stylus and finger.
-- [ ] Verify popup and menu sizing.
-- [ ] Verify performance and lifecycle behaviour.
+- [ ] Verify stylus and finger touch tolerance.
+- [ ] Verify popup/menu sizing, performance, and lifecycle behaviour.
 
 ---
 
@@ -136,32 +139,34 @@ Decision rules:
 
 ### Level 1
 
-- [x] Two clear opening moves implemented.
-- [ ] Fresh-save tutorial approved.
+- [x] Two clear openings.
+- [x] Fresh-save `FREE` state verified.
+- [ ] Confirm corrected arrow system with a new player.
 
 ### Level 2
 
-- [x] Tightened to a 6×6 board.
-- [x] New players understood blocking in the recorded test.
-- [ ] Confirm revised arrow/tail language does not reduce comprehension.
+- [x] Tightened to 6×6.
+- [x] Initial testers understood blocking.
+- [ ] Confirm corrected arrow system does not reduce comprehension.
 
 ### Level 3
 
-- [x] Tightened to a 6×6 board.
-- [x] New players understood bent-path reading in the recorded test.
-- [ ] Confirm revised direction cue with new players.
+- [x] Tightened to 6×6.
+- [x] Initial testers understood bent-path reading.
+- [ ] Review paths with zero projection span reported by visual audit.
+- [ ] Confirm direction cue with new players.
 
 ### Level 4
 
 - [x] Failure/retry/result flow exercised.
-- [ ] Retest with new players after readability revision.
+- [ ] Retest after arrow correction.
 - [ ] Increase decision depth only if evidence supports it.
 
 ### Level 5
 
-- [x] Redesigned around an authored dependency chain.
-- [ ] Retest with new players after readability revision.
-- [ ] Target a meaningful first-time solve rather than visual busyness.
+- [x] Authored dependency-chain redesign exists.
+- [ ] Confirm every head is attached to the movement-leading edge.
+- [ ] Retest difficulty after visual comprehension passes.
 
 ---
 
@@ -169,10 +174,9 @@ Decision rules:
 
 ### Main Menu
 
-- [ ] Keep clear Start/Continue hierarchy.
-- [ ] Keep the board as a valid start target.
-- [ ] Place tap instruction below the board without overlap.
-- [ ] Improve vertical balance and reduce unused lower space.
+- [ ] Keep clear Start/Continue hierarchy and board start target.
+- [ ] Place prompt below the board without overlap.
+- [ ] Improve vertical balance and reduce empty lower space.
 - [ ] Add restrained game-specific iconography.
 - [ ] Avoid excessive glow, sparkles, shadows, and repeated cards.
 
@@ -180,19 +184,15 @@ Decision rules:
 
 - [ ] Keep four columns on compact phones.
 - [ ] Make Completed, Current, Unlocked, and Locked states unmistakable.
-- [ ] Make the recommended next level easy to identify.
+- [ ] Make the recommended next level obvious.
 - [ ] Increase star readability.
 - [ ] Use a dedicated Continue action when it improves touch clarity.
-- [ ] Avoid five narrow columns and repetitive status labels.
 
-### Final art-direction work deferred
+### Final art work deferred
 
-- [ ] Final logo and app icon.
-- [ ] Ownable Pathbreak motif.
-- [ ] Final typography and iconography.
-- [ ] Chapter themes and backgrounds.
-- [ ] Production particles and transitions.
-- [ ] Final sound and music direction.
+- [ ] Final logo, app icon, typography, and iconography.
+- [ ] Ownable Pathbreak motif and chapter themes.
+- [ ] Production particles, transitions, sound, and music.
 - [ ] Store screenshots and marketing art.
 
 ---
@@ -201,73 +201,42 @@ Decision rules:
 
 Start only after the vertical slice is approved.
 
-- [ ] Replace the experimental editor with a modular level editor.
-- [ ] Create, move, rotate, and delete paths.
-- [ ] Validate schema before export.
-- [ ] Integrate `LevelSolver`.
-- [ ] Show opening-move count.
-- [ ] Show full-clear solution count.
-- [ ] Detect reachable dead ends.
-- [ ] Add dependency-depth measurements.
-- [ ] Add difficulty notes and playtest fields.
-- [ ] Preview at phone/tablet scales.
-- [ ] Export versioned JSON.
-- [ ] Batch validate level packs.
+- [ ] Modular level editor with create/move/rotate/delete.
+- [ ] Schema and visual-orientation validation before export.
+- [ ] `LevelSolver` integration.
+- [ ] Opening-move, solution-count, dead-end, and dependency-depth metrics.
+- [ ] Difficulty notes and playtest fields.
+- [ ] Phone/tablet preview.
+- [ ] Versioned JSON export and batch validation.
 
 ---
 
-## P3 — Content production
+## P3 — Content and launch
 
-Do not manually produce the full pack before the editor and solver workflow are reliable.
-
-- [ ] Finalise chapter and mechanic plan.
-- [ ] Produce teaching levels for every new mechanic.
-- [ ] Produce combination levels.
-- [ ] Tune difficulty from solver measurements and player evidence.
-- [ ] Remove levels that solve through random tapping.
-- [ ] Verify originality and avoid competitor layouts.
-- [ ] Build the launch-sized level pack.
-
----
-
-## P3 — Commercial and launch preparation
-
-- [ ] Final name and trademark clearance.
-- [ ] Analytics event implementation.
-- [ ] Crash reporting.
-- [ ] Privacy policy and Data Safety form.
-- [ ] Consent flow where required.
-- [ ] Android target/API and store configuration.
-- [ ] Signed Android App Bundle and signing-key backup.
-- [ ] Closed testing.
-- [ ] Store listing, screenshots, feature graphic, and trailer.
-- [ ] Customer support and incident plan.
-- [ ] Rewarded hints and optional remove-ads purchase only after retention validation.
+- [ ] Finalise chapter/mechanic plan.
+- [ ] Produce teaching and combination levels through the toolchain.
+- [ ] Remove random-tap and visually confusing levels.
+- [ ] Build the launch-sized original level pack.
+- [ ] Final name/trademark clearance.
+- [ ] Analytics, crash reporting, privacy, consent, and Data Safety.
+- [ ] Android target/API, signing, closed testing, and store listing.
+- [ ] Rewarded hints and optional remove-ads only after retention validation.
 
 ---
 
-## Verified or accepted foundations
+## Preserved foundations
 
-- [x] Modular gameplay architecture is the only supported runtime architecture.
+- [x] One modular gameplay architecture.
+- [x] One shared `PuzzlePiece` scene/script for all levels.
 - [x] Main Menu is the project startup scene.
-- [x] JSON is the canonical level format.
-- [x] Movement rules are separated into `MovementValidator`.
-- [x] Reusable level validation exists.
-- [x] `LevelSolver` and vertical-slice tests exist.
-- [x] Central nearest-path touch selection exists.
-- [x] Save data is versioned.
-- [x] Sound, Haptics, Reduce Motion, and High Contrast persist separately.
-- [x] Moves and mistakes are tracked independently.
-- [x] Hint inventory is persistent.
-- [x] Zero hints remain actionable through the refill flow.
-- [x] Hint refill was confirmed working after the native-button correction.
-- [x] Restart was moved to the same reliable native-button system.
-- [x] Menu board and primary CTA both start the recommended level.
-- [x] Directional menu and hint cues work in the local build.
-- [x] Automatic final clear works and excludes the automatic move.
-- [x] Reduce Motion alternatives work for the latest interaction pass.
+- [x] JSON is canonical level data.
+- [x] Movement rules are isolated in `MovementValidator`.
+- [x] `LevelSolver`, structural validator, and headless tests exist.
+- [x] Central nearest-path touch selection.
+- [x] Versioned saves and persistent hint inventory.
+- [x] Separate persistent Sound, Haptics, Reduce Motion, and High Contrast.
 - [x] AI anti-slop standard is active.
-- [x] Current light UI is explicitly provisional.
+- [x] Current light UI remains provisional.
 
 ---
 
@@ -282,6 +251,7 @@ git pull origin codex/vertical-slice-level-review
 GODOT="/home/silver/Downloads/godot games /Godot_v4.7.1-stable_linux.x86_64"
 
 "$GODOT" --headless --path . --editor --quit
+"$GODOT" --headless --path . --script tests/test_path_visual_geometry.gd
 "$GODOT" --headless --path . --script tests/test_movement_validator.gd
 "$GODOT" --headless --path . --script tests/test_level_data_validator.gd
 "$GODOT" --headless --path . --script tests/test_vertical_slice_levels.gd
