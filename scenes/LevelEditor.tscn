@@ -13,109 +13,256 @@ color = Color(0.95, 0.95, 0.95, 1)
 
 [node name="UI" type="CanvasLayer" parent="."]
 
+[node name="TopPanel" type="Panel" parent="UI"]
+offset_left = 20.0
+offset_top = 18.0
+offset_right = 700.0
+offset_bottom = 145.0
+
+[node name="LevelLabel" type="Label" parent="UI/TopPanel"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 12.0
+offset_right = 68.0
+offset_bottom = 42.0
+theme_override_font_sizes/font_size = 17
+text = "Level"
+
+[node name="LevelSpin" type="SpinBox" parent="UI/TopPanel"]
+layout_mode = 0
+offset_left = 67.0
+offset_top = 7.0
+offset_right = 142.0
+offset_bottom = 43.0
+min_value = 1.0
+max_value = 999.0
+value = 6.0
+step = 1.0
+
+[node name="LivesLabel" type="Label" parent="UI/TopPanel"]
+layout_mode = 0
+offset_left = 155.0
+offset_top = 12.0
+offset_right = 200.0
+offset_bottom = 42.0
+theme_override_font_sizes/font_size = 17
+text = "Lives"
+
+[node name="LivesSpin" type="SpinBox" parent="UI/TopPanel"]
+layout_mode = 0
+offset_left = 198.0
+offset_top = 7.0
+offset_right = 267.0
+offset_bottom = 43.0
+min_value = 1.0
+max_value = 9.0
+value = 3.0
+step = 1.0
+
+[node name="DifficultyLabel" type="Label" parent="UI/TopPanel"]
+layout_mode = 0
+offset_left = 282.0
+offset_top = 12.0
+offset_right = 355.0
+offset_bottom = 42.0
+theme_override_font_sizes/font_size = 17
+text = "Difficulty"
+
+[node name="DifficultyEasy" type="Button" parent="UI/TopPanel"]
+layout_mode = 0
+offset_left = 358.0
+offset_top = 5.0
+offset_right = 438.0
+offset_bottom = 45.0
+theme_override_font_sizes/font_size = 15
+text = "Easy"
+
+[node name="DifficultyNormal" type="Button" parent="UI/TopPanel"]
+layout_mode = 0
+offset_left = 443.0
+offset_top = 5.0
+offset_right = 535.0
+offset_bottom = 45.0
+theme_override_font_sizes/font_size = 15
+text = "Normal"
+
+[node name="DifficultyHard" type="Button" parent="UI/TopPanel"]
+layout_mode = 0
+offset_left = 540.0
+offset_top = 5.0
+offset_right = 620.0
+offset_bottom = 45.0
+theme_override_font_sizes/font_size = 15
+text = "Hard"
+
+[node name="BoardLabel" type="Label" parent="UI/TopPanel"]
+layout_mode = 0
+offset_left = 16.0
+offset_top = 63.0
+offset_right = 68.0
+offset_bottom = 93.0
+theme_override_font_sizes/font_size = 17
+text = "Board"
+
+[node name="Board6" type="Button" parent="UI/TopPanel"]
+layout_mode = 0
+offset_left = 70.0
+offset_top = 55.0
+offset_right = 138.0
+offset_bottom = 96.0
+theme_override_font_sizes/font_size = 15
+text = "6×6"
+
+[node name="Board7" type="Button" parent="UI/TopPanel"]
+layout_mode = 0
+offset_left = 143.0
+offset_top = 55.0
+offset_right = 211.0
+offset_bottom = 96.0
+theme_override_font_sizes/font_size = 15
+text = "7×7"
+
+[node name="Board8" type="Button" parent="UI/TopPanel"]
+layout_mode = 0
+offset_left = 216.0
+offset_top = 55.0
+offset_right = 284.0
+offset_bottom = 96.0
+theme_override_font_sizes/font_size = 15
+text = "8×8"
+
+[node name="Board9" type="Button" parent="UI/TopPanel"]
+layout_mode = 0
+offset_left = 289.0
+offset_top = 55.0
+offset_right = 357.0
+offset_bottom = 96.0
+theme_override_font_sizes/font_size = 15
+text = "9×9"
+
+[node name="MetaSummary" type="Label" parent="UI/TopPanel"]
+layout_mode = 0
+offset_left = 378.0
+offset_top = 57.0
+offset_right = 655.0
+offset_bottom = 96.0
+theme_override_font_sizes/font_size = 15
+text = "L6 • 8x8 • Normal • 3 lives"
+horizontal_alignment = 2
+vertical_alignment = 1
+
 [node name="Sidebar" type="Panel" parent="UI"]
-offset_top = 960.0
+offset_top = 930.0
 offset_right = 720.0
 offset_bottom = 1280.0
 
 [node name="SaveButton" type="Button" parent="UI/Sidebar"]
 layout_mode = 0
 offset_left = 30.0
-offset_top = 30.0
+offset_top = 25.0
 offset_right = 190.0
-offset_bottom = 90.0
-theme_override_font_sizes/font_size = 22
-text = "Export JSON"
+offset_bottom = 82.0
+theme_override_font_sizes/font_size = 19
+text = "Export L6 Draft"
 
 [node name="LoadButton" type="Button" parent="UI/Sidebar"]
 layout_mode = 0
 offset_left = 30.0
-offset_top = 105.0
+offset_top = 95.0
 offset_right = 190.0
-offset_bottom = 165.0
-theme_override_font_sizes/font_size = 22
+offset_bottom = 152.0
+theme_override_font_sizes/font_size = 19
 text = "Load Draft"
 
 [node name="ClearButton" type="Button" parent="UI/Sidebar"]
 layout_mode = 0
 offset_left = 30.0
-offset_top = 180.0
+offset_top = 165.0
 offset_right = 190.0
-offset_bottom = 240.0
-theme_override_font_sizes/font_size = 22
+offset_bottom = 222.0
+theme_override_font_sizes/font_size = 19
 text = "Clear"
 
 [node name="DeleteButton" type="Button" parent="UI/Sidebar"]
 layout_mode = 0
 offset_left = 30.0
-offset_top = 250.0
+offset_top = 235.0
 offset_right = 190.0
-offset_bottom = 305.0
-theme_override_font_sizes/font_size = 19
+offset_bottom = 292.0
+theme_override_font_sizes/font_size = 18
 text = "Delete Last"
 
 [node name="DirLabel" type="Label" parent="UI/Sidebar"]
 layout_mode = 0
 offset_left = 220.0
-offset_top = 25.0
+offset_top = 18.0
 offset_right = 430.0
-offset_bottom = 60.0
-theme_override_font_sizes/font_size = 20
+offset_bottom = 50.0
+theme_override_font_sizes/font_size = 18
 text = "Choose head endpoint"
 horizontal_alignment = 1
 
 [node name="BtnUP" type="Button" parent="UI/Sidebar"]
 layout_mode = 0
 offset_left = 295.0
-offset_top = 65.0
+offset_top = 55.0
 offset_right = 355.0
-offset_bottom = 120.0
-theme_override_font_sizes/font_size = 22
+offset_bottom = 105.0
+theme_override_font_sizes/font_size = 20
 text = "↑"
 
 [node name="BtnDOWN" type="Button" parent="UI/Sidebar"]
 layout_mode = 0
 offset_left = 295.0
-offset_top = 130.0
+offset_top = 115.0
 offset_right = 355.0
-offset_bottom = 185.0
-theme_override_font_sizes/font_size = 22
+offset_bottom = 165.0
+theme_override_font_sizes/font_size = 20
 text = "↓"
 
 [node name="BtnLEFT" type="Button" parent="UI/Sidebar"]
 layout_mode = 0
 offset_left = 230.0
-offset_top = 130.0
+offset_top = 115.0
 offset_right = 290.0
-offset_bottom = 185.0
-theme_override_font_sizes/font_size = 22
+offset_bottom = 165.0
+theme_override_font_sizes/font_size = 20
 text = "←"
 
 [node name="BtnRIGHT" type="Button" parent="UI/Sidebar"]
 layout_mode = 0
 offset_left = 360.0
-offset_top = 130.0
+offset_top = 115.0
 offset_right = 420.0
-offset_bottom = 185.0
-theme_override_font_sizes/font_size = 22
+offset_bottom = 165.0
+theme_override_font_sizes/font_size = 20
 text = "→"
 
 [node name="ValidateButton" type="Button" parent="UI/Sidebar"]
 layout_mode = 0
 offset_left = 230.0
-offset_top = 215.0
+offset_top = 195.0
 offset_right = 420.0
-offset_bottom = 275.0
-theme_override_font_sizes/font_size = 22
+offset_bottom = 247.0
+theme_override_font_sizes/font_size = 19
 text = "Analyze Level"
+
+[node name="PreviewButton" type="Button" parent="UI/Sidebar"]
+layout_mode = 0
+offset_left = 230.0
+offset_top = 260.0
+offset_right = 420.0
+offset_bottom = 312.0
+theme_override_font_sizes/font_size = 19
+text = "Preview L6"
 
 [node name="ValidateLabel" type="Label" parent="UI/Sidebar"]
 layout_mode = 0
-offset_left = 450.0
-offset_top = 25.0
+offset_left = 445.0
+offset_top = 20.0
 offset_right = 700.0
-offset_bottom = 90.0
-theme_override_font_sizes/font_size = 18
+offset_bottom = 88.0
+theme_override_font_sizes/font_size = 17
 text = "Analysis needed."
 horizontal_alignment = 1
 vertical_alignment = 1
@@ -123,16 +270,16 @@ autowrap_mode = 2
 
 [node name="MetricsLabel" type="Label" parent="UI/Sidebar"]
 layout_mode = 0
-offset_left = 450.0
-offset_top = 100.0
+offset_left = 445.0
+offset_top = 95.0
 offset_right = 700.0
-offset_bottom = 270.0
-theme_override_font_sizes/font_size = 17
+offset_bottom = 295.0
+theme_override_font_sizes/font_size = 16
 text = "Draw paths tail → head, then Analyze."
 vertical_alignment = 1
 autowrap_mode = 2
 
 [node name="BoardPivot" type="Node2D" parent="."]
-position = Vector2(360, 470)
+position = Vector2(360, 505)
 
 [node name="GridDots" type="Node2D" parent="BoardPivot"]
