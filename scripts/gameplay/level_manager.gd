@@ -28,6 +28,10 @@ const BOTTOM_RESERVED := 190.0
 const SIDE_MARGIN := 24.0
 const MAX_BOARD_SCALE := 1.25
 const HINT_REFILL_AMOUNT := 3
+const NEWLY_FREED_REVEAL_DELAY := 0.20
+const NEWLY_FREED_REVEAL_DELAY_REDUCED := 0.10
+const RESULT_SETTLE_DELAY := 0.24
+const RESULT_SETTLE_DELAY_REDUCED := 0.08
 
 func _ready() -> void:
 	_load_levels()
@@ -163,6 +167,7 @@ func _on_piece_tapped(piece: PuzzlePiece) -> void:
 
 	move_count += 1
 	if board.can_piece_escape(piece):
+		var previously_escapable: PackedInt32Array = board.get_escapable_piece_ids()
 		AudioManager.play_move_sound()
 		SettingsManager.play_haptic(&"success")
 		board.remove_piece_occupancy(piece)
@@ -179,6 +184,8 @@ func _on_piece_tapped(piece: PuzzlePiece) -> void:
 			get_tree().create_timer(0.28).timeout.connect(_on_level_completed)
 			return
 
+		var newly_escapable: Array[PuzzlePiece] = board.get_newly_escapable_pieces(previously_escapable)
+		_schedule_newly_freed_feedback(newly_escapable)
 		get_tree().create_timer(0.35).timeout.connect(func() -> void:
 			if not input_locked:
 				board.update_assist_pulses(current_level_idx == 0 and not SaveManager.tutorial_completed)
@@ -199,6 +206,22 @@ func _on_piece_tapped(piece: PuzzlePiece) -> void:
 		if lives_left <= 0:
 			_lock_gameplay()
 			get_tree().create_timer(0.35).timeout.connect(_show_fail_screen)
+
+func _schedule_newly_freed_feedback(candidates: Array[PuzzlePiece]) -> void:
+	if candidates.is_empty():
+		return
+	var reveal_delay := (
+		NEWLY_FREED_REVEAL_DELAY_REDUCED
+		if SettingsManager.reduce_motion
+		else NEWLY_FREED_REVEAL_DELAY
+	)
+	get_tree().create_timer(reveal_delay).timeout.connect(func() -> void:
+		if not is_instance_valid(board):
+			return
+		var signalled: int = board.play_newly_freed_feedback(candidates)
+		if signalled > 0:
+			AudioManager.play_unlock_sound()
+	)
 
 func _auto_clear_final_piece() -> void:
 	if remaining_pieces != 1:
@@ -249,6 +272,7 @@ func _show_fail_screen() -> void:
 	)
 
 func _on_level_completed() -> void:
+	board.play_completion_settle()
 	AudioManager.play_win_sound()
 	SettingsManager.play_haptic(&"celebration")
 	var elapsed_seconds := (Time.get_ticks_msec() - level_start_msec) / 1000.0
@@ -265,6 +289,12 @@ func _on_level_completed() -> void:
 		level_data_list.size()
 	)
 
+	var settle_delay := RESULT_SETTLE_DELAY_REDUCED if SettingsManager.reduce_motion else RESULT_SETTLE_DELAY
+	get_tree().create_timer(settle_delay).timeout.connect(func() -> void:
+		_show_result_popup(elapsed_seconds, hints_used)
+	)
+
+func _show_result_popup(elapsed_seconds: float, hints_used: int) -> void:
 	var popup = ResultPopupScene.instantiate()
 	add_child(popup)
 	popup.show_popup(
