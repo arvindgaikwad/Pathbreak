@@ -40,6 +40,7 @@ When documents disagree, update the stale document rather than guessing.
 | `../TASKS.md` | Current | Prioritised execution tracker |
 | `ARROW_SYSTEM_AUDIT.md` | Current | Root cause, ordered-path migration, tests, risks |
 | `SNAKE_ESCAPE_ANIMATION.md` | Manually verified | Corner-following escape motion and regression checks |
+| `ANDROID_DEVICE_VERIFICATION_2026-08-07.md` | Verified | Physical Android device QA report (Samsung Galaxy Tab S6 Lite) |
 | `ANDROID_VERTICAL_SLICE_QA.md` | Active | Android preflight, APK export/install, phone/tablet QA |
 | `VERTICAL_SLICE_REVIEW.md` | Current | Approval criteria and Levels 1–5 review |
 | `VERTICAL_SLICE_PLAYTEST_2026-08-06.md` | Current evidence | Playtest observations and verification boundaries |
