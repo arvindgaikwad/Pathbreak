@@ -163,6 +163,7 @@ run_regression() {
   "$GODOT_BIN" --headless --path . --script tests/test_release_polish.gd
   "$GODOT_BIN" --headless --path . --script tests/test_completion_finish.gd
   "$GODOT_BIN" --headless --path . --script tests/test_level_studio_analysis.gd
+  "$GODOT_BIN" --headless --path . --script tests/test_level_studio_preview.gd
 }
 
 export_apk() {
