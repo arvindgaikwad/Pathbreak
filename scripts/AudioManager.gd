@@ -12,6 +12,11 @@ func _ready() -> void:
 func play_move_sound() -> void:
 	_play_synth_notes([523.25, 659.25], 0.12, 0.15)
 
+func play_unlock_sound() -> void:
+	# Automatic newly-freed feedback was rejected because it reveals the next answer.
+	# Keep this temporary no-op while the prototype coordinator hook is removed cleanly.
+	pass
+
 func play_blocked_sound() -> void:
 	_play_synth_notes([180.0, 140.0], 0.18, 0.25)
 
