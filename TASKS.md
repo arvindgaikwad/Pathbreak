@@ -48,7 +48,7 @@ Close the remaining current-head regression, Android, accessibility, and layout 
 
 The two-person pass did not record exact moves, mistakes, hints, or written qualitative notes. Those metrics are useful for broader testing but no longer justify delaying platform QA.
 
-## Android vertical-slice preparation — implemented, pending local verification
+## Android vertical-slice preparation — VERIFIED ON DEVICE
 
 - [x] Added committed `Android Debug` export preset.
 - [x] Added `*.json` to the export include filter so canonical levels ship in the APK.
@@ -56,11 +56,12 @@ The two-person pass did not record exact moves, mistakes, hints, or written qual
 - [x] Enabled Android vibration permission for Pathbreak haptics.
 - [x] Kept Internet permission disabled for the current offline vertical slice.
 - [x] Added `tools/android_vertical_slice.sh` for preflight, regression tests, debug APK export, device install, and logcat.
-- [x] Added `docs/ANDROID_VERTICAL_SLICE_QA.md`.
+- [x] Added `docs/ANDROID_VERTICAL_SLICE_QA.md` and `docs/ANDROID_DEVICE_VERIFICATION_2026-08-07.md`.
 - [x] Added `/builds/` to `.gitignore`.
-- [ ] Verify local Godot 4.7.1 accepts the new Android export preset.
-- [ ] Confirm matching 4.7.1 export templates are installed.
-- [ ] Confirm Java SDK and Android SDK paths are configured in Godot Editor Settings.
+- [x] Verified local Godot 4.7.1 accepts the Android export preset.
+- [x] Verified Java OpenJDK 21 and Android SDK environment.
+- [x] Exported signed 56MB Debug APK (`builds/android/pathbreak-debug.apk`).
+- [x] Installed and launched live on Samsung Galaxy Tab S6 Lite (`SM_P615`).
 
 **Temporary testing package:** `com.pathbreak.verticalslice`. Do not publish this package ID to Google Play. Final package ID waits for final naming and publisher decisions.
 
