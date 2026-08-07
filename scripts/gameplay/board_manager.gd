@@ -19,6 +19,9 @@ const COLOR_BOARD_CARD := Color("#FFFFFF")
 const COLOR_SHADOW := Color(0.1, 0.12, 0.18, 0.06)
 const COLOR_GRID_DOTS := Color("#DDE3EC")
 const COLOR_GRID_DOTS_HIGH := Color("#B8C1CF")
+const COMPLETION_SETTLE_COMPRESS := 0.040
+const COMPLETION_SETTLE_RELEASE := 0.065
+const COMPLETION_SETTLE_RETURN := 0.075
 
 func _ready() -> void:
 	if is_inside_tree() and get_tree() and get_tree().root:
@@ -149,15 +152,35 @@ func play_newly_freed_feedback(_candidates: Array[PuzzlePiece]) -> int:
 	# analysis, but gameplay must not visually or audibly identify newly escapable paths.
 	return 0
 
+func get_completion_settle_duration() -> float:
+	if _is_reduce_motion():
+		return 0.0
+	return COMPLETION_SETTLE_COMPRESS + COMPLETION_SETTLE_RELEASE + COMPLETION_SETTLE_RETURN
+
 func play_completion_settle() -> void:
 	if _is_reduce_motion():
 		return
 	if completion_tween != null and completion_tween.is_valid():
 		completion_tween.kill()
 	completion_tween = create_tween()
-	completion_tween.tween_property(self, "scale", Vector2.ONE * 0.992, 0.055).set_trans(Tween.TRANS_SINE)
-	completion_tween.tween_property(self, "scale", Vector2.ONE * 1.006, 0.09).set_trans(Tween.TRANS_SINE)
-	completion_tween.tween_property(self, "scale", Vector2.ONE, 0.12).set_trans(Tween.TRANS_SINE)
+	completion_tween.tween_property(
+		self,
+		"scale",
+		Vector2.ONE * 0.994,
+		COMPLETION_SETTLE_COMPRESS
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	completion_tween.tween_property(
+		self,
+		"scale",
+		Vector2.ONE * 1.003,
+		COMPLETION_SETTLE_RELEASE
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	completion_tween.tween_property(
+		self,
+		"scale",
+		Vector2.ONE,
+		COMPLETION_SETTLE_RETURN
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	completion_tween.finished.connect(func() -> void:
 		completion_tween = null
 		scale = Vector2.ONE
