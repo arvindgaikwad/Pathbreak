@@ -9,7 +9,7 @@ Read `docs/PROJECT_HANDOFF.md` before continuing after a lost conversation.
 
 ## Current objective
 
-Approve a complete, understandable, stable, device-tested vertical slice before building the level-production pipeline, final art, or monetization.
+Finish vertical-slice gameplay quality, tune Levels 4–5, then complete Android/device acceptance before final UI/art and the level-production pipeline.
 
 ## Verified manual behaviours
 
@@ -17,64 +17,78 @@ Approve a complete, understandable, stable, device-tested vertical slice before 
 - [x] Travelling menu cue works.
 - [x] Hint cue moves toward the arrowhead.
 - [x] Final valid path clears automatically without adding a Move.
-- [x] Reduce Motion alternatives work.
+- [x] Reduce Motion alternatives worked before the latest snake-animation pass.
 - [x] Restart and hint refill work.
 - [x] Clean-save menu shows `Start Level 1`.
 - [x] First Level 1 hint shows `FREE`.
 - [x] Level 2 starts with five normal hints.
 - [x] Replaying Level 1 shows the real hint inventory.
+- [x] Ordered arrow/head correction passed Gate 1 formal verification.
+- [x] Ordered arrow/head movement regression passed Gate 2.
+- [x] New-player direction comprehension passed Gate 3.
+- [x] Bent paths now animate like a snake: head leads, tail feeds through the bend, body becomes straight, then exits.
 
-## Latest implementation — pending local verification
+## Accepted technical foundations
 
-The two expert prompts were combined into one correction:
-
-- [x] Keep one shared path system; do not patch levels with rotation offsets.
-- [x] Standardise authored cells as `tail → ... → head`.
-- [x] Derive head and movement direction from the final two cells.
-- [x] Reject direction values that do not match the final segment.
-- [x] Trim only the rendered shaft before the triangle.
-- [x] Use the same geometry helper in gameplay and the menu.
-- [x] Make the hint marker a small directional triangle.
-- [x] Update the level editor so arbitrary unrelated directions cannot be saved.
-- [x] Add a safe preview-only migration scanner.
-- [x] Migrate Levels 1–5 while preserving the vertical-slice metric targets.
-- [x] Add full-pack ordered-path tests.
-- [x] Document the root cause and migration in `docs/ARROW_SYSTEM_AUDIT.md`.
-
-These items remain unverified until the local parser, migration preview, tests, and screenshots pass.
+- [x] One shared path system; no per-level rotation offsets.
+- [x] Authored cells use `tail → ... → head`.
+- [x] Head and movement direction derive from the final two cells.
+- [x] Validator rejects direction/final-segment mismatches.
+- [x] Gameplay and menu share path geometry helpers.
+- [x] Hint marker uses a directional triangle.
+- [x] Level editor cannot save arbitrary unrelated direction values.
+- [x] Existing Levels 1–5 were migrated to the ordered-path model.
+- [x] Full-pack ordered-path tests exist.
+- [x] Snake escape uses a constant-length body window through the exact polyline.
+- [x] `docs/ARROW_SYSTEM_AUDIT.md` and `docs/SNAKE_ESCAPE_ANIMATION.md` document the accepted model.
 
 ---
 
 ## P0 — Do next
 
-### A. Formal parser and automated verification
+### A. Post-snake regression rerun
 
-- [ ] Pull the latest active branch.
-- [ ] Run the Godot 4.7.1 headless editor/parser scan.
+The earlier formal gate passed before the final snake-animation correction. Rerun only because shared geometry changed afterward.
+
+- [ ] Run the Godot 4.7.1 headless editor/parser scan on current head.
 - [ ] Confirm zero parser errors and no new warnings.
-- [ ] Run `tools/path_level_migration_preview.gd`.
-- [ ] Confirm the preview reports `reversible=0 ambiguous=0`.
-- [ ] Run `tests/test_path_visual_geometry.gd`.
+- [ ] Run `tests/test_path_visual_geometry.gd` and confirm `7/7`.
 - [ ] Run `tests/test_movement_validator.gd`.
 - [ ] Run `tests/test_level_data_validator.gd`.
 - [ ] Run `tests/test_vertical_slice_levels.gd`.
-- [ ] Confirm the vertical-slice opening and solution counts remain unchanged.
-- [ ] Record exact output in the playtest document.
+- [ ] Quick-check Reduce Motion still uses the simpler escape.
 
-### B. Ordered-path visual acceptance
+### B. Difficulty tuning — Levels 4 and 5
 
-- [ ] Confirm every Level 1–5 triangle is attached to the final path endpoint.
-- [ ] Confirm each triangle follows the adjacent final segment.
-- [ ] Confirm left, right, up, and down triangles have identical proportions.
-- [ ] Confirm bent paths never use first-to-last diagonal direction.
-- [ ] Confirm the rendered shaft stops cleanly under the triangle.
-- [ ] Confirm the tail remains on the opposite endpoint.
-- [ ] Confirm hint marker direction matches the final segment.
-- [ ] Confirm movement direction matches the visible head.
-- [ ] Confirm menu demonstration uses the same rules.
-- [ ] Confirm touch selection, restart, refill, failure, and automatic final clear did not regress.
+Do not change Levels 1–3 unless new evidence shows a teaching failure.
 
-### C. Main-menu acceptance
+#### Level 4
+
+- [ ] Audit current opening moves and solution count.
+- [ ] Make the player intentionally choose an order rather than clear obvious free paths.
+- [ ] Keep the board readable with the corrected arrow language.
+- [ ] Target roughly 20–35 seconds for a first-time player.
+- [ ] Avoid artificial difficulty from crowded geometry.
+- [ ] Re-run solver/dead-end checks after every geometry change.
+
+#### Level 5
+
+- [ ] Audit current dependency chain after ordered-path migration.
+- [ ] Increase meaningful decision depth without making direction ambiguous.
+- [ ] Target roughly 30–45 seconds for a first-time player.
+- [ ] Keep at least one satisfying bent-path snake escape visible during normal solving.
+- [ ] Re-run opening, solution-count, and dead-end metrics after every change.
+
+### C. Difficulty retest
+
+- [ ] Give revised Levels 4–5 to at least three players without hints or explanation.
+- [ ] Record completion time, moves, mistakes, hints, and confusion points.
+- [ ] Reject a revision if difficulty comes from unreadable arrows rather than sequencing.
+- [ ] Keep the version that produces deliberate thought while preserving enjoyment.
+
+---
+
+## P1 — Main-menu/layout acceptance
 
 - [x] Hero board and Start/Continue open the same level.
 - [x] Travelling direction cue is visible.
@@ -85,37 +99,11 @@ These items remain unverified until the local parser, migration preview, tests, 
 - [ ] Confirm chapter-complete state is understandable.
 - [ ] Test 360×800 and 800×1280 first.
 
-### D. Accessibility regression
+## P1 — Accessibility regression
 
-- [ ] Verify Reduce Motion after the ordered-path migration.
+- [ ] Verify Reduce Motion after the final snake-animation implementation.
 - [ ] Enable High Contrast and verify shaft, head, tail, and marker readability.
 - [ ] Verify Sound and Haptics persist after restart.
-
----
-
-## P1 — New-player retest
-
-Use at least three players who have not seen the corrected arrow system.
-
-Record:
-
-- [ ] First Main Menu target tapped.
-- [ ] Whether board and Start button were understood.
-- [ ] Whether arrow direction was identified without explanation.
-- [ ] Whether tail markers caused confusion.
-- [ ] Completion time for Levels 1–5.
-- [ ] Moves, mistakes, and hints.
-- [ ] Confusion, boredom, enjoyment, or abandonment.
-- [ ] Reaction to automatic final clear.
-
-Decision rules:
-
-- [ ] Do not create difficulty through unclear arrow visuals.
-- [ ] Keep Level 2 if blocking remains understandable.
-- [ ] Keep Level 3 if bent-path reading remains understandable.
-- [ ] Tune Levels 4–5 only after readability passes.
-
----
 
 ## P1 — Android verification
 
@@ -124,6 +112,7 @@ Decision rules:
 - [ ] Export and install a debug APK.
 - [ ] Verify portrait layout and nearest-path touch selection.
 - [ ] Verify close paths do not select incorrectly.
+- [ ] Verify snake animation remains smooth at mobile framerate.
 - [ ] Verify multi-touch does not duplicate actions.
 - [ ] Verify Android Back closes popup/pause first.
 - [ ] Verify suspend/resume and force-close/reopen persistence.
@@ -134,41 +123,44 @@ Decision rules:
 - [ ] Install on Samsung Galaxy Tab S6 Lite or another Android tablet.
 - [ ] Verify board scale and centring.
 - [ ] Verify stylus and finger tolerance.
+- [ ] Verify snake animation at tablet scale.
 - [ ] Verify popup/menu sizing, performance, and lifecycle behaviour.
 
 ---
 
-## P1 — Vertical-slice level direction
+## P1 — Vertical-slice level status
 
 ### Level 1
 
 - [x] Two clear openings.
 - [x] Fresh-save `FREE` state verified.
-- [ ] Confirm migrated left/right heads visually.
+- [x] Ordered heads accepted.
 
 ### Level 2
 
 - [x] Tightened to 6×6.
-- [x] Initial testers understood blocking.
-- [ ] Confirm the migrated L-path still teaches blocking.
+- [x] Blocking understood by players.
+- [x] L-path visually accepted.
+- [x] L-path snake escape accepted.
 
 ### Level 3
 
 - [x] Tightened to 6×6.
-- [x] Initial testers understood bent-path reading.
-- [ ] Confirm all migrated final segments remain understandable.
+- [x] Bent-path reading understood.
+- [x] Ordered-path direction model accepted.
 
 ### Level 4
 
 - [x] Failure/retry/result flow exercised.
-- [ ] Confirm reversed upward path renders and moves correctly.
-- [ ] Retest difficulty only after readability passes.
+- [ ] Tune decision depth.
+- [ ] Retest with new players.
 
 ### Level 5
 
-- [x] Dependency-chain metric target remains encoded in tests.
-- [ ] Confirm all eight ordered heads visually.
-- [ ] Retest difficulty after the migration passes.
+- [x] Ordered-path heads visually accepted.
+- [x] Snake-style bent-path movement accepted.
+- [ ] Tune meaningful difficulty.
+- [ ] Retest with new players.
 
 ---
 
@@ -250,7 +242,6 @@ git pull origin codex/vertical-slice-level-review
 GODOT="/home/silver/Downloads/godot games /Godot_v4.7.1-stable_linux.x86_64"
 
 "$GODOT" --headless --path . --editor --quit
-"$GODOT" --headless --path . --script tools/path_level_migration_preview.gd
 "$GODOT" --headless --path . --script tests/test_path_visual_geometry.gd
 "$GODOT" --headless --path . --script tests/test_movement_validator.gd
 "$GODOT" --headless --path . --script tests/test_level_data_validator.gd
