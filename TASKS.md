@@ -9,7 +9,7 @@ Read `docs/PROJECT_HANDOFF.md` before continuing after a lost conversation.
 
 ## Current objective
 
-Close the remaining current-head regression, Android, accessibility, and layout gates for the five-level vertical slice. Levels 1–5 are frozen unless new evidence reveals a regression.
+Close the few remaining phone, lifecycle, accessibility/settings, and layout gates for the five-level vertical slice. Levels 1–5 are frozen unless new evidence reveals a regression.
 
 ## Approved gameplay foundations
 
@@ -61,7 +61,10 @@ The two-person pass did not record exact moves, mistakes, hints, or written qual
 - [x] Verified local Godot 4.7.1 accepts the Android export preset.
 - [x] Verified Java OpenJDK 21 and Android SDK environment.
 - [x] Exported signed 56MB Debug APK (`builds/android/pathbreak-debug.apk`).
-- [x] Installed and launched live on Samsung Galaxy Tab S6 Lite (`SM_P615`).
+- [x] Installed and launched live on Samsung Galaxy Tab S6 Lite (`SM_P615`, Android 13).
+- [x] Physical-device touch selection reported reliable.
+- [x] Physical-device snake animation reported smooth at 60 FPS.
+- [x] Physical-device audio and haptics reported working.
 
 **Temporary testing package:** `com.pathbreak.verticalslice`. Do not publish this package ID to Google Play. Final package ID waits for final naming and publisher decisions.
 
@@ -69,52 +72,35 @@ The two-person pass did not record exact moves, mistakes, hints, or written qual
 
 ## P0 — Do next
 
-### A. Final current-head regression + Android preflight
+### A. Final current-head regression + Android preflight — PASSED
 
-Run:
+- [x] Godot 4.7.1 detected.
+- [x] Java detected; current successful export used OpenJDK 21.
+- [x] Android SDK + `adb` detected.
+- [x] `Android Debug` preset detected.
+- [x] Godot 4.7.1 headless editor/parser scan passed with 0 parse errors/warnings reported.
+- [x] Path migration preview passed; 10 levels / 83 pieces canonical.
+- [x] `tests/test_path_visual_geometry.gd` → `7/7`.
+- [x] `tests/test_movement_validator.gd` → `10/10`.
+- [x] `tests/test_level_data_validator.gd` → `8/8`.
+- [x] `tests/test_vertical_slice_levels.gd` → `7/7`.
+- [x] Level 4 structural targets remain encoded: 9 pieces / 2 openings / 15 solutions.
+- [x] Level 5 structural targets remain encoded: 10 pieces / 1 opening / 10 solutions.
 
-```bash
-bash tools/android_vertical_slice.sh check
-bash tools/android_vertical_slice.sh test
-```
+Evidence: `docs/ANDROID_DEVICE_VERIFICATION_2026-08-07.md`.
 
-- [ ] Godot 4.7.1 detected.
-- [ ] Java detected; OpenJDK 17 preferred.
-- [ ] Android SDK + `adb` detected.
-- [ ] `Android Debug` preset detected.
-- [ ] Godot 4.7.1 headless editor/parser scan passes.
-- [ ] Zero parser errors and no new warnings.
-- [ ] `tools/path_level_migration_preview.gd` → `reversible=0 ambiguous=0`.
-- [ ] `tests/test_path_visual_geometry.gd` → expected `7/7`.
-- [ ] `tests/test_movement_validator.gd` passes.
-- [ ] `tests/test_level_data_validator.gd` passes.
-- [ ] `tests/test_vertical_slice_levels.gd` passes.
-- [ ] Confirm Level 4 = 9 pieces / 2 openings / 15 solutions.
-- [ ] Confirm Level 5 = 10 pieces / 1 opening / 10 solutions.
+### B. Export and install the Android debug build — PASSED
 
-### B. Export and install the Android debug build
+- [x] APK exported successfully.
+- [x] APK installed on authorized physical Android hardware.
+- [x] Main Menu launched on device.
+- [x] Packaged JSON levels loaded successfully in the installed build.
 
-Run:
+### C. Android phone verification — STILL REQUIRED
 
-```bash
-bash tools/android_vertical_slice.sh export
-bash tools/android_vertical_slice.sh install
-```
+A real Android phone has not yet been recorded as tested. Do not substitute viewport simulation for this gate.
 
-Expected APK:
-
-```text
-builds/android/pathbreak-debug.apk
-```
-
-- [ ] APK exports successfully.
-- [ ] APK installs on an authorized Android device.
-- [ ] Main Menu launches.
-- [ ] Levels load from packaged JSON correctly.
-
-### C. Android phone verification
-
-- [ ] Portrait layout fits correctly.
+- [ ] Portrait layout fits correctly on a physical phone.
 - [ ] Main-menu board and Start/Continue work with touch.
 - [ ] Rapid taps do not double-navigate.
 - [ ] Nearest-path touch selection remains accurate.
@@ -127,29 +113,34 @@ builds/android/pathbreak-debug.apk
 - [ ] Haptics work and respect the toggle.
 - [ ] Snake animation remains smooth.
 
-### D. Android tablet verification
+### D. Android tablet verification — SUBSTANTIAL PASS
 
-- [ ] Install on Samsung Galaxy Tab S6 Lite or another Android tablet.
-- [ ] Board scale and centring are correct.
-- [ ] 800×1280-class portrait layout is balanced.
-- [ ] Stylus and finger selection both feel accurate.
-- [ ] Popup/menu sizing is comfortable.
-- [ ] Snake animation remains smooth.
-- [ ] Suspend/resume and save persistence work.
+Physical device: Samsung Galaxy Tab S6 Lite (`SM_P615`, Android 13).
+
+- [x] APK installs and launches.
+- [x] Touch/nearest-path selection reported reliable.
+- [x] Board/UI scaling reported correct on physical hardware.
+- [x] Snake animation reported smooth at 60 FPS.
+- [x] Sound playback verified.
+- [x] Haptics integration verified.
+- [ ] Explicit stylus-versus-finger comparison recorded.
+- [ ] Android Back behavior recorded for pause/refill overlays.
+- [ ] Suspend/resume behavior recorded.
+- [ ] Force-close/reopen save persistence recorded.
 
 ### E. Accessibility/settings regression
 
 - [ ] High Contrast keeps shaft/head/tail/marker readable.
-- [ ] Reduce Motion keeps the simpler rigid translation/fade.
+- [ ] Reduce Motion keeps the simpler rigid translation/fade after the final snake implementation.
 - [ ] Sound toggle persists after restart.
 - [ ] Haptics toggle persists after restart.
-- [ ] No core direction information depends only on color.
+- [x] Core direction is communicated by shape, not color alone.
 
 ### F. Main-menu/layout closure
 
-- [ ] Board prompt does not overlap at 360×800.
-- [ ] Full loop works at 800×1280 tablet portrait.
-- [ ] Chapter-complete state remains understandable.
+- [x] Responsive layout was reported clean at compact 360×800 simulation and on the physical tablet.
+- [ ] Rapid-tap double-navigation check recorded on Android.
+- [ ] Chapter-complete state recorded and understandable.
 
 ---
 
@@ -157,12 +148,12 @@ builds/android/pathbreak-debug.apk
 
 Approve only when:
 
-- [ ] Current-head automation passes.
+- [x] Current-head automation passes.
 - [x] Levels 4–5 have acceptable two-person timing evidence.
 - [ ] Android phone test passes.
-- [ ] Android tablet test passes.
+- [ ] Remaining Android tablet lifecycle/Back persistence checks pass.
 - [ ] Accessibility/settings regression passes.
-- [ ] Main-menu/layout closure passes.
+- [ ] Remaining menu closure checks pass.
 - [ ] Remaining defects are documented.
 
 Do not reopen Levels 1–5 merely to add difficulty.
@@ -243,7 +234,7 @@ bash tools/android_vertical_slice.sh export
 bash tools/android_vertical_slice.sh install
 ```
 
-Or run the full verified path:
+Or run the full path:
 
 ```bash
 bash tools/android_vertical_slice.sh all
