@@ -15,11 +15,11 @@ var direction_marker: Polygon2D = null
 var direction_tween: Tween = null
 
 var snake_route := PackedVector2Array()
-var snake_sample_distances: Array[float] = []
 var snake_body_length: float = 0.0
-var snake_travel_distance: float = 0.0
+var snake_exit_distance: float = 0.0
 var snake_head_length: float = 0.0
 var snake_shaft_trim: float = 0.0
+var snake_has_corner: bool = false
 
 @onready var line: Line2D = $Line2D
 @onready var arrow_head: Polygon2D = $ArrowHead
@@ -33,6 +33,7 @@ const COLOR_ERROR := Color("#EF5B5B")
 const MARKER_START_PROGRESS := 0.0
 const MARKER_END_PROGRESS := 1.0
 const SNAKE_ESCAPE_DURATION := 0.28
+const SNAKE_UNCOIL_PHASE := 0.72
 
 func init_from_data(data: PuzzlePieceData, new_grid_size: float = 64.0) -> void:
 	piece_data = data
@@ -220,72 +221,73 @@ func animate_successful_escape() -> void:
 		0.0,
 		1.0,
 		SNAKE_ESCAPE_DURATION
-	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	).set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_callback(queue_free)
 
 func _prepare_snake_escape() -> bool:
-	var source_points := _source_points()
 	var ordered_points := PathVisualGeometryScript.points_tail_to_head(
-		source_points,
+		_source_points(),
 		head_endpoint
 	)
 	if ordered_points.size() < 2:
 		return false
 
-	var sample_spacing := clampf(grid_size * 0.10, 5.0, 8.0)
-	var dense_points := PathVisualGeometryScript.densify_polyline(
-		ordered_points,
-		sample_spacing
-	)
-	if dense_points.size() < 2:
+	snake_body_length = PathVisualGeometryScript.polyline_length(ordered_points)
+	if snake_body_length <= 0.001:
 		return false
 
-	snake_sample_distances = PathVisualGeometryScript.cumulative_distances(dense_points)
-	if snake_sample_distances.is_empty():
-		return false
-
-	snake_body_length = snake_sample_distances[-1]
 	snake_head_length = clampf(grid_size * 0.38, 22.0, 28.0)
 	snake_shaft_trim = snake_head_length * 0.44
-	var offscreen_distance := grid_size * 12.0
-	snake_travel_distance = snake_body_length + offscreen_distance
+	snake_exit_distance = grid_size * 12.0
+	snake_has_corner = _path_has_corner(ordered_points)
 	snake_route = ordered_points.duplicate()
-	snake_route.append(ordered_points[-1] + _direction_vector() * snake_travel_distance)
+	snake_route.append(ordered_points[-1] + _direction_vector() * snake_exit_distance)
 	_set_snake_escape_progress(0.0)
 	return true
 
+func _path_has_corner(points: PackedVector2Array) -> bool:
+	if points.size() < 3:
+		return false
+	for index in range(1, points.size() - 1):
+		var incoming := (points[index] - points[index - 1]).normalized()
+		var outgoing := (points[index + 1] - points[index]).normalized()
+		if not incoming.is_equal_approx(outgoing):
+			return true
+	return false
+
+func _snake_travel_for_progress(progress: float) -> float:
+	var amount := clampf(progress, 0.0, 1.0)
+	if not snake_has_corner:
+		return (snake_body_length + snake_exit_distance) * amount
+
+	if amount <= SNAKE_UNCOIL_PHASE:
+		var uncoil_progress := amount / SNAKE_UNCOIL_PHASE
+		return snake_body_length * uncoil_progress
+
+	var exit_progress := (amount - SNAKE_UNCOIL_PHASE) / (1.0 - SNAKE_UNCOIL_PHASE)
+	return snake_body_length + snake_exit_distance * exit_progress
+
 func _set_snake_escape_progress(progress: float) -> void:
-	if snake_route.size() < 2 or snake_sample_distances.is_empty():
+	if snake_route.size() < 2:
 		return
 
-	var travel := snake_travel_distance * clampf(progress, 0.0, 1.0)
-	var moving_points := PackedVector2Array()
-	for sample_distance in snake_sample_distances:
-		moving_points.append(
-			PathVisualGeometryScript.point_at_distance(
-				snake_route,
-				sample_distance + travel
-			)
-		)
+	var travel := _snake_travel_for_progress(progress)
+	var moving_points := PathVisualGeometryScript.slice_polyline(
+		snake_route,
+		travel,
+		travel + snake_body_length
+	)
 	if moving_points.size() < 2:
 		return
 
 	var direction := _direction_vector()
 	var head_anchor: Vector2 = moving_points[-1]
 	var tail_anchor: Vector2 = moving_points[0]
-	var render_points := PackedVector2Array()
-	for point_index in range(moving_points.size()):
-		var distance_from_head := snake_body_length - snake_sample_distances[point_index]
-		if distance_from_head > snake_shaft_trim:
-			render_points.append(moving_points[point_index])
-
-	var trimmed_head := head_anchor - direction * snake_shaft_trim
-	if render_points.is_empty():
-		render_points.append(trimmed_head)
-	elif render_points[-1].distance_to(trimmed_head) > 0.1:
-		render_points.append(trimmed_head)
-	else:
-		render_points[render_points.size() - 1] = trimmed_head
+	var render_points := PathVisualGeometryScript.trim_shaft_for_head(
+		moving_points,
+		snake_shaft_trim,
+		PathVisualGeometry.HeadEndpoint.END
+	)
 
 	line.points = render_points
 	_set_tail_dot_center(tail_anchor)
