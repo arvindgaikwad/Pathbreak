@@ -9,7 +9,7 @@ Read `docs/PROJECT_HANDOFF.md` before continuing after a lost conversation.
 
 ## Current objective
 
-Close the few remaining phone, lifecycle, accessibility/settings, and layout gates for the five-level vertical slice. Levels 1–5 are frozen unless new evidence reveals a regression.
+Fix and re-verify Android portrait orientation, then close the remaining phone, lifecycle, accessibility/settings, and layout gates for the five-level vertical slice. Levels 1–5 are frozen unless new evidence reveals a regression.
 
 ## Approved gameplay foundations
 
@@ -46,59 +46,51 @@ Close the few remaining phone, lifecycle, accessibility/settings, and layout gat
 - [x] Timing lands inside the intended 30–45 second range.
 - [x] Stop tuning unless later evidence shows confusion or frustration.
 
-The two-person pass did not record exact moves, mistakes, hints, or written qualitative notes. Those metrics are useful for broader testing but no longer justify delaying platform QA.
+## Android vertical-slice preparation
 
-## Android vertical-slice preparation — VERIFIED ON DEVICE
+- [x] Android Debug export preset committed.
+- [x] Canonical `*.json` files included in APK export.
+- [x] ARMv7 and ARM64 enabled.
+- [x] Vibration permission enabled for haptics.
+- [x] Internet permission remains disabled for the offline slice.
+- [x] `tools/android_vertical_slice.sh` handles preflight, tests, export, install, and logcat.
+- [x] APK exported, installed, and launched on Samsung Galaxy Tab S6 Lite.
+- [x] Touch selection, snake animation, sound, and haptics worked on physical hardware.
+- [!] Initial tablet build launched in **landscape**, so the portrait platform gate is reopened.
+- [x] Corrected `project.godot` orientation to `SCREEN_PORTRAIT = 1`.
+- [x] Added `tests/test_mobile_project_settings.gd`.
+- [x] Added portrait guard to `tools/android_vertical_slice.sh`.
 
-- [x] Added committed `Android Debug` export preset.
-- [x] Added `*.json` to the export include filter so canonical levels ship in the APK.
-- [x] Enabled ARMv7 and ARM64 for broad physical-device testing.
-- [x] Enabled Android vibration permission for Pathbreak haptics.
-- [x] Kept Internet permission disabled for the current offline vertical slice.
-- [x] Added `tools/android_vertical_slice.sh` for preflight, regression tests, debug APK export, device install, and logcat.
-- [x] Added `docs/ANDROID_VERTICAL_SLICE_QA.md` and `docs/ANDROID_DEVICE_VERIFICATION_2026-08-07.md`.
-- [x] Added `/builds/` to `.gitignore`.
-- [x] Verified local Godot 4.7.1 accepts the Android export preset.
-- [x] Verified Java OpenJDK 21 and Android SDK environment.
-- [x] Exported signed 56MB Debug APK (`builds/android/pathbreak-debug.apk`).
-- [x] Installed and launched live on Samsung Galaxy Tab S6 Lite (`SM_P615`, Android 13).
-- [x] Physical-device touch selection reported reliable.
-- [x] Physical-device snake animation reported smooth at 60 FPS.
-- [x] Physical-device audio and haptics reported working.
-
-**Temporary testing package:** `com.pathbreak.verticalslice`. Do not publish this package ID to Google Play. Final package ID waits for final naming and publisher decisions.
+**Temporary testing package:** `com.pathbreak.verticalslice`. Do not publish this package ID to Google Play.
 
 ---
 
 ## P0 — Do next
 
-### A. Final current-head regression + Android preflight — PASSED
+### A. Portrait-orientation regression
 
-- [x] Godot 4.7.1 detected.
-- [x] Java detected; current successful export used OpenJDK 21.
-- [x] Android SDK + `adb` detected.
-- [x] `Android Debug` preset detected.
-- [x] Godot 4.7.1 headless editor/parser scan passed with 0 parse errors/warnings reported.
-- [x] Path migration preview passed; 10 levels / 83 pieces canonical.
-- [x] `tests/test_path_visual_geometry.gd` → `7/7`.
-- [x] `tests/test_movement_validator.gd` → `10/10`.
-- [x] `tests/test_level_data_validator.gd` → `8/8`.
-- [x] `tests/test_vertical_slice_levels.gd` → `7/7`.
-- [x] Level 4 structural targets remain encoded: 9 pieces / 2 openings / 15 solutions.
-- [x] Level 5 structural targets remain encoded: 10 pieces / 1 opening / 10 solutions.
+- [ ] Pull the latest active branch.
+- [ ] Run `bash tools/android_vertical_slice.sh test`.
+- [ ] Confirm `tests/test_mobile_project_settings.gd` reports portrait and passes.
+- [ ] Re-export the Android debug APK.
+- [ ] Reinstall on the Samsung Galaxy Tab S6 Lite.
+- [ ] Confirm app launches in portrait.
+- [ ] Confirm rotating the tablet does not switch Pathbreak into landscape.
+- [ ] Confirm Main Menu, gameplay, Pause, Refill, Result, and Level Select remain correctly composed in portrait.
 
-Evidence: `docs/ANDROID_DEVICE_VERIFICATION_2026-08-07.md`.
+### B. Current-head automated regression
 
-### B. Export and install the Android debug build — PASSED
+The pre-orientation gameplay/data suites already passed. Rerun them once with the portrait fix because `tools/android_vertical_slice.sh test` now includes the new mobile-settings guard.
 
-- [x] APK exported successfully.
-- [x] APK installed on authorized physical Android hardware.
-- [x] Main Menu launched on device.
-- [x] Packaged JSON levels loaded successfully in the installed build.
+- [ ] Editor/parser scan passes with no new warnings.
+- [ ] Mobile project settings test passes.
+- [ ] Path migration preview remains canonical.
+- [ ] Ordered geometry remains `7/7`.
+- [ ] Movement validator remains `10/10`.
+- [ ] Level data validator remains `8/8`.
+- [ ] Vertical-slice level suite remains `7/7`.
 
 ### C. Android phone verification — STILL REQUIRED
-
-A real Android phone has not yet been recorded as tested. Do not substitute viewport simulation for this gate.
 
 - [ ] Portrait layout fits correctly on a physical phone.
 - [ ] Main-menu board and Start/Continue work with touch.
@@ -113,16 +105,16 @@ A real Android phone has not yet been recorded as tested. Do not substitute view
 - [ ] Haptics work and respect the toggle.
 - [ ] Snake animation remains smooth.
 
-### D. Android tablet verification — SUBSTANTIAL PASS
+### D. Android tablet verification — RETEST REQUIRED AFTER PORTRAIT FIX
 
 Physical device: Samsung Galaxy Tab S6 Lite (`SM_P615`, Android 13).
 
-- [x] APK installs and launches.
-- [x] Touch/nearest-path selection reported reliable.
-- [x] Board/UI scaling reported correct on physical hardware.
-- [x] Snake animation reported smooth at 60 FPS.
+- [ ] App launches and stays in portrait.
+- [x] Touch/nearest-path selection reported reliable in the first hardware pass.
+- [x] Snake animation reported smooth at 60 FPS in the first hardware pass.
 - [x] Sound playback verified.
 - [x] Haptics integration verified.
+- [ ] Board/UI scaling rechecked in actual portrait orientation.
 - [ ] Explicit stylus-versus-finger comparison recorded.
 - [ ] Android Back behavior recorded for pause/refill overlays.
 - [ ] Suspend/resume behavior recorded.
@@ -138,7 +130,7 @@ Physical device: Samsung Galaxy Tab S6 Lite (`SM_P615`, Android 13).
 
 ### F. Main-menu/layout closure
 
-- [x] Responsive layout was reported clean at compact 360×800 simulation and on the physical tablet.
+- [ ] Recheck compact portrait composition after orientation correction.
 - [ ] Rapid-tap double-navigation check recorded on Android.
 - [ ] Chapter-complete state recorded and understandable.
 
@@ -148,10 +140,11 @@ Physical device: Samsung Galaxy Tab S6 Lite (`SM_P615`, Android 13).
 
 Approve only when:
 
-- [x] Current-head automation passes.
+- [ ] Portrait-orientation rebuild/retest passes.
+- [ ] Current-head automation including mobile-settings guard passes.
 - [x] Levels 4–5 have acceptable two-person timing evidence.
 - [ ] Android phone test passes.
-- [ ] Remaining Android tablet lifecycle/Back persistence checks pass.
+- [ ] Remaining Android tablet lifecycle/Back/persistence checks pass.
 - [ ] Accessibility/settings regression passes.
 - [ ] Remaining menu closure checks pass.
 - [ ] Remaining defects are documented.
@@ -234,7 +227,7 @@ bash tools/android_vertical_slice.sh export
 bash tools/android_vertical_slice.sh install
 ```
 
-Or run the full path:
+Or:
 
 ```bash
 bash tools/android_vertical_slice.sh all
