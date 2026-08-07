@@ -6,7 +6,15 @@
 
 ## 1. Automated checks
 
-Run from the project root:
+The ordered-arrow Gate 1 passed before the later snake-animation and Level 4–5 tuning changes. Run the current head once more before platform approval.
+
+Preferred command:
+
+```bash
+bash tools/android_vertical_slice.sh test
+```
+
+Equivalent individual commands:
 
 ```bash
 godot --headless --path . --editor --quit
@@ -17,119 +25,122 @@ godot --headless --path . --script tests/test_level_data_validator.gd
 godot --headless --path . --script tests/test_vertical_slice_levels.gd
 ```
 
-- [ ] Editor scan completes with zero parser errors and zero warnings.
+- [ ] Current-head editor scan completes with zero parser errors and no new warnings.
 - [ ] Migration preview reports `reversible=0 ambiguous=0`.
-- [ ] Ordered path geometry suite passes.
+- [ ] Ordered path geometry suite passes; expected `7/7`.
 - [ ] Movement validator suite passes.
 - [ ] Level data validator suite passes.
 - [ ] Vertical-slice structure/solver suite passes.
-- [ ] Level 1–5 opening and solution counts remain at the expected values.
+- [ ] Level 4 remains 9 pieces / 2 openings / 15 solutions.
+- [ ] Level 5 remains 10 pieces / 1 opening / 10 solutions.
 
 ## 2. Ordered path and arrow invariant
 
-For every inspected path:
+Accepted from the ordered-arrow visual/comprehension gates:
 
-- [ ] Cells form one ordered non-branching cardinal path.
-- [ ] First cell is the tail endpoint.
-- [ ] Final cell is the head endpoint.
-- [ ] Head direction equals `cells[-1] - cells[-2]`.
-- [ ] Movement direction equals the visible head direction.
-- [ ] Bent paths do not use first-to-last direction.
-- [ ] Triangle is attached to the final endpoint.
-- [ ] Shaft stops cleanly beneath the triangle.
-- [ ] Tail marker is on the opposite endpoint.
-- [ ] No per-level rotation offset or negative-scale flip is present.
-
-Check at least one path for each final segment:
-
-- [ ] Right.
-- [ ] Down.
-- [ ] Left.
-- [ ] Up.
-- [ ] L-shape ending right.
-- [ ] L-shape ending down.
-- [ ] L-shape ending left.
-- [ ] L-shape ending up.
+- [x] Cells form one ordered non-branching cardinal path.
+- [x] First cell is the tail endpoint.
+- [x] Final cell is the head endpoint.
+- [x] Head direction equals `cells[-1] - cells[-2]`.
+- [x] Movement direction equals the visible head direction.
+- [x] Bent paths do not use first-to-last direction.
+- [x] Triangle is attached to the final endpoint.
+- [x] Shaft stops cleanly beneath the triangle.
+- [x] Tail marker is on the opposite endpoint.
+- [x] No per-level rotation offset or negative-scale flip is used.
+- [x] Right, down, left, and up head directions were visually accepted.
+- [x] Bent-path direction comprehension passed with new players.
 
 ## 3. Fresh-save tutorial
 
-Already verified before the latest migration; rerun once after the ordered-path correction:
+Verified in the current gameplay direction before Android packaging:
 
-- [ ] Reset or remove the save.
-- [ ] Main Menu displays `Start Level 1`.
-- [ ] Main-menu board displays `TAP THE BOARD TO START`.
-- [ ] Board and primary button both start Level 1.
-- [ ] Repeated taps do not trigger duplicate navigation.
-- [ ] Level 1 displays `FREE`.
-- [ ] Tutorial instruction is visible.
-- [ ] Directional marker follows the final segment toward the head.
-- [ ] Tutorial assistance identifies a valid path.
-- [ ] Free hint does not reduce the persistent bank.
-- [ ] Completing Level 1 marks the tutorial complete.
-- [ ] Replaying Level 1 displays the real hint count.
+- [x] Main Menu displays `Start Level 1` on a clean save.
+- [x] Main-menu board displays `TAP THE BOARD TO START`.
+- [x] Board and primary button both start Level 1.
+- [x] Level 1 displays `FREE`.
+- [x] Free tutorial state transitions to normal hint inventory after completion.
+- [x] Replaying Level 1 displays the real hint count.
+
+Still close on-device:
+
+- [ ] Repeated touch taps do not trigger duplicate navigation.
+- [ ] Tutorial marker remains readable on a physical phone.
 
 ## 4. Hint inventory and refill
 
-- [ ] Normal hint highlights an escapable path.
-- [ ] Small marker triangle points toward the same head used by movement.
-- [ ] Marker cannot be mistaken for another tail dot.
-- [ ] HUD message remains understandable.
-- [ ] Each normal hint decreases the bank exactly once.
-- [ ] Count persists through Menu and reopen.
-- [ ] At zero, HUD displays `+3 / Refill`.
-- [ ] Popup opens and blocks gameplay input.
-- [ ] Cancel/backdrop/Back closes without adding hints.
-- [ ] Refill restores exactly three and saves immediately.
-- [ ] Next hint consumes one.
+- [x] Normal hint highlights an escapable path.
+- [x] Marker points toward the same head used by movement.
+- [x] Marker does not read as another tail dot in the accepted visual pass.
+- [x] Each normal hint decreases the bank exactly once.
+- [x] At zero, HUD displays `+3 / Refill`.
+- [x] Refill popup opens.
+- [x] Refill restores exactly three hints.
+- [x] Restart works.
+- [x] `No path can leave yet` remains useful feedback.
+
+On-device regression:
+
+- [ ] Cancel/backdrop/Android Back closes refill without adding hints.
+- [ ] Hint count survives force-close/reopen.
 - [ ] Result `Hints used` remains correct after refill.
-- [ ] `No path can leave yet` still appears when appropriate.
 
-## 5. Gameplay and input
+## 5. Gameplay, input, and snake escape
 
-- [ ] Valid path escapes in its visible head direction.
-- [ ] Blocked path loses one life and records one mistake.
+- [x] Valid path escapes in its visible head direction.
+- [x] Blocked path loses one life and records one mistake.
+- [x] Restart rebuilds the board.
+- [x] Final valid path previews and clears automatically.
+- [x] Automatic final clear adds no Move.
+- [x] Snake-style bent-path escape is manually accepted.
+- [x] Head leads, tail follows through the corner, bend travels through body, then body becomes straight and exits.
+- [x] No large diagonal shortcut appears across the bend.
+
+Physical-device checks:
+
 - [ ] Rapid repeated taps do not count twice.
 - [ ] Close paths select the nearest intended path.
-- [ ] Input remains accurate after scaling.
-- [ ] Restart rebuilds the board and clears active animation state.
-- [ ] Arrowhead is more prominent than the tail.
-- [ ] Final valid path previews and clears automatically.
-- [ ] Automatic final clear adds no Move.
+- [ ] Input remains accurate after Android scaling.
+- [ ] Multi-touch does not duplicate actions.
+- [ ] Snake animation remains smooth under repeated play.
 - [ ] Completion triggers exactly once.
-- [ ] Blocked/inconsistent final state returns control.
 - [ ] Zero lives triggers failure exactly once.
 
 ## 6. Connected flow
 
-- [ ] Main Menu recommends the first uncleared level.
-- [ ] Living board opens the same level as Continue.
-- [ ] Returning prompt names the recommended level.
-- [ ] Level Select states match save data.
+- [x] Main Menu recommends the first uncleared level.
+- [x] Living board opens the same level as Continue.
+- [x] Level Select and Levels 1–10 load in desktop/manual testing.
+- [x] Pause/Restart/failure/result flows were exercised earlier.
+
+Android/device closure:
+
 - [ ] Back preserves hint state.
-- [ ] Pause Resume, Restart, and Menu work.
+- [ ] Pause Resume, Restart, and Menu work with touch/system Back.
 - [ ] Failure Retry and Menu work.
 - [ ] Result Replay and Next Level work.
 - [ ] Final available level returns to Level Select.
 
 ## 7. Accessibility and settings
 
-- [ ] Sound persists after restart.
-- [ ] Haptics persist after restart.
-- [ ] Reduce Motion removes travelling cues without hiding direction.
-- [ ] Reduce Motion shortens final-clear preview.
+- [ ] Sound persists after app restart on Android.
+- [ ] Haptics persist after app restart on Android.
+- [ ] Haptics are physically felt and respect the toggle.
+- [ ] Reduce Motion removes snake deformation and keeps the simpler short translation/fade.
+- [ ] Reduce Motion does not hide direction.
 - [ ] High Contrast keeps shaft, triangle, tail, and hint marker readable.
 - [ ] Settings remain independent from progress reset.
 - [ ] Direction does not depend only on color.
 
 ## 8. Portrait layout matrix
 
-Test menu → gameplay → overlay → result at:
+Desktop/viewport review should be confirmed on real target classes:
 
-- [ ] 360 × 800.
-- [ ] 393 × 873.
-- [ ] 412 × 915.
-- [ ] 800 × 1280.
-- [ ] 1200 × 1920.
+- [ ] 360 × 800 compact phone.
+- [ ] 393 × 873 standard phone.
+- [ ] 412 × 915 tall phone.
+- [ ] 800 × 1280 tablet.
+- [ ] 1200 × 1920 high-resolution tablet.
 
 Verify:
 
@@ -138,42 +149,98 @@ Verify:
 - [ ] Menu board remains tappable.
 - [ ] Touch targets remain comfortable.
 - [ ] Popup buttons remain visible.
+- [ ] Chapter-complete menu state remains understandable.
 
-## 9. Level review after migration
+## 9. Level review
 
-- [ ] Level 1 left/right heads and two openings.
-- [ ] Level 2 migrated L-path still teaches blocking.
-- [ ] Level 3 migrated paths still teach bent-path reading.
-- [ ] Level 4 reversed upward path renders and moves correctly.
-- [ ] Level 5 all eight heads follow their final segments.
-- [ ] Three new testers attempt Levels 1–5 without explanation.
-- [ ] Record first menu tap, time, moves, mistakes, hints, confusion, and abandonment.
-- [ ] Ask whether head/tail distinction is understood.
-- [ ] Ask whether automatic final clear feels satisfying.
+Accepted for the current vertical slice:
 
-## 10. Android checks
+- [x] Levels 1–3 teaching role accepted.
+- [x] Level 2 blocking comprehension accepted.
+- [x] Level 3 bent-path comprehension accepted.
+- [x] Level 4 tuned layout accepted for platform QA.
+- [x] Level 5 tuned layout accepted for platform QA.
+- [x] Latest two-person Level 4 timing: roughly 30–40 seconds.
+- [x] Latest two-person Level 5 timing: roughly 30–40 seconds.
 
-- [ ] Install debug APK on phone.
-- [ ] Install debug APK on tablet.
-- [ ] Single-touch path selection.
+Do not reopen difficulty unless a new defect or player-comprehension problem is observed.
+
+## 10. Android export preflight
+
+Repository preparation:
+
+- [x] `export_presets.cfg` contains `Android Debug`.
+- [x] `*.json` is explicitly included in export packaging.
+- [x] ARMv7 + ARM64 are enabled for testing.
+- [x] Vibration permission is enabled.
+- [x] Internet permission is disabled for the offline slice.
+- [x] Local APK output is ignored by Git.
+
+Run:
+
+```bash
+bash tools/android_vertical_slice.sh check
+```
+
+- [ ] Godot 4.7.1 detected.
+- [ ] Java SDK detected.
+- [ ] Android SDK detected.
+- [ ] `adb` detected.
+- [ ] Matching Godot export templates installed.
+- [ ] At least one authorized device appears in `adb devices -l`.
+
+## 11. Android APK and phone checks
+
+Export/install:
+
+```bash
+bash tools/android_vertical_slice.sh export
+bash tools/android_vertical_slice.sh install
+```
+
+- [ ] `builds/android/pathbreak-debug.apk` is created.
+- [ ] APK installs successfully.
+- [ ] Main Menu launches.
+- [ ] Packaged JSON Levels 1–10 load.
+- [ ] Single-touch path selection works.
 - [ ] Menu board starts with touch.
 - [ ] Multi-touch does not duplicate actions.
 - [ ] System Back closes refill/pause first.
 - [ ] Sound routes correctly.
 - [ ] Haptics respect the toggle.
 - [ ] Suspend/resume remains stable.
-- [ ] Close/reopen preserves save and settings.
+- [ ] Force-close/reopen preserves save and settings.
+- [ ] Snake animation remains smooth.
 
-## 11. Approval
+For logs:
+
+```bash
+bash tools/android_vertical_slice.sh logcat
+```
+
+## 12. Android tablet checks
+
+- [ ] Install the same debug APK on Samsung Galaxy Tab S6 Lite or another Android tablet.
+- [ ] Board scale and centering are correct.
+- [ ] Finger selection is accurate.
+- [ ] Stylus selection is accurate.
+- [ ] Popup/menu sizing is comfortable.
+- [ ] Snake animation remains smooth.
+- [ ] Suspend/resume remains stable.
+- [ ] Save/settings persist.
+
+## 13. Approval
 
 The slice remains unapproved until:
 
-- [ ] Current head passes parser, migration preview, and all suites.
-- [ ] Ordered path/head invariant is visually confirmed.
-- [ ] Main-menu hierarchy passes new-player testing.
-- [ ] Direction is understood without explanation.
-- [ ] Hint refill and automatic final clear remain verified.
-- [ ] Fresh-save tutorial passes after migration.
-- [ ] Levels 1–5 pass director review.
-- [ ] Phone and tablet checks pass.
+- [ ] Current post-snake/post-Level-4–5 head passes parser and all automated suites.
+- [x] Ordered path/head invariant is visually confirmed.
+- [x] Main-menu hierarchy/direction comprehension passed new-player testing.
+- [x] Hint refill and automatic final clear are manually verified.
+- [x] Fresh-save tutorial is manually verified.
+- [x] Levels 1–5 pass current director review.
+- [ ] Android phone checks pass.
+- [ ] Android tablet checks pass.
+- [ ] Accessibility/settings checks pass.
+- [ ] Main-menu/layout target sizes pass.
 - [ ] Remaining defects have severity and owner.
