@@ -13,7 +13,7 @@ var is_animating: bool = false
 var grid_size: float = 64.0
 var direction_marker: Polygon2D = null
 var direction_tween: Tween = null
-var feedback_tween: Tween = null
+var release_tween: Tween = null
 
 var snake_route := PackedVector2Array()
 var snake_body_length: float = 0.0
@@ -33,9 +33,12 @@ const COLOR_ACCENT := Color("#3B82F6")
 const COLOR_ERROR := Color("#EF5B5B")
 const MARKER_START_PROGRESS := 0.0
 const MARKER_END_PROGRESS := 1.0
-const SNAKE_ESCAPE_DURATION := 0.28
+const RELEASE_ACTIVATION_RISE := 0.030
+const RELEASE_ACTIVATION_SETTLE := 0.015
+const SNAKE_ESCAPE_DURATION := 0.240
+const REDUCE_MOTION_ESCAPE_DURATION := 0.180
 const SNAKE_UNCOIL_PHASE := 0.72
-const FREED_FEEDBACK_ACCENT_STRENGTH := 0.72
+const EXIT_ACCELERATION_POWER := 1.35
 
 func init_from_data(data: PuzzlePieceData, new_grid_size: float = 64.0) -> void:
 	piece_data = data
@@ -59,6 +62,9 @@ func _ready() -> void:
 	_update_visuals()
 	_create_direction_marker()
 
+func _base_line_width() -> float:
+	return clampf(grid_size * 0.23, 12.0, 17.0)
+
 func _update_visuals() -> void:
 	if cells.size() < 2:
 		return
@@ -66,7 +72,7 @@ func _update_visuals() -> void:
 	var source_points := _source_points()
 	line.clear_points()
 	line.default_color = _normal_color()
-	line.width = clampf(grid_size * 0.23, 12.0, 17.0)
+	line.width = _base_line_width()
 	line.begin_cap_mode = Line2D.LINE_CAP_ROUND
 	line.end_cap_mode = Line2D.LINE_CAP_ROUND
 	line.joint_mode = Line2D.LINE_JOINT_ROUND
@@ -205,67 +211,61 @@ func _set_direction_marker_progress(progress: float) -> void:
 		clampf(progress, MARKER_START_PROGRESS, MARKER_END_PROGRESS)
 	)
 
-func _set_freed_feedback_amount(amount: float) -> void:
-	var safe_amount := clampf(amount, 0.0, 1.0)
-	var accent_amount := safe_amount * FREED_FEEDBACK_ACCENT_STRENGTH
-	set_color(_normal_color().lerp(COLOR_ACCENT, accent_amount))
-	var base_width := clampf(grid_size * 0.23, 12.0, 17.0)
-	line.width = base_width * (1.0 + safe_amount * 0.055)
-
 func _is_reduce_motion() -> bool:
 	var sm: Node = get_node_or_null("/root/SettingsManager")
 	return bool(sm and sm.get("reduce_motion"))
 
-func play_newly_freed_feedback() -> void:
-	if is_removed or is_animating:
-		return
-	_stop_feedback()
-	_stop_pulse()
-	reset_color()
-
-	if _is_reduce_motion():
-		set_color(_normal_color().lerp(COLOR_ACCENT, 0.62))
-		var timer := get_tree().create_timer(0.18)
-		timer.timeout.connect(func() -> void:
-			if is_instance_valid(self) and not is_removed:
-				line.width = clampf(grid_size * 0.23, 12.0, 17.0)
-				reset_color()
-		)
-		return
-
-	line.width = clampf(grid_size * 0.28, 14.0, 20.0)
-	feedback_tween = create_tween()
-	feedback_tween.tween_method(_set_freed_feedback_amount, 1.0, 0.0, 0.20).set_trans(Tween.TRANS_SINE)
-	feedback_tween.finished.connect(func() -> void:
-		feedback_tween = null
-		line.width = clampf(grid_size * 0.23, 12.0, 17.0)
-		if not is_removed:
-			reset_color()
-	)
+func _set_release_activation_amount(amount: float) -> void:
+	var safe_amount := clampf(amount, 0.0, 1.0)
+	set_color(_normal_color().lerp(COLOR_ACCENT, safe_amount))
+	line.width = _base_line_width() * (1.0 + safe_amount * 0.075)
 
 func get_escape_animation_duration() -> float:
-	return 0.18 if _is_reduce_motion() else SNAKE_ESCAPE_DURATION
+	if _is_reduce_motion():
+		return REDUCE_MOTION_ESCAPE_DURATION
+	return RELEASE_ACTIVATION_RISE + RELEASE_ACTIVATION_SETTLE + SNAKE_ESCAPE_DURATION
 
 func animate_successful_escape() -> void:
 	if is_removed:
 		return
 	is_removed = true
 	is_animating = true
-	_stop_feedback()
+	_stop_release_tween()
 	_stop_pulse()
-	set_color(COLOR_ACCENT)
 
 	if _is_reduce_motion() or not _prepare_snake_escape():
+		set_color(COLOR_ACCENT)
 		_animate_reduced_motion_escape()
 		return
 
+	# Reward only the path the player actually chose. This short activation is tactile
+	# acknowledgement, not a hint and not a cue on any other path.
+	release_tween = create_tween()
+	release_tween.tween_method(
+		_set_release_activation_amount,
+		0.0,
+		1.0,
+		RELEASE_ACTIVATION_RISE
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	release_tween.tween_method(
+		_set_release_activation_amount,
+		1.0,
+		0.82,
+		RELEASE_ACTIVATION_SETTLE
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	release_tween.tween_callback(_begin_snake_escape)
+
+func _begin_snake_escape() -> void:
+	release_tween = null
+	line.width = _base_line_width()
+	set_color(COLOR_ACCENT)
 	var tween := create_tween()
 	tween.tween_method(
 		_set_snake_escape_progress,
 		0.0,
 		1.0,
 		SNAKE_ESCAPE_DURATION
-	).set_trans(Tween.TRANS_LINEAR).set_ease(Tween.EASE_IN_OUT)
+	).set_trans(Tween.TRANS_LINEAR)
 	tween.tween_callback(queue_free)
 
 func _prepare_snake_escape() -> bool:
@@ -302,14 +302,20 @@ func _path_has_corner(points: PackedVector2Array) -> bool:
 func _snake_travel_for_progress(progress: float) -> float:
 	var amount := clampf(progress, 0.0, 1.0)
 	if not snake_has_corner:
-		return (snake_body_length + snake_exit_distance) * amount
+		# A very small ease-in gives straight paths a crisp pull followed by a faster exit.
+		var accelerated_amount := pow(amount, 1.10)
+		return (snake_body_length + snake_exit_distance) * accelerated_amount
 
 	if amount <= SNAKE_UNCOIL_PHASE:
+		# Preserve the accepted corner-following geometry and readable uncoil rhythm.
 		var uncoil_progress := amount / SNAKE_UNCOIL_PHASE
 		return snake_body_length * uncoil_progress
 
+	# Once the body is straight, accelerate off-board. The path's geometry and direction
+	# stay unchanged; only the travel timing changes.
 	var exit_progress := (amount - SNAKE_UNCOIL_PHASE) / (1.0 - SNAKE_UNCOIL_PHASE)
-	return snake_body_length + snake_exit_distance * exit_progress
+	var accelerated_exit := pow(exit_progress, EXIT_ACCELERATION_POWER)
+	return snake_body_length + snake_exit_distance * accelerated_exit
 
 func _set_snake_escape_progress(progress: float) -> void:
 	if snake_route.size() < 2:
@@ -338,19 +344,28 @@ func _set_snake_escape_progress(progress: float) -> void:
 	_set_arrowhead_geometry(head_anchor, direction, snake_head_length)
 
 func _animate_reduced_motion_escape() -> void:
-	var duration := 0.18
 	var escape_distance := grid_size * 12.0
 	var final_position := position + Vector2(exit_direction) * escape_distance
 	var tween := create_tween()
-	tween.tween_property(self, "position", final_position, duration).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween.parallel().tween_property(self, "modulate:a", 0.0, duration * 0.75)
+	tween.tween_property(
+		self,
+		"position",
+		final_position,
+		REDUCE_MOTION_ESCAPE_DURATION
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.parallel().tween_property(
+		self,
+		"modulate:a",
+		0.0,
+		REDUCE_MOTION_ESCAPE_DURATION * 0.75
+	)
 	tween.tween_callback(queue_free)
 
 func animate_blocked_tap() -> void:
 	if is_removed or is_animating:
 		return
 	is_animating = true
-	_stop_feedback()
+	_stop_release_tween()
 	_stop_pulse()
 	set_color(COLOR_ERROR)
 
@@ -369,7 +384,7 @@ func animate_blocked_tap() -> void:
 func play_hint_pulse() -> void:
 	if is_removed:
 		return
-	_stop_feedback()
+	_stop_release_tween()
 	_stop_pulse()
 	reset_color()
 	if _is_reduce_motion():
@@ -395,7 +410,7 @@ func play_hint_pulse() -> void:
 func play_final_clear_preview() -> void:
 	if is_removed:
 		return
-	_stop_feedback()
+	_stop_release_tween()
 	_stop_pulse()
 	reset_color()
 	if _is_reduce_motion():
@@ -438,12 +453,12 @@ func _hide_direction_marker() -> void:
 	if direction_marker != null:
 		direction_marker.visible = false
 
-func _stop_feedback() -> void:
-	if feedback_tween != null and feedback_tween.is_valid():
-		feedback_tween.kill()
-	feedback_tween = null
+func _stop_release_tween() -> void:
+	if release_tween != null and release_tween.is_valid():
+		release_tween.kill()
+	release_tween = null
 	if line != null:
-		line.width = clampf(grid_size * 0.23, 12.0, 17.0)
+		line.width = _base_line_width()
 
 func _stop_pulse() -> void:
 	if direction_tween != null and direction_tween.is_valid():
