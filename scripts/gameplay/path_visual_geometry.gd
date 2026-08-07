@@ -107,37 +107,31 @@ static func point_at_distance(points: PackedVector2Array, distance: float) -> Ve
 		travelled += segment_length
 	return points[-1]
 
-static func densify_polyline(
+static func slice_polyline(
 	points: PackedVector2Array,
-	maximum_spacing: float
+	start_distance: float,
+	end_distance: float
 ) -> PackedVector2Array:
-	var dense := PackedVector2Array()
+	var sliced := PackedVector2Array()
 	if points.is_empty():
-		return dense
-	dense.append(points[0])
-	var safe_spacing := maxf(maximum_spacing, 1.0)
-	for index in range(points.size() - 1):
-		var start: Vector2 = points[index]
-		var finish: Vector2 = points[index + 1]
-		var segment_length := start.distance_to(finish)
-		if segment_length <= 0.001:
-			continue
-		var steps := maxi(int(ceil(segment_length / safe_spacing)), 1)
-		for step_index in range(1, steps + 1):
-			var amount := float(step_index) / float(steps)
-			dense.append(start.lerp(finish, amount))
-	return dense
+		return sliced
 
-static func cumulative_distances(points: PackedVector2Array) -> Array[float]:
-	var distances: Array[float] = []
-	if points.is_empty():
-		return distances
-	distances.append(0.0)
+	var total_length := polyline_length(points)
+	var start_target := clampf(start_distance, 0.0, total_length)
+	var end_target := clampf(end_distance, start_target, total_length)
+	var start_point := point_at_distance(points, start_target)
+	var end_point := point_at_distance(points, end_target)
+	sliced.append(start_point)
+
 	var travelled := 0.0
-	for index in range(1, points.size()):
+	for index in range(1, points.size() - 1):
 		travelled += points[index - 1].distance_to(points[index])
-		distances.append(travelled)
-	return distances
+		if travelled > start_target + 0.001 and travelled < end_target - 0.001:
+			sliced.append(points[index])
+
+	if sliced[-1].distance_to(end_point) > 0.001:
+		sliced.append(end_point)
+	return sliced
 
 static func trim_shaft_for_head(
 	points: PackedVector2Array,
