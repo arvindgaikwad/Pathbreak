@@ -141,6 +141,9 @@ run_regression() {
   "$GODOT_BIN" --headless --path . --script tests/test_movement_validator.gd
   "$GODOT_BIN" --headless --path . --script tests/test_level_data_validator.gd
   "$GODOT_BIN" --headless --path . --script tests/test_vertical_slice_levels.gd
+  "$GODOT_BIN" --headless --path . --script tests/test_satisfaction_feedback.gd
+  "$GODOT_BIN" --headless --path . --script tests/test_release_polish.gd
+  "$GODOT_BIN" --headless --path . --script tests/test_completion_finish.gd
 }
 
 export_apk() {
