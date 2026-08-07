@@ -10,6 +10,7 @@ var occupancy: Dictionary = {}
 var pieces: Array[PuzzlePiece] = []
 var input_enabled := true
 var assist_pulses_enabled: bool = false
+var completion_tween: Tween = null
 
 @onready var pieces_container: Node2D = $PiecesContainer
 
@@ -18,26 +19,65 @@ const COLOR_BOARD_CARD := Color("#FFFFFF")
 const COLOR_SHADOW := Color(0.1, 0.12, 0.18, 0.06)
 const COLOR_GRID_DOTS := Color("#DDE3EC")
 const COLOR_GRID_DOTS_HIGH := Color("#B8C1CF")
+const COMPLETION_SETTLE_COMPRESS := 0.040
+const COMPLETION_SETTLE_RELEASE := 0.065
+const COMPLETION_SETTLE_RETURN := 0.075
 
 func _ready() -> void:
-	SettingsManager.settings_changed.connect(_on_settings_changed)
+	if is_inside_tree() and get_tree() and get_tree().root:
+		var sm := get_tree().root.get_node_or_null("SettingsManager")
+		if sm and sm.has_signal("settings_changed"):
+			sm.settings_changed.connect(_on_settings_changed)
+
+func _is_reduce_motion() -> bool:
+	var sm: Node = null
+	if is_inside_tree() and get_tree() and get_tree().root:
+		sm = get_tree().root.get_node_or_null("SettingsManager")
+	if sm == null:
+		var tree := Engine.get_main_loop() as SceneTree
+		if tree and tree.root:
+			sm = tree.root.get_node_or_null("SettingsManager")
+	if sm == null and get_parent() != null:
+		sm = get_parent().get_node_or_null("SettingsManager")
+
+	if sm:
+		if sm.has_meta("reduce_motion") and sm.get_meta("reduce_motion") == true:
+			return true
+		if "reduce_motion" in sm and sm.reduce_motion == true:
+			return true
+	return false
+
+func _is_high_contrast() -> bool:
+	var sm: Node = null
+	if is_inside_tree() and get_tree() and get_tree().root:
+		sm = get_tree().root.get_node_or_null("SettingsManager")
+	if sm == null:
+		var tree := Engine.get_main_loop() as SceneTree
+		if tree and tree.root:
+			sm = tree.root.get_node_or_null("SettingsManager")
+	if sm == null and get_parent() != null:
+		sm = get_parent().get_node_or_null("SettingsManager")
+
+	if sm:
+		if sm.has_meta("high_contrast") and sm.get_meta("high_contrast") == true:
+			return true
+		if "high_contrast" in sm and sm.high_contrast == true:
+			return true
+	return false
 
 func _draw() -> void:
 	var board_width := board_size.x * grid_size
 	var board_height := board_size.y * grid_size
 	var offset_x := -board_width * 0.5
 	var offset_y := -board_height * 0.5
-	var card_rect := Rect2(
-		Vector2(offset_x - VISUAL_PADDING, offset_y - VISUAL_PADDING),
-		Vector2(board_width + VISUAL_PADDING * 2.0, board_height + VISUAL_PADDING * 2.0)
-	)
 
-	var shadow_rect := card_rect
-	shadow_rect.position += Vector2(0.0, 6.0)
+	var shadow_rect := Rect2(offset_x - 8, offset_y - 4, board_width + 16, board_height + 24)
+	var card_rect := Rect2(offset_x - 12, offset_y - 12, board_width + 24, board_height + 24)
+
 	_draw_rounded_stylebox(shadow_rect, COLOR_SHADOW, 32)
 	_draw_rounded_stylebox(card_rect, COLOR_BOARD_CARD, 32)
 
-	var dot_color := COLOR_GRID_DOTS_HIGH if SettingsManager.high_contrast else COLOR_GRID_DOTS
+	var dot_color := COLOR_GRID_DOTS_HIGH if _is_high_contrast() else COLOR_GRID_DOTS
 	for x in range(board_size.x + 1):
 		for y in range(board_size.y + 1):
 			var point := Vector2(offset_x + x * grid_size, offset_y + y * grid_size)
@@ -52,7 +92,16 @@ func _draw_rounded_stylebox(rect: Rect2, color: Color, radius: int) -> void:
 	style.corner_radius_bottom_right = radius
 	draw_style_box(style, rect)
 
+func _ensure_nodes() -> void:
+	if pieces_container == null:
+		pieces_container = get_node_or_null("PiecesContainer")
+		if pieces_container == null:
+			pieces_container = Node2D.new()
+			pieces_container.name = "PiecesContainer"
+			add_child(pieces_container)
+
 func setup_level(level_data: PuzzleLevelData) -> void:
+	_ensure_nodes()
 	clear_board()
 	board_size = level_data.board_size
 	queue_redraw()
@@ -73,6 +122,10 @@ func clear_board() -> void:
 	assist_pulses_enabled = false
 	occupancy.clear()
 	pieces.clear()
+	if completion_tween != null and completion_tween.is_valid():
+		completion_tween.kill()
+	completion_tween = null
+	scale = Vector2.ONE
 	if pieces_container == null:
 		return
 	for child in pieces_container.get_children():
@@ -89,6 +142,70 @@ func can_piece_escape(piece: PuzzlePiece) -> bool:
 		piece.exit_direction,
 		board_size,
 		occupancy
+	)
+
+func get_escapable_piece_ids() -> PackedInt32Array:
+	var ids := PackedInt32Array()
+	for piece in pieces:
+		if not is_instance_valid(piece) or piece.is_removed:
+			continue
+		if can_piece_escape(piece):
+			ids.append(piece.piece_id)
+	return ids
+
+func get_newly_escapable_pieces(previous_ids: PackedInt32Array) -> Array[PuzzlePiece]:
+	var previous_set: Dictionary = {}
+	for piece_id in previous_ids:
+		previous_set[piece_id] = true
+
+	var newly_escapable: Array[PuzzlePiece] = []
+	for piece in pieces:
+		if not is_instance_valid(piece) or piece.is_removed or piece.is_animating:
+			continue
+		if previous_set.has(piece.piece_id):
+			continue
+		if can_piece_escape(piece):
+			newly_escapable.append(piece)
+	return newly_escapable
+
+func play_newly_freed_feedback(_candidates: Array[PuzzlePiece]) -> int:
+	# Product decision: automatic blocked→free cues reveal the next answer and compete
+	# with the explicit Hint system. Keep dependency detection available for tooling and
+	# analysis, but gameplay must not visually or audibly identify newly escapable paths.
+	return 0
+
+func get_completion_settle_duration() -> float:
+	if _is_reduce_motion():
+		return 0.0
+	return COMPLETION_SETTLE_COMPRESS + COMPLETION_SETTLE_RELEASE + COMPLETION_SETTLE_RETURN
+
+func play_completion_settle() -> void:
+	if _is_reduce_motion():
+		return
+	if completion_tween != null and completion_tween.is_valid():
+		completion_tween.kill()
+	completion_tween = create_tween()
+	completion_tween.tween_property(
+		self,
+		"scale",
+		Vector2.ONE * 0.994,
+		COMPLETION_SETTLE_COMPRESS
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	completion_tween.tween_property(
+		self,
+		"scale",
+		Vector2.ONE * 1.003,
+		COMPLETION_SETTLE_RELEASE
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	completion_tween.tween_property(
+		self,
+		"scale",
+		Vector2.ONE,
+		COMPLETION_SETTLE_RETURN
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	completion_tween.finished.connect(func() -> void:
+		completion_tween = null
+		scale = Vector2.ONE
 	)
 
 func get_first_escapable_piece() -> PuzzlePiece:

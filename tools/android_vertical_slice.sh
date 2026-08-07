@@ -82,13 +82,31 @@ check_godot() {
   "$GODOT_BIN" --version
 }
 
+find_java() {
+  if command -v java >/dev/null 2>&1; then
+    command -v java
+    return
+  fi
+  if [[ -x "$HOME/.local/opt/android-studio/jbr/bin/java" ]]; then
+    printf '%s\n' "$HOME/.local/opt/android-studio/jbr/bin/java"
+    return
+  fi
+  if [[ -x "$HOME/android-studio/jbr/bin/java" ]]; then
+    printf '%s\n' "$HOME/android-studio/jbr/bin/java"
+    return
+  fi
+  return 1
+}
+
 check_java() {
   print_header "Java"
-  if ! command -v java >/dev/null 2>&1; then
+  JAVA_BIN="$(find_java || true)"
+  if [[ -z "$JAVA_BIN" ]]; then
     echo "ERROR: Java not found. Godot 4.7 recommends OpenJDK 17 for Android export."
     exit 1
   fi
-  java -version 2>&1 | head -n 1
+  export PATH="$(dirname "$JAVA_BIN"):$PATH"
+  "$JAVA_BIN" -version 2>&1 | head -n 1
 }
 
 check_android_sdk() {
@@ -141,6 +159,9 @@ run_regression() {
   "$GODOT_BIN" --headless --path . --script tests/test_movement_validator.gd
   "$GODOT_BIN" --headless --path . --script tests/test_level_data_validator.gd
   "$GODOT_BIN" --headless --path . --script tests/test_vertical_slice_levels.gd
+  "$GODOT_BIN" --headless --path . --script tests/test_satisfaction_feedback.gd
+  "$GODOT_BIN" --headless --path . --script tests/test_release_polish.gd
+  "$GODOT_BIN" --headless --path . --script tests/test_completion_finish.gd
 }
 
 export_apk() {
