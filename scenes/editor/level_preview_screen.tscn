@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/editor/level_preview_manager.gd" id="1_preview"]
+[ext_resource type="PackedScene" uid="uid://board001" path="res://scenes/game/board.tscn" id="2_board"]
+[ext_resource type="PackedScene" uid="uid://hud001" path="res://scenes/game/hud.tscn" id="3_hud"]
+
+[node name="LevelPreviewScreen" type="Control"]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_preview")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.968, 0.968, 0.957, 1)
+
+[node name="BoardPivot" type="Node2D" parent="."]
+position = Vector2(360, 640)
+
+[node name="Board" parent="BoardPivot" instance=ExtResource("2_board")]
+
+[node name="HUD" parent="." instance=ExtResource("3_hud")]
