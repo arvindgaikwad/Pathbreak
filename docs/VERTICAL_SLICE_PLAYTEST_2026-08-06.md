@@ -1,224 +1,175 @@
 # Pathbreak — Vertical Slice Playtest Evidence
 
-Date: 2026-08-06 to 2026-08-07  
-Branch: `codex/vertical-slice-level-review`
+**Evidence window:** 2026-08-06 to 2026-08-07  
+**Branch:** `codex/vertical-slice-level-review`
 
-## Evidence sources
+## Current status
 
-1. Returning developer/tester familiar with the game.
-2. New players with no menu or rule explanation.
-3. Local interaction-clarity verification.
-4. Clean-save tutorial verification.
-5. Screenshot review after the first simple-triangle cleanup.
-6. Screenshot review after the ordered-path migration.
+The ordered-path correction is accepted as the gameplay foundation.
 
-## Returning-tester evidence
+The user has confirmed:
 
-- Level 4: 7 seconds, 10 moves, 2 mistakes, 0 hints.
-- Level 5: 16 seconds, 8 moves, 0 mistakes, 0 hints.
-- Failure, retry, result, Replay, Next Level, restart, hint depletion, and refill were exercised.
-- Captured boards fit the portrait viewport.
+- Gate 1 parser/automated verification passed for the ordered-arrow correction.
+- Gate 2 movement regression passed.
+- Gate 3 new-player comprehension passed.
+- The corrected arrowheads are visually much better.
+- The final snake-style corner escape animation is working as intended.
 
-## Initial new-player findings
+After those approvals, Levels 4–5 were tuned for greater decision depth. Those new layouts now require a fresh parser/solver/playtest pass.
+
+## Early playtest evidence
 
 ### Main Menu
 
-- Players were unsure where to begin.
-- Some tapped the demonstration arrows rather than Continue.
-- They expected path-like motion instead of a simple swoosh.
+New players initially did not know where to start and sometimes tapped the decorative demonstration arrows.
 
-**Response:** make the board a valid start target, strengthen Start/Continue, and animate direction through the path.
+Response implemented and later verified:
 
-### Path readability
+- the board itself starts the recommended level;
+- Start/Continue starts the same level;
+- the board has a travelling direction cue;
+- clean-save state explicitly says `Start Level 1`.
 
-- Level 2 communicated blocking.
-- Level 3 communicated bent-path reading.
-- Arrowhead and tail-dot language was not consistently understood.
+### Core rule readability
 
-**Response:** strengthen the head, reduce tail prominence, and use restrained directional motion.
+Initial players:
 
-### Final path
+- understood Level 2 blocking;
+- understood Level 3 bent-path reading;
+- struggled with the old arrowhead/tail-dot language.
 
-Players wanted the last obvious path to leave automatically.
-
-**Response:** preview and auto-clear the final valid path without adding a Move.
-
-### Difficulty
-
-- Typical early completion was roughly 10 seconds.
-- Zero mistakes were common.
-- Hints were used on Levels 9–10.
-- Players reported enjoyment.
-
-**Decision:** improve visual comprehension before increasing difficulty.
-
-## Interaction-clarity verification — passed before latest migration
-
-The user confirmed:
-
-- Menu board starts the recommended level.
-- Start/Continue starts the same level.
-- Travelling menu animation works.
-- Hint marker moves toward the arrowhead.
-- Final remaining valid path clears automatically.
-- Automatic final clear does not add a Move.
-- Reduce Motion alternatives work.
-- Restart and hint refill work.
-
-## Clean-save tutorial verification — passed
-
-Screenshots confirmed:
-
-- New-player menu and zero stars.
-- `Start Level 1`.
-- `TAP THE BOARD TO START`.
-- Level 1 displays `FREE`.
-- Level 2 displays five normal hints.
-- Replaying Level 1 displays the real hint count.
-
-## First simple-triangle cleanup — rejected as incomplete
-
-A later Level 5 screenshot showed that replacing the notched head with a triangle did not solve the shared problem.
-
-Observed:
-
-- some triangles remained attached to a side that did not follow the path endpoint;
-- some L-shaped heads still pointed in a direction unrelated to their adjacent segment;
-- visually leading placement and stored movement direction could disagree;
-- the result looked systematic across multiple pieces, not like isolated styling defects.
-
-The initial projection-based correction was therefore rejected. A geometric leading edge is not necessarily an ordered path endpoint.
-
-## Expert-prompt correction
-
-The two supplied expert prompts establish the correct model:
-
-```text
-ordered cells
-→ selected endpoint
-→ adjacent endpoint cell
-→ derived head direction
-→ same movement direction
-```
-
-Current canonical Pathbreak rule:
+The renderer was subsequently rebuilt around ordered paths:
 
 ```text
 tail → ... → head
-cells[-1] - cells[-2]
-= head direction
-= movement direction
+final segment = head direction = movement direction
 ```
 
-Implemented:
+Representative screenshots of Levels 2 and 5 were accepted by the user as much better.
 
-- ordered endpoint helper in `path_visual_geometry.gd`;
-- shaft trimming before the triangle;
-- `PuzzlePieceData` derives movement direction from ordered cells;
-- gameplay and menu use the same endpoint geometry;
-- hint marker is a small directional triangle on the final segment;
-- validator rejects path/direction mismatches;
-- Level Editor cannot assign arbitrary unrelated directions;
-- safe preview-only migration scanner;
-- Levels 1–5 migrated;
-- ordered-path geometry and full-pack tests;
-- movement tests migrated to valid ordered paths.
+### Tutorial and hints
 
-Migration review:
+Verified:
 
-- 10 sequential levels inspected;
-- 13 path entries did not match the final-segment convention;
-- 7 repaired by reversing cell order;
-- 6 required small geometry changes;
-- Levels 6–10 already followed the convention.
+- clean-save Level 1 shows `FREE`;
+- Level 2 starts with five normal hints;
+- replaying Level 1 uses the real persistent hint count;
+- hint refill works;
+- `No path can leave yet` feedback is useful and should remain.
 
-## Ordered-path screenshot verification — visually passed for Levels 2 and 5
+### Final path
 
-The user supplied new screenshots of Levels 2 and 5 after pulling the ordered-path correction and described the result as “much better.”
+New players did not want to tap the last obvious path manually.
 
-Observed in the screenshots:
+Implemented and verified:
 
-- right-facing heads attach to right-facing final segments;
-- down-facing heads attach to downward final segments;
-- left-facing heads attach to left-facing final segments;
-- the upward L-shaped path in Level 5 attaches its head to the upper endpoint;
-- bent paths follow the adjacent endpoint segment rather than a first-to-last diagonal;
-- shaft rendering stops before the triangle instead of visibly passing through it;
-- tail endpoints remain visually quieter than heads;
-- triangle proportions are consistent across the visible four directions;
-- Level 2 remains immediately readable as a blocking lesson;
-- Level 5 now reads as a deliberate collection of directional paths rather than mismatched symbols.
+- final valid path previews and clears automatically;
+- the automatic clear does not add a Move.
 
-**Director verdict:** the ordered-path visual model is accepted as the correct Pathbreak foundation. Do not return to projection-based placement, manual per-level rotations, or separate movement/head directions.
+## Snake-style corner motion
 
-**Verification boundary:** screenshots prove static visual alignment for the displayed Levels 2 and 5. Exact parser/test output, actual movement-direction matching for every migrated path, hint-marker regression, accessibility regression, and Android behaviour still require evidence.
+The first attempt was rejected because a bent L could visually appear to translate rather than uncoil.
 
-## Current level status
+The corrected implementation was then tested by the user and described as working perfectly.
 
-### Level 1
+Accepted motion:
 
-- Two-opening teaching structure retained.
-- Clean-save `FREE` verified.
-- One path order was reversed to make the left-facing head canonical.
+```text
+head advances
+→ tail follows original path
+→ bend travels through body
+→ body becomes straight
+→ straight path exits
+```
 
-### Level 2
+Do not regress to rigid L translation or diagonal corner cutting.
 
-- Blocking was understood before migration.
-- One L-path was reshaped and one path reversed.
-- New screenshot confirms the straight right, bent down, and straight left path heads are visually aligned.
-- Expected one-opening/one-solution target remains encoded in tests.
+See `SNAKE_ESCAPE_ANIMATION.md`.
 
-**Status:** static visual acceptance passed; formal tests and new-player regression remain.
+## Difficulty evidence before tuning
 
-### Level 3
+Earlier builds were enjoyable but too easy:
 
-- Bent-path reading was understood before migration.
-- Three malformed direction/path combinations were replaced with canonical endpoint shapes.
-- Expected three openings and 12 solutions remain encoded in tests.
+- typical early levels were around 10 seconds;
+- zero mistakes were common;
+- returning tester Level 4: 7 seconds, 10 moves, 2 mistakes;
+- returning tester Level 5: 16 seconds, 8 moves, 0 mistakes;
+- hints were mainly needed on Levels 9–10.
 
-### Level 4
+The problem was not rule confusion after the arrow correction. It was insufficient dependency depth.
 
-- Failure/retry/result flow exercised.
-- One upward path was reversed without changing occupancy or direction.
+## Level 4 tuning — implemented, pending verification
 
-### Level 5
+Previous Level 4 behaved mostly like one forced chain plus an almost-independent second opening.
 
-- Previous screenshot exposed the shared head problem.
-- Four paths were reversed and two were minimally reshaped.
-- New screenshot confirms consistent endpoint-based heads across right, down, left, and up paths.
-- Expected one opening and six solutions remain encoded in tests.
+New target structure:
 
-**Status:** static visual acceptance passed; solver, movement, and external difficulty evidence remain.
+- 8×8 board;
+- 9 pieces;
+- 6 bent paths;
+- 2 opening moves;
+- both openings reveal different next moves;
+- 15 full-clear solution orders.
 
-### Levels 9–10
+Encoded branch expectations:
 
-- Hints were used.
-- `No path can leave yet` was liked and remains.
-- Difficulty labels still need later evidence.
+```text
+start → [1, 5]
+after 1 → [4, 5]
+after 5 → [1, 7]
+```
 
-## Technical fixes already verified earlier
+Director target: **20–35 seconds** for a first-time player, with time spent re-reading dependencies rather than fighting the UI.
 
-- HUD enum warning fixed.
-- Hint-refill parse error fixed.
-- Hint and Restart use native full-card Buttons.
-- Hint refill works.
-- Menu-board start, automatic final clear, Reduce Motion, and clean-save tutorial states worked before the ordered-path migration.
+## Level 5 tuning — implemented, pending verification
 
-## Remaining gates
+Previous Level 5 had 8 pieces and was still cleared too quickly.
 
-1. Record parser scan output.
-2. Confirm migration preview reports zero reversible/ambiguous paths.
-3. Confirm ordered geometry suite passes.
-4. Confirm movement, data, and vertical-slice solver suites pass.
-5. Play migrated Levels 1–5 and verify visible head direction equals actual escape movement.
-6. Verify hint marker follows the same final segment.
-7. Verify menu demonstration still follows the same ordered-path rules.
-8. Verify Restart, refill, automatic final clear, and failure flow did not regress.
-9. Verify Reduce Motion and High Contrast.
-10. Repeat a no-explanation test with new players.
-11. Tune Levels 4–5 from evidence.
-12. Complete Android phone/tablet testing.
+New target structure:
 
-## Current decision
+- 8×8 board;
+- 10 pieces;
+- 5 bent paths;
+- 1 opening move;
+- staged forced dependency reading before the first branch;
+- 10 full-clear solution orders.
 
-The ordered endpoint system has passed static visual review on representative straight and bent paths in Levels 2 and 5. The next gate is formal parser/test evidence and movement-regression testing. Difficulty tuning begins only after that gate passes.
+Encoded early sequence:
+
+```text
+start → [5]
+after 5 → [6]
+after 5,6 → [9]
+after 5,6,9 → [7]
+after 5,6,9,7 → [4]
+after 5,6,9,7,4 → [2, 8]
+```
+
+Director target: **30–45 seconds** for a first-time player.
+
+## Next evidence required
+
+Run the current branch after the Level 4–5 changes and record:
+
+1. parser scan result;
+2. ordered geometry result, expected `7/7`;
+3. movement validator result;
+4. level-data validator result;
+5. vertical-slice result, expected `7/7`;
+6. Level 4 completion time, moves, mistakes, hints;
+7. Level 5 completion time, moves, mistakes, hints;
+8. whether either board feels confusing rather than thoughtful;
+9. whether snake motion remains correct on the new bent paths;
+10. one no-explanation player attempt on the tuned Levels 4–5.
+
+## Director decision rule
+
+Keep the new layouts only when the increased duration comes from:
+
+```text
+read → decide → satisfying escape → board changes → read again
+```
+
+Reject or simplify them if the extra time comes from tiny paths, ambiguous taps, unclear direction, or visual clutter.
+
+Android phone/tablet QA remains the final major slice gate after the tuned difficulty pass.
