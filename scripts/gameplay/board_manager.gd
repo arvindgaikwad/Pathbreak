@@ -21,17 +21,24 @@ const COLOR_GRID_DOTS := Color("#DDE3EC")
 const COLOR_GRID_DOTS_HIGH := Color("#B8C1CF")
 
 func _ready() -> void:
-	var sm: Node = get_node_or_null("/root/SettingsManager")
-	if sm and sm.has_signal("settings_changed"):
-		sm.settings_changed.connect(_on_settings_changed)
+	if is_inside_tree() and get_tree() and get_tree().root:
+		var sm := get_tree().root.get_node_or_null("SettingsManager")
+		if sm and sm.has_signal("settings_changed"):
+			sm.settings_changed.connect(_on_settings_changed)
 
 func _is_reduce_motion() -> bool:
-	var sm: Node = get_node_or_null("/root/SettingsManager")
-	return bool(sm and sm.get("reduce_motion"))
+	if is_inside_tree() and get_tree() and get_tree().root:
+		var sm := get_tree().root.get_node_or_null("SettingsManager")
+		if sm and "reduce_motion" in sm:
+			return sm.reduce_motion == true
+	return false
 
 func _is_high_contrast() -> bool:
-	var sm: Node = get_node_or_null("/root/SettingsManager")
-	return bool(sm and sm.get("high_contrast"))
+	if is_inside_tree() and get_tree() and get_tree().root:
+		var sm := get_tree().root.get_node_or_null("SettingsManager")
+		if sm and "high_contrast" in sm:
+			return sm.high_contrast == true
+	return false
 
 func _draw() -> void:
 	var board_width := board_size.x * grid_size

@@ -65,7 +65,18 @@ func _ready() -> void:
 func _base_line_width() -> float:
 	return clampf(grid_size * 0.23, 12.0, 17.0)
 
+func _ensure_render_nodes() -> void:
+	if line == null:
+		line = get_node_or_null("Line2D")
+	if arrow_head == null:
+		arrow_head = get_node_or_null("ArrowHead")
+	if tail_dot == null:
+		tail_dot = get_node_or_null("TailDot")
+
 func _update_visuals() -> void:
+	_ensure_render_nodes()
+	if line == null or arrow_head == null or tail_dot == null:
+		return
 	if cells.size() < 2:
 		return
 
@@ -107,9 +118,12 @@ func _direction_vector() -> Vector2:
 	return Vector2(exit_direction).normalized()
 
 func _normal_color() -> Color:
-	var sm: Node = get_node_or_null("/root/SettingsManager")
-	if sm and sm.get("high_contrast"):
-		return COLOR_HIGH_CONTRAST_PATH
+	if is_inside_tree() and get_tree() and get_tree().root:
+		var root_node := get_tree().root
+		if root_node.has_node("SettingsManager"):
+			var sm := root_node.get_node("SettingsManager")
+			if sm and "high_contrast" in sm and sm.high_contrast == true:
+				return COLOR_HIGH_CONTRAST_PATH
 	return COLOR_PRIMARY_PATH
 
 func reset_color() -> void:
@@ -212,8 +226,22 @@ func _set_direction_marker_progress(progress: float) -> void:
 	)
 
 func _is_reduce_motion() -> bool:
-	var sm: Node = get_node_or_null("/root/SettingsManager")
-	return bool(sm and sm.get("reduce_motion"))
+	var sm: Node = null
+	if is_inside_tree() and get_tree() and get_tree().root:
+		sm = get_tree().root.get_node_or_null("SettingsManager")
+	if sm == null:
+		var tree := Engine.get_main_loop() as SceneTree
+		if tree and tree.root:
+			sm = tree.root.get_node_or_null("SettingsManager")
+	if sm == null and get_parent() != null:
+		sm = get_parent().get_node_or_null("SettingsManager")
+
+	if sm:
+		if sm.has_meta("reduce_motion") and sm.get_meta("reduce_motion") == true:
+			return true
+		if "reduce_motion" in sm and sm.reduce_motion == true:
+			return true
+	return false
 
 func _set_release_activation_amount(amount: float) -> void:
 	var safe_amount := clampf(amount, 0.0, 1.0)
@@ -318,7 +346,8 @@ func _snake_travel_for_progress(progress: float) -> float:
 	return snake_body_length + snake_exit_distance * accelerated_exit
 
 func _set_snake_escape_progress(progress: float) -> void:
-	if snake_route.size() < 2:
+	_ensure_render_nodes()
+	if line == null or arrow_head == null or tail_dot == null or snake_route.size() < 2:
 		return
 
 	var travel := _snake_travel_for_progress(progress)

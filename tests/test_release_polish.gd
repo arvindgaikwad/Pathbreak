@@ -20,35 +20,57 @@ func _init() -> void:
 
 func _make_bent_piece() -> PuzzlePiece:
 	var piece := PuzzlePieceScene.instantiate() as PuzzlePiece
+	root.add_child(piece)
 	var data := PuzzlePieceData.create(
 		1,
 		[[0, 0], [1, 0], [1, 1]],
 		Vector2i.DOWN
 	)
 	piece.init_from_data(data, 64.0)
-	root.add_child(piece)
 	return piece
 
+func _set_reduce_motion(value: bool) -> bool:
+	var sm: Node = root.get_node_or_null("SettingsManager")
+	if sm == null:
+		var main_tree := Engine.get_main_loop() as SceneTree
+		if main_tree and main_tree.root:
+			sm = main_tree.root.get_node_or_null("SettingsManager")
+	if sm == null:
+		sm = Node.new()
+		sm.name = "SettingsManager"
+		root.add_child(sm)
+
+	var previous: bool = false
+	if "reduce_motion" in sm:
+		previous = sm.reduce_motion == true
+	elif sm.has_meta("reduce_motion"):
+		previous = sm.get_meta("reduce_motion") == true
+
+	if sm.has_method("set_reduce_motion"):
+		sm.call("set_reduce_motion", value)
+	if "reduce_motion" in sm:
+		sm.reduce_motion = value
+	sm.set_meta("reduce_motion", value)
+	return previous
+
 func test_full_motion_timing_budget() -> bool:
-	var previous_reduce_motion := SettingsManager.reduce_motion
-	SettingsManager.reduce_motion = false
+	var previous_reduce_motion := _set_reduce_motion(false)
 	var piece := _make_bent_piece()
 	var duration := piece.get_escape_animation_duration()
 	var passed := duration >= 0.27 and duration <= 0.30
 	if not passed:
 		push_error("Full-motion release duration left the 270–300 ms budget: %.3f" % duration)
 	piece.queue_free()
-	SettingsManager.reduce_motion = previous_reduce_motion
+	_set_reduce_motion(previous_reduce_motion)
 	return passed
 
 func test_bent_path_accelerates_only_after_uncoil() -> bool:
-	var previous_reduce_motion := SettingsManager.reduce_motion
-	SettingsManager.reduce_motion = false
+	var previous_reduce_motion := _set_reduce_motion(false)
 	var piece := _make_bent_piece()
 	if not piece._prepare_snake_escape():
 		push_error("Bent-path release preparation failed.")
 		piece.queue_free()
-		SettingsManager.reduce_motion = previous_reduce_motion
+		_set_reduce_motion(previous_reduce_motion)
 		return false
 
 	var uncoil_end := piece._snake_travel_for_progress(0.72)
@@ -60,7 +82,7 @@ func test_bent_path_accelerates_only_after_uncoil() -> bool:
 			]
 		)
 		piece.queue_free()
-		SettingsManager.reduce_motion = previous_reduce_motion
+		_set_reduce_motion(previous_reduce_motion)
 		return false
 
 	var halfway_exit_progress := 0.86
@@ -76,17 +98,16 @@ func test_bent_path_accelerates_only_after_uncoil() -> bool:
 		)
 
 	piece.queue_free()
-	SettingsManager.reduce_motion = previous_reduce_motion
+	_set_reduce_motion(previous_reduce_motion)
 	return passed
 
 func test_reduce_motion_keeps_short_escape() -> bool:
-	var previous_reduce_motion := SettingsManager.reduce_motion
-	SettingsManager.reduce_motion = true
+	var previous_reduce_motion := _set_reduce_motion(true)
 	var piece := _make_bent_piece()
 	var duration := piece.get_escape_animation_duration()
 	var passed := is_equal_approx(duration, 0.18)
 	if not passed:
 		push_error("Reduce Motion release duration should remain 0.18 seconds, got %.3f" % duration)
 	piece.queue_free()
-	SettingsManager.reduce_motion = previous_reduce_motion
+	_set_reduce_motion(previous_reduce_motion)
 	return passed
