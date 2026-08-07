@@ -1,6 +1,6 @@
 # Pathbreak — Satisfaction Prototype v1
 
-**Status:** Director-reviewed; answer-revealing cue rejected, remaining feel work retained for verification  
+**Status:** Release Polish v2 implemented; pending local Godot and director verification  
 **Last reviewed:** 2026-08-07  
 **Branch:** `codex/satisfaction-prototype-v1`  
 **Base:** `codex/vertical-slice-level-review`
@@ -13,7 +13,7 @@ Core rule:
 
 > **Clarity first, satisfaction second, spectacle third.**
 
-A second rule is now locked from the first director playtest:
+A second rule is locked from the first director playtest:
 
 > **The game must not automatically identify the next correct path. Solution-revealing assistance belongs to the explicit Hint system.**
 
@@ -21,55 +21,105 @@ A second rule is now locked from the first director playtest:
 
 The first prototype highlighted a path when it changed from blocked to escapable. Although the causal effect was readable, the director found that it effectively gave away the next answer.
 
-That creates three product problems:
+That created three product problems:
 
-1. it weakens the player's need to inspect the board;
-2. it reduces the value and purpose of the Hint button;
-3. it turns satisfying feedback into passive guidance rather than earned discovery.
+1. it weakened the player's need to inspect the board;
+2. it reduced the value and purpose of the Hint button;
+3. it turned satisfying feedback into passive guidance rather than earned discovery.
 
 Therefore the automatic newly-freed visual pulse and unlock audio are rejected as normal gameplay behavior.
 
-### Current implementation state
-
-`BoardManager` still contains the dependency-state detection helpers because they may later be useful for:
-
-- level-editor analysis;
-- difficulty metrics;
-- automated tests;
-- internal debugging.
-
-However `play_newly_freed_feedback(...)` now deliberately returns `0` and performs no presentation. The coordinator may still calculate the state during this prototype branch, but the player receives no automatic visual or audio answer reveal.
-
-`AudioManager.play_unlock_sound()` is temporarily a no-op while the prototype coordinator hook is cleaned up after verification.
+`BoardManager` still contains dependency-state detection helpers because they may later be useful for level-editor analysis, difficulty metrics, automated tests, and internal debugging. `play_newly_freed_feedback(...)` deliberately returns `0` and performs no presentation.
 
 No level data, solver rule, occupancy rule, movement rule, hint count, or difficulty changed.
 
-## What remains accepted from Satisfaction Prototype v1
+## Locked satisfaction rule
 
-### 1. Existing living-path release
+Normal gameplay:
 
-The accepted snake/uncoil motion remains the primary satisfying event:
+```text
+player reads the board
+→ player chooses a path
+→ game rewards that chosen action
+→ player inspects the changed board
+→ player discovers the next move
+```
+
+Hint:
+
+```text
+player explicitly asks for help
+→ game identifies an escapable path
+```
+
+Future feel work may enhance the selected path, the escaping motion, whole-board completion, sound, haptics, or non-directional material response. It must not automatically single out an unchosen correct path.
+
+---
+
+## Release Polish v2 — IMPLEMENTED, PENDING VERIFICATION
+
+Release Polish v2 focuses only on the path the player already selected.
+
+### Target sequence
+
+```text
+correct tap
+→ ~45 ms tactile visual activation
+→ blue release state
+→ head leads
+→ body follows authored corners
+→ body straightens
+→ slight late acceleration off-board
+→ board is immediately readable again
+```
+
+### Implementation
+
+`scripts/gameplay/puzzle_piece.gd` now adds:
+
+- a 30 ms activation rise;
+- a 15 ms activation settle;
+- a small temporary shaft-width increase on the selected path only;
+- selected-path navy → blue activation;
+- no scale pulse on neighbouring paths;
+- no particles or trail system yet;
+- the existing ordered snake geometry remains unchanged;
+- bent paths keep the accepted linear corner-uncoil phase;
+- acceleration begins only after a bent path has straightened;
+- straight paths use a very mild full-release acceleration curve;
+- Reduce Motion keeps the previous short translation/fade path.
+
+Full-motion release timing is intentionally kept within roughly **270–300 ms total** so the effect does not delay the player's next reasoning step.
+
+### Rejected cleanup
+
+The old `PuzzlePiece.play_newly_freed_feedback()` implementation and its dedicated visual tween were removed from the path renderer. The board-level presentation safeguard remains the authority that normal gameplay must not reveal newly escapable paths.
+
+### Why no particles yet
+
+Particles, wakes, glow trails, and larger material effects are deliberately postponed. The selected path's own movement must feel strong before decorative effects are considered.
+
+---
+
+## Existing accepted feel systems
+
+### Living-path release
 
 ```text
 player chooses a path
-→ path activates
 → head leads
 → body follows through its corners
 → path straightens
 → path exits
 ```
 
-This rewards the player's own decision without revealing another decision.
-
-### 2. Blocked-path resistance
+### Blocked-path resistance
 
 Blocked taps keep their restrained recoil, sound, haptic, and life/mistake consequence. The feedback communicates resistance without solving anything for the player.
 
-### 3. Completion settle
+### Completion settle
 
 The small board settle after the final automatic clear remains in the prototype.
-
-Normal motion:
 
 ```text
 last path escapes
@@ -80,79 +130,98 @@ last path escapes
 
 Reduce Motion skips this scale animation and uses the shorter result transition.
 
-### 4. Existing explicit hints
+---
 
-Hints remain the intentional answer-revealing mechanic.
+## Automated verification
 
-The distinction is now:
+New test:
 
 ```text
-Normal gameplay
-= player reads the board and discovers what became possible
-
-Hint
-= player explicitly asks the game to identify an escapable path
+tests/test_release_polish.gd
 ```
 
-This separation must remain clear in future feel work and monetization design.
+It checks:
 
-## Revised satisfaction design rule
+1. full-motion release remains inside the 270–300 ms budget;
+2. a bent path completes its authored uncoil before off-board acceleration begins;
+3. Reduce Motion remains a 0.18 second simple escape.
 
-Future satisfaction effects may react to:
+The existing satisfaction safeguard also remains required:
 
-- the path the player actually tapped;
-- the path currently escaping;
-- the whole board after a meaningful event;
-- the final completion state;
-- non-directional environmental/material responses.
+```text
+tests/test_satisfaction_feedback.gd
+```
 
-Future satisfaction effects must **not** automatically single out:
+It verifies that internal blocked → escapable analysis can exist without producing any player-facing answer reveal.
 
-- the next correct path;
-- a newly escapable path;
-- the best branch;
-- the intended solution order.
-
-Unless the user explicitly activates a Hint, the player owns the discovery.
-
-## Better replacement directions
-
-Instead of highlighting the answer, future prototypes should explore non-spoiling satisfaction such as:
-
-1. **Release Polish v2** — improve activation timing, path material response, and snake exit feel on the path the player already chose.
-2. **Board tension release** — a tiny board-wide response after a successful removal, with no specific remaining path highlighted.
-3. **Path trail/material wake** — a short restrained effect behind the escaping path only.
-4. **Completion Finish v2** — improve the final mechanism finish without delaying the result screen.
-5. **Audio/haptic identity** — richer feedback attached to player actions, not hidden solution state.
-
-## Verification
-
-Pull the branch:
+### Run
 
 ```bash
 cd "/home/silver/Downloads/godot games /projects/arrow puzzle"
 git fetch origin
 git switch codex/satisfaction-prototype-v1
 git pull origin codex/satisfaction-prototype-v1
+
+GODOT="/home/silver/Downloads/godot games /Godot_v4.7.1-stable_linux.x86_64"
+
+"$GODOT" --headless --path . --editor --quit
+"$GODOT" --headless --path . --script tests/test_release_polish.gd
+"$GODOT" --headless --path . --script tests/test_satisfaction_feedback.gd
+"$GODOT" --headless --path . --script tests/test_path_visual_geometry.gd
+"$GODOT" --headless --path . --script tests/test_movement_validator.gd
+"$GODOT" --headless --path . --script tests/test_level_data_validator.gd
+"$GODOT" --headless --path . --script tests/test_vertical_slice_levels.gd
+"$GODOT" --headless --path . --script tests/test_mobile_project_settings.gd
 ```
 
-Run the normal regression suite before merging any part of this prototype.
+Expected new results:
 
-Manual acceptance now focuses on:
+```text
+Release polish: 3/3 passed
+Satisfaction safeguard: 1/1 passed
+```
 
-- no remaining path is highlighted merely because it became escapable;
-- no unlock sound reveals a newly available answer;
-- Hint still has a clear purpose;
-- snake release remains satisfying;
-- completion settle remains subtle;
-- puzzle readability is unchanged;
-- Reduce Motion and High Contrast remain correct;
-- Android portrait behavior remains correct.
+Do not describe Release Polish v2 as verified until the user's Godot output confirms this.
 
-## Director decision
+---
+
+## Manual director pass
+
+Use **F5** and play Levels 3, 4, and 5.
+
+Judge these points:
+
+1. Correct tap feels acknowledged immediately.
+2. The selected path briefly feels more alive before movement without looking like a button animation.
+3. Snake geometry still follows every authored corner correctly.
+4. Bent paths do not accelerate until their bend has travelled out of the body.
+5. The final straight exit feels a little faster and cleaner than the uncoil phase.
+6. Straight paths remain crisp rather than sluggish.
+7. No unchosen path changes color, width, motion, or sound because it became escapable.
+8. Hint remains clearly useful.
+9. The next board-reading decision is not delayed.
+10. Reduce Motion still feels immediate and readable.
+11. High Contrast remains readable.
+12. Completion settle remains subtle.
+
+### Director acceptance criterion
+
+Keep Release Polish v2 only if the selected action feels noticeably better **and** the player can immediately return to reasoning.
+
+Reject or reduce it if:
+
+- the activation pause feels sluggish;
+- the width change looks like a hint or selection state that lingers;
+- late acceleration looks like a teleport;
+- snake corner readability regresses;
+- the effect attracts more attention than the puzzle itself.
+
+## Current decision state
 
 **Rejected:** automatic blocked → escapable path acknowledgement in normal play.
 
-**Keep testing:** player-action release polish, snake motion, completion settle, audio/haptic feel attached to explicit player actions.
+**Pending verification:** Release Polish v2.
 
-This is an important product constraint for Pathbreak: satisfaction should reward reasoning, not replace it.
+**Still accepted:** snake/uncoil geometry, blocked resistance, final automatic clear, completion settle, explicit hints.
+
+The product constraint remains: **satisfaction should reward reasoning, not replace it.**
