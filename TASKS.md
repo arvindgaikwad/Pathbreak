@@ -9,7 +9,7 @@ Read `docs/PROJECT_HANDOFF.md` before continuing after a lost conversation.
 
 ## Current objective
 
-Fix and re-verify Android portrait orientation, then close the remaining phone, lifecycle, accessibility/settings, and layout gates for the five-level vertical slice. Levels 1–5 are frozen unless new evidence reveals a regression.
+Close the remaining Android phone, lifecycle, accessibility/settings, and layout gates for the five-level vertical slice. After approval, prove Pathbreak's satisfying living-path identity before building the production level pipeline. Levels 1–5 are frozen unless new evidence reveals a regression.
 
 ## Approved gameplay foundations
 
@@ -26,6 +26,8 @@ Fix and re-verify Android portrait orientation, then close the remaining phone, 
 - [x] Final auto-clear does not add a Move.
 - [x] Snake-style bent-path escape manually approved.
 - [x] Bent paths visibly uncoil through corners, straighten, then exit.
+- [x] Product direction locked: **the satisfying living-path puzzle**.
+- [x] Quality rule locked: **clarity first, satisfaction second, spectacle third**.
 
 ## Difficulty tuning — accepted for the slice
 
@@ -56,32 +58,20 @@ Fix and re-verify Android portrait orientation, then close the remaining phone, 
 - [x] `tools/android_vertical_slice.sh` handles preflight, tests, export, install, and logcat.
 - [x] APK exported, installed, and launched on Samsung Galaxy Tab S6 Lite.
 - [x] Touch selection, snake animation, sound, and haptics worked on physical hardware.
-- [!] Initial tablet build launched in **landscape**, so the portrait platform gate is reopened.
 - [x] Corrected `project.godot` orientation to `SCREEN_PORTRAIT = 1`.
-- [x] Added `tests/test_mobile_project_settings.gd`.
-- [x] Added portrait guard to `tools/android_vertical_slice.sh`.
+- [x] Added `tests/test_mobile_project_settings.gd` and portrait guard to the Android helper.
+- [x] User confirmed the corrected Android build now opens in portrait.
 
 **Temporary testing package:** `com.pathbreak.verticalslice`. Do not publish this package ID to Google Play.
 
 ---
 
-## P0 — Do next
+## P0 — Finish vertical-slice closure
 
-### A. Portrait-orientation regression
+### A. Portrait and current-head regression
 
-- [ ] Pull the latest active branch.
-- [ ] Run `bash tools/android_vertical_slice.sh test`.
-- [ ] Confirm `tests/test_mobile_project_settings.gd` reports portrait and passes.
-- [ ] Re-export the Android debug APK.
-- [ ] Reinstall on the Samsung Galaxy Tab S6 Lite.
-- [ ] Confirm app launches in portrait.
 - [ ] Confirm rotating the tablet does not switch Pathbreak into landscape.
 - [ ] Confirm Main Menu, gameplay, Pause, Refill, Result, and Level Select remain correctly composed in portrait.
-
-### B. Current-head automated regression
-
-The pre-orientation gameplay/data suites already passed. Rerun them once with the portrait fix because `tools/android_vertical_slice.sh test` now includes the new mobile-settings guard.
-
 - [ ] Editor/parser scan passes with no new warnings.
 - [ ] Mobile project settings test passes.
 - [ ] Path migration preview remains canonical.
@@ -90,7 +80,7 @@ The pre-orientation gameplay/data suites already passed. Rerun them once with th
 - [ ] Level data validator remains `8/8`.
 - [ ] Vertical-slice level suite remains `7/7`.
 
-### C. Android phone verification — STILL REQUIRED
+### B. Android phone verification — STILL REQUIRED
 
 - [ ] Portrait layout fits correctly on a physical phone.
 - [ ] Main-menu board and Start/Continue work with touch.
@@ -105,32 +95,30 @@ The pre-orientation gameplay/data suites already passed. Rerun them once with th
 - [ ] Haptics work and respect the toggle.
 - [ ] Snake animation remains smooth.
 
-### D. Android tablet verification — RETEST REQUIRED AFTER PORTRAIT FIX
+### C. Android tablet closure
 
 Physical device: Samsung Galaxy Tab S6 Lite (`SM_P615`, Android 13).
 
-- [ ] App launches and stays in portrait.
-- [x] Touch/nearest-path selection reported reliable in the first hardware pass.
-- [x] Snake animation reported smooth at 60 FPS in the first hardware pass.
+- [x] App launches in portrait after correction.
+- [x] Touch/nearest-path selection reliable.
+- [x] Snake animation smooth.
 - [x] Sound playback verified.
 - [x] Haptics integration verified.
-- [ ] Board/UI scaling rechecked in actual portrait orientation.
+- [ ] Rotation remains portrait.
+- [ ] Board/UI scaling rechecked across the full flow in portrait.
 - [ ] Explicit stylus-versus-finger comparison recorded.
 - [ ] Android Back behavior recorded for pause/refill overlays.
 - [ ] Suspend/resume behavior recorded.
 - [ ] Force-close/reopen save persistence recorded.
 
-### E. Accessibility/settings regression
+### D. Accessibility/settings and menu closure
 
 - [ ] High Contrast keeps shaft/head/tail/marker readable.
 - [ ] Reduce Motion keeps the simpler rigid translation/fade after the final snake implementation.
 - [ ] Sound toggle persists after restart.
 - [ ] Haptics toggle persists after restart.
 - [x] Core direction is communicated by shape, not color alone.
-
-### F. Main-menu/layout closure
-
-- [ ] Recheck compact portrait composition after orientation correction.
+- [ ] Recheck compact portrait composition.
 - [ ] Rapid-tap double-navigation check recorded on Android.
 - [ ] Chapter-complete state recorded and understandable.
 
@@ -140,7 +128,7 @@ Physical device: Samsung Galaxy Tab S6 Lite (`SM_P615`, Android 13).
 
 Approve only when:
 
-- [ ] Portrait-orientation rebuild/retest passes.
+- [ ] Portrait/device regression fully passes.
 - [ ] Current-head automation including mobile-settings guard passes.
 - [x] Levels 4–5 have acceptable two-person timing evidence.
 - [ ] Android phone test passes.
@@ -153,11 +141,36 @@ Do not reopen Levels 1–5 merely to add difficulty.
 
 ---
 
-## P2 — After slice approval: production level pipeline
+## P2 — Satisfaction Prototype v1
+
+Start only after vertical-slice approval. Source of truth: `docs/SATISFACTION_BLUEPRINT.md`.
+
+- [ ] Polish successful release timing while preserving accepted snake geometry.
+- [ ] Add one restrained activation response before escape.
+- [ ] Add one subtle trail/material response and reject it if readability drops.
+- [ ] Detect which remaining paths become newly available after a successful move using the existing movement rules.
+- [ ] Give only newly available paths one restrained acknowledgement; never repeatedly highlight every valid move.
+- [ ] Preserve the `choose → release → board changes → notice → choose` unravel rhythm.
+- [ ] Polish the automatic final clear and add a restrained board-settle response.
+- [ ] Prototype one success sound, one resistance sound, and one completion sound.
+- [ ] Keep Sound/Haptics toggles respected.
+- [ ] Define Reduce Motion and High Contrast behavior for every new effect.
+- [ ] Verify Android performance on tablet and phone.
+- [ ] Test with at least three uncoached players.
+- [ ] Reject any effect that makes direction, obstacles, or cause-and-effect harder to understand.
+- [ ] Capture three genuine 5–10 second clips: bent-path uncoil, dependency reveal, and final unravel.
+- [ ] Lock the Pathbreak feel language before mass content production.
+
+---
+
+## P3 — Production Level Studio
+
+Build only after Satisfaction Prototype v1 is accepted.
 
 - [ ] Replace the experimental editor with a production modular editor.
 - [ ] Keep ordered tail-to-head authoring as the only output format.
 - [ ] Preview and validate before export.
+- [ ] Preview the locked Pathbreak presentation language.
 - [ ] Integrate solver metrics.
 - [ ] Opening-move count.
 - [ ] Solution count.
@@ -166,10 +179,11 @@ Do not reopen Levels 1–5 merely to add difficulty.
 - [ ] Difficulty notes and playtest fields.
 - [ ] Phone/tablet preview.
 - [ ] Versioned JSON export and batch validation.
+- [ ] Produce the first **20 polished levels**, not a large random pack.
 
 ---
 
-## P3 — UI/art after gameplay pipeline is proven
+## P4 — Final UI / art / production audio
 
 ### Main Menu
 
@@ -187,19 +201,20 @@ Do not reopen Levels 1–5 merely to add difficulty.
 - [ ] Strong recommended-next-level state.
 - [ ] More readable stars.
 
-### Final art
+### Final identity
 
 - [ ] Logo and app icon.
 - [ ] Typography and icon system.
-- [ ] Ownable Pathbreak visual motif.
-- [ ] Production sound/music/particles.
+- [ ] Ownable Pathbreak motif built around living-path release.
+- [ ] Final path/board material treatment.
+- [ ] Production sound/music/feedback.
 - [ ] Store screenshots and marketing art.
 
 ---
 
-## P4 — Launch preparation
+## P5 — Launch preparation
 
-- [ ] Build launch-sized original level pack through the production pipeline.
+- [ ] Scale the original level pack only through the production pipeline.
 - [ ] Final name/trademark clearance.
 - [ ] Choose final globally unique Android package identifier.
 - [ ] Analytics and crash reporting.
