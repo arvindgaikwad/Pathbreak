@@ -1,19 +1,19 @@
 # Pathbreak — Snake Escape Animation
 
-**Status:** Implemented, pending local Godot verification  
+**Status:** Manually verified; post-animation automated rerun still required  
 **Last reviewed:** 2026-08-07  
 **Branch:** `codex/vertical-slice-level-review`
 
 ## Verified input before this pass
 
-The user confirmed:
+The user previously confirmed:
 
-- Gate 1 formal parser and automated verification passed.
+- Gate 1 formal parser and automated verification passed for the ordered-path correction.
 - Gate 2 movement regression passed.
 - Gate 3 new-player comprehension passed.
 - The ordered path-head system is visually accepted.
 
-The remaining game-feel requirement is specific: a bent path must not translate as a rigid L. Its head must pull the body through the bend until the whole path becomes straight, then the straightened path exits.
+The remaining game-feel requirement was specific: a bent path must not translate as a rigid L. Its head must pull the body through the bend until the whole path becomes straight, then the straightened path exits.
 
 ## Exact intended motion
 
@@ -47,9 +47,7 @@ The window starts at the original tail and advances forward. Because the exact o
 
 After the body is completely straight, the straight path continues out of the board.
 
-The current 0.28-second escape intentionally spends about 72% of its visual progress on the uncoil phase for bent paths. The remaining progress is the straight exit. This makes the snake behaviour visible without changing existing gameplay timers.
-
-Straight paths skip the special uncoil weighting because they have no corner to demonstrate.
+The current escape intentionally spends most of its visible progress on the uncoil phase for bent paths. The remaining progress is the straight exit. Straight paths skip the special uncoil weighting because they have no corner to demonstrate.
 
 ## Implementation
 
@@ -75,7 +73,7 @@ Straight paths skip the special uncoil weighting because they have no corner to 
 - trims the shaft under the head without changing movement geometry;
 - keeps arrowhead and movement direction tied to the same final segment;
 - uses a short final straight-exit phase after the body has fully uncoiled;
-- preserves the previous simple translation/fade when Reduce Motion is enabled.
+- preserves the simpler translation/fade when Reduce Motion is enabled.
 
 No level data, occupancy, solver rule, touch-selection rule, hint count, or progression rule changed.
 
@@ -96,16 +94,7 @@ It also slices the exact polyline rather than reconnecting sparse moved samples,
 
 `tests/test_path_visual_geometry.gd` includes a corner-body-window test.
 
-It verifies that an L-shaped route at partial travel contains:
-
-```text
-moving tail
-→ exact original corner
-→ final-segment corner
-→ moving head
-```
-
-and that after one complete body-length of travel the body is a straight segment of the same length.
+It verifies that an L-shaped route at partial travel contains the moving tail, exact corner, final segment, and moving head, and that after one complete body-length of travel the body becomes a straight segment of the same length.
 
 Expected suite result:
 
@@ -113,20 +102,20 @@ Expected suite result:
 Ordered path geometry: 7/7 passed
 ```
 
-## Manual acceptance
+## Manual acceptance — PASSED
 
-- L-shaped paths visibly feed through the bend instead of sliding as a rigid L.
-- The arrowhead leads.
-- The tail follows its original segment into the bend.
-- The corner visibly travels through the body.
-- The body does not cut diagonally across the corner.
-- The full path becomes straight before the final exit.
-- Body length does not visibly shrink during uncoiling.
-- Straight paths remain clean.
-- Visible head direction equals actual movement direction.
-- Restart, refill, hints, failure, results, and automatic final clear do not regress.
-- Reduce Motion keeps the simpler rigid translation/fade instead of shape deformation.
+The user confirmed the corrected animation is working as intended.
+
+Accepted behaviour:
+
+- [x] L-shaped path feeds through its bend rather than translating as a rigid L.
+- [x] Arrowhead visibly leads.
+- [x] Tail follows its original segment into the corner.
+- [x] Corner travels through the body.
+- [x] No large diagonal shortcut appears across the bend.
+- [x] Full path becomes straight before the final exit.
+- [x] Snake motion is visually understandable and satisfying enough to keep.
 
 ## Remaining verification
 
-Run the parser and all automated suites again, then visually test at least one L-shaped path in Levels 2, 3, and 5. The key acceptance check is not merely that the path exits correctly; the user must be able to see the bend travel through the body and disappear before the final straight exit.
+Because this animation changed shared geometry after the previous Gate 1 run, rerun the parser and automated suites on the current head before calling the implementation fully regression-tested. Also retain a quick Reduce Motion regression check.
