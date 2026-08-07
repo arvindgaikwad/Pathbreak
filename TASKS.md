@@ -9,7 +9,7 @@ Read `docs/PROJECT_HANDOFF.md` before continuing after a lost conversation.
 
 ## Current objective
 
-Approve the five-level vertical slice, then move to the production level pipeline. Final UI/art and monetization remain deferred.
+Close the remaining regression, Android, accessibility, and layout gates for the five-level vertical slice. Levels 1–5 are frozen unless new evidence reveals a regression.
 
 ## Approved gameplay foundations
 
@@ -17,7 +17,7 @@ Approve the five-level vertical slice, then move to the production level pipelin
 - [x] Final segment = arrowhead direction = escape direction.
 - [x] Centralized arrow renderer; no per-level rotation hacks.
 - [x] Correct triangle head/tail visual language accepted.
-- [x] Gate 1 parser/automated verification passed for ordered-arrow correction.
+- [x] Gate 1 parser/automated verification passed for the ordered-arrow correction.
 - [x] Gate 2 movement regression passed.
 - [x] Gate 3 new-player arrow comprehension passed.
 - [x] Menu board and Start/Continue both start the recommended level.
@@ -25,129 +25,84 @@ Approve the five-level vertical slice, then move to the production level pipelin
 - [x] Hint refill, Restart, failure/results, and automatic final clear work.
 - [x] Final auto-clear does not add a Move.
 - [x] Snake-style bent-path escape manually approved.
-- [x] Bent path visibly uncoils through its corner, becomes straight, then exits.
+- [x] Bent paths visibly uncoil through corners, straighten, then exit.
 
-## Latest change — pending verification
-
-Difficulty tuning is now implemented for Levels 4–5.
+## Difficulty tuning — accepted for the slice
 
 ### Level 4
 
-- [x] Redesigned to 9 pieces.
-- [x] Keeps exactly 2 opening moves.
-- [x] Each opening reveals a different next safe path.
-- [x] Structural target = 15 full-clear sequences.
-- [x] Includes multiple bent paths so snake motion remains part of normal play.
-- [ ] Parser/solver verification on current head.
-- [ ] Director playtest target: 20–35 seconds.
+- [x] 9-piece tuned layout.
+- [x] 2 opening moves.
+- [x] 15 full-clear solution orders encoded in tests.
+- [x] Two-person timing pass: roughly **30–40 seconds**.
+- [x] Stop tuning unless later evidence shows confusion or frustration.
 
 ### Level 5
 
-- [x] Redesigned to 10 pieces.
-- [x] Keeps exactly 1 opening move.
-- [x] Uses a five-step staged dependency read before its first branch.
-- [x] Structural target = 10 full-clear sequences.
-- [x] Includes multiple bent paths.
-- [ ] Parser/solver verification on current head.
-- [ ] Director playtest target: 30–45 seconds.
+- [x] 10-piece tuned layout.
+- [x] 1 opening move.
+- [x] 10 full-clear solution orders encoded in tests.
+- [x] Two-person timing pass: roughly **30–40 seconds**.
+- [x] Timing lands inside the intended 30–45 second range.
+- [x] Stop tuning unless later evidence shows confusion or frustration.
+
+The two-person pass did not record exact moves, mistakes, hints, or written qualitative notes. Those metrics are useful for broader testing but no longer justify delaying platform QA.
 
 ---
 
 ## P0 — Do next
 
-### A. Rerun automation after Level 4–5 tuning
+### A. Final automated regression on the current head
 
-- [ ] Run Godot 4.7.1 headless editor/parser scan.
-- [ ] Confirm zero parser errors and no new warnings.
-- [ ] Run `tools/path_level_migration_preview.gd` and confirm `reversible=0 ambiguous=0`.
-- [ ] Run `tests/test_path_visual_geometry.gd`; expected `7/7`.
-- [ ] Run `tests/test_movement_validator.gd`.
-- [ ] Run `tests/test_level_data_validator.gd`.
-- [ ] Run `tests/test_vertical_slice_levels.gd`; expected `7/7`.
-- [ ] Confirm Level 4 audit reports 9 pieces, 2 openings, 15 solutions.
-- [ ] Confirm Level 5 audit reports 10 pieces, 1 opening, 10 solutions.
+Run once after the snake-animation and Level 4–5 changes:
 
-### B. Director playtest — tuned Level 4
+- [ ] Godot 4.7.1 headless editor/parser scan.
+- [ ] Zero parser errors and no new warnings.
+- [ ] `tools/path_level_migration_preview.gd` → `reversible=0 ambiguous=0`.
+- [ ] `tests/test_path_visual_geometry.gd` → expected `7/7`.
+- [ ] `tests/test_movement_validator.gd` passes.
+- [ ] `tests/test_level_data_validator.gd` passes.
+- [ ] `tests/test_vertical_slice_levels.gd` → expected `7/7`.
+- [ ] Confirm Level 4 = 9 pieces / 2 openings / 15 solutions.
+- [ ] Confirm Level 5 = 10 pieces / 1 opening / 10 solutions.
 
-Play three times and record:
-
-- [ ] completion time;
-- [ ] moves;
-- [ ] mistakes;
-- [ ] hints;
-- [ ] first opening selected;
-- [ ] whether the second branch was noticed;
-- [ ] whether any path felt too close or ambiguous;
-- [ ] whether snake motion remains clean.
-
-Acceptance:
-
-- [ ] roughly 20–35 seconds for a new player;
-- [ ] increased time comes from dependency reading, not confusion.
-
-### C. Director playtest — tuned Level 5
-
-Play three times and record:
-
-- [ ] completion time;
-- [ ] moves;
-- [ ] mistakes;
-- [ ] hints;
-- [ ] whether the early staged chain is understandable;
-- [ ] whether the later `[2, 8]` branch feels satisfying rather than random;
-- [ ] whether any path is visually ambiguous;
-- [ ] whether snake motion remains clean.
-
-Acceptance:
-
-- [ ] roughly 30–45 seconds for a new player;
-- [ ] one clear opening without feeling like a tutorial;
-- [ ] several board re-evaluations before completion.
-
-### D. One no-explanation retest
-
-- [ ] Give tuned Levels 4–5 to at least one player who has not seen the new layouts.
-- [ ] Do not explain the solution.
-- [ ] Record time, mistakes, hints, confusion, and enjoyment.
-- [ ] Keep the level only if the player understands why successful paths move.
-
----
-
-## P1 — Android verification
-
-### Phone
+### B. Android phone verification
 
 - [ ] Export/install debug APK.
-- [ ] Verify portrait layout and nearest-path touch selection.
-- [ ] Verify close paths do not select incorrectly.
-- [ ] Verify multi-touch does not duplicate actions.
-- [ ] Verify Android Back closes popup/pause first.
-- [ ] Verify suspend/resume and force-close/reopen persistence.
-- [ ] Verify sound and haptics.
-- [ ] Verify snake animation performance.
+- [ ] Portrait layout fits correctly.
+- [ ] Nearest-path touch selection remains accurate.
+- [ ] Close paths do not select incorrectly.
+- [ ] Multi-touch does not duplicate actions.
+- [ ] Android Back closes refill/pause before leaving gameplay.
+- [ ] Suspend/resume preserves a valid state.
+- [ ] Force-close/reopen preserves save and settings.
+- [ ] Sound works.
+- [ ] Haptics work and respect the toggle.
+- [ ] Snake animation remains smooth.
 
-### Tablet
+### C. Android tablet verification
 
 - [ ] Install on Samsung Galaxy Tab S6 Lite or another Android tablet.
-- [ ] Verify board scale and centring.
-- [ ] Verify stylus and finger tolerance.
-- [ ] Verify popup/menu sizing.
-- [ ] Verify snake animation performance and visual smoothness.
+- [ ] Board scale and centring are correct.
+- [ ] Stylus and finger selection both feel accurate.
+- [ ] Popup/menu sizing is comfortable.
+- [ ] Snake animation remains smooth.
+- [ ] Suspend/resume and save persistence work.
 
-### Accessibility
+### D. Accessibility/settings regression
 
 - [ ] High Contrast keeps shaft/head/tail/marker readable.
 - [ ] Reduce Motion keeps the simpler rigid translation/fade.
-- [ ] Sound and Haptics settings persist after restart.
+- [ ] Sound toggle persists after restart.
+- [ ] Haptics toggle persists after restart.
+- [ ] No core direction information depends only on color.
 
----
-
-## P1 — Main-menu/layout closure
+### E. Main-menu/layout closure
 
 - [ ] Rapid taps do not double-navigate.
 - [ ] Board prompt does not overlap at 360×800.
-- [ ] Verify 800×1280 tablet portrait.
-- [ ] Chapter-complete state is understandable.
+- [ ] Full loop works at 800×1280 tablet portrait.
+- [ ] Chapter-complete state remains understandable.
 
 ---
 
@@ -155,21 +110,21 @@ Acceptance:
 
 Approve only when:
 
-- [ ] Current automation passes.
-- [ ] Tuned Level 4 passes director/new-player testing.
-- [ ] Tuned Level 5 passes director/new-player testing.
+- [ ] Current-head automation passes.
+- [x] Levels 4–5 have acceptable two-person timing evidence.
 - [ ] Android phone test passes.
 - [ ] Android tablet test passes.
-- [ ] Accessibility regression passes.
+- [ ] Accessibility/settings regression passes.
+- [ ] Main-menu/layout closure passes.
 - [ ] Remaining defects are documented.
 
-Do not reopen Levels 1–3 unless new evidence reveals a regression.
+Do not reopen Levels 1–5 merely to add difficulty.
 
 ---
 
 ## P2 — After slice approval: production level pipeline
 
-- [ ] Replace experimental editor with production modular editor.
+- [ ] Replace the experimental editor with a production modular editor.
 - [ ] Keep ordered tail-to-head authoring as the only output format.
 - [ ] Preview and validate before export.
 - [ ] Integrate solver metrics.
