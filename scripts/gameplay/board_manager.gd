@@ -30,17 +30,39 @@ func _ready() -> void:
 			sm.settings_changed.connect(_on_settings_changed)
 
 func _is_reduce_motion() -> bool:
+	var sm: Node = null
 	if is_inside_tree() and get_tree() and get_tree().root:
-		var sm := get_tree().root.get_node_or_null("SettingsManager")
-		if sm and "reduce_motion" in sm:
-			return sm.reduce_motion == true
+		sm = get_tree().root.get_node_or_null("SettingsManager")
+	if sm == null:
+		var tree := Engine.get_main_loop() as SceneTree
+		if tree and tree.root:
+			sm = tree.root.get_node_or_null("SettingsManager")
+	if sm == null and get_parent() != null:
+		sm = get_parent().get_node_or_null("SettingsManager")
+
+	if sm:
+		if sm.has_meta("reduce_motion") and sm.get_meta("reduce_motion") == true:
+			return true
+		if "reduce_motion" in sm and sm.reduce_motion == true:
+			return true
 	return false
 
 func _is_high_contrast() -> bool:
+	var sm: Node = null
 	if is_inside_tree() and get_tree() and get_tree().root:
-		var sm := get_tree().root.get_node_or_null("SettingsManager")
-		if sm and "high_contrast" in sm:
-			return sm.high_contrast == true
+		sm = get_tree().root.get_node_or_null("SettingsManager")
+	if sm == null:
+		var tree := Engine.get_main_loop() as SceneTree
+		if tree and tree.root:
+			sm = tree.root.get_node_or_null("SettingsManager")
+	if sm == null and get_parent() != null:
+		sm = get_parent().get_node_or_null("SettingsManager")
+
+	if sm:
+		if sm.has_meta("high_contrast") and sm.get_meta("high_contrast") == true:
+			return true
+		if "high_contrast" in sm and sm.high_contrast == true:
+			return true
 	return false
 
 func _draw() -> void:

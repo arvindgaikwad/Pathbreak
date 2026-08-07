@@ -64,13 +64,13 @@ func test_full_motion_finish_budget() -> bool:
 	var piece := _make_bent_piece()
 	var board = _make_board()
 	var coordinator_gap := 0.015
-	var total := (
+	var total: float = (
 		piece.get_final_clear_preview_duration()
 		+ piece.get_escape_animation_duration()
 		+ coordinator_gap
 		+ board.get_completion_settle_duration()
 	)
-	var passed := total >= 0.40 and total <= 0.70
+	var passed: bool = total >= 0.40 and total <= 0.70
 	if not passed:
 		push_error("Full completion finish left the 400–700 ms budget: %.3f" % total)
 	piece.queue_free()
@@ -84,14 +84,14 @@ func test_reduce_motion_finish_budget() -> bool:
 	var board = _make_board()
 	var coordinator_gap := 0.015
 	var reduced_result_gap := 0.040
-	var total := (
+	var total: float = (
 		piece.get_final_clear_preview_duration()
 		+ piece.get_escape_animation_duration()
 		+ coordinator_gap
 		+ reduced_result_gap
 		+ board.get_completion_settle_duration()
 	)
-	var passed := total <= 0.30
+	var passed: bool = total <= 0.30
 	if not passed:
 		push_error("Reduce Motion completion finish should stay under 300 ms: %.3f" % total)
 	piece.queue_free()

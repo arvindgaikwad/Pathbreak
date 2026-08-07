@@ -278,7 +278,7 @@ func _on_level_completed() -> void:
 		level_data_list.size()
 	)
 
-	var settle_delay := (
+	var settle_delay: float = (
 		REDUCE_MOTION_RESULT_GAP
 		if SettingsManager.reduce_motion
 		else board.get_completion_settle_duration()

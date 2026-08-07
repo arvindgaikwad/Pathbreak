@@ -57,6 +57,8 @@ func init_from_data(data: PuzzlePieceData, new_grid_size: float = 64.0) -> void:
 				exit_direction
 			]
 		)
+	_update_visuals()
+	_create_direction_marker()
 
 func _ready() -> void:
 	if area != null:
@@ -132,9 +134,13 @@ func reset_color() -> void:
 	set_color(_normal_color())
 
 func set_color(color: Color) -> void:
-	line.default_color = color
-	arrow_head.color = color
-	tail_dot.color = color
+	_ensure_render_nodes()
+	if line != null:
+		line.default_color = color
+	if arrow_head != null:
+		arrow_head.color = color
+	if tail_dot != null:
+		tail_dot.color = color
 
 func _set_tail_dot_center(tail_position: Vector2) -> void:
 	var points := PackedVector2Array()
@@ -161,19 +167,22 @@ func _set_arrowhead_geometry(
 	arrow_head.color = line.default_color
 
 func _create_direction_marker() -> void:
-	direction_marker = Polygon2D.new()
-	var marker_length := clampf(grid_size * 0.13, 7.0, 9.0)
-	var marker_half_height := clampf(grid_size * 0.075, 4.0, 5.5)
-	direction_marker.polygon = PathVisualGeometryScript.make_triangle_from_tip(
-		Vector2(marker_length, 0.0),
-		Vector2.RIGHT,
-		marker_length,
-		marker_half_height
-	)
+	if cells.size() < 2:
+		return
+	if direction_marker == null:
+		direction_marker = Polygon2D.new()
+		var marker_length := clampf(grid_size * 0.13, 7.0, 9.0)
+		var marker_half_height := clampf(grid_size * 0.075, 4.0, 5.5)
+		direction_marker.polygon = PathVisualGeometryScript.make_triangle_from_tip(
+			Vector2(marker_length, 0.0),
+			Vector2.RIGHT,
+			marker_length,
+			marker_half_height
+		)
+		direction_marker.color = COLOR_ACCENT
+		direction_marker.visible = false
+		add_child(direction_marker)
 	direction_marker.rotation = _direction_vector().angle()
-	direction_marker.color = COLOR_ACCENT
-	direction_marker.visible = false
-	add_child(direction_marker)
 
 func _clear_legacy_collisions() -> void:
 	if area == null:
