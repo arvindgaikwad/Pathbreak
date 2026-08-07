@@ -10,6 +10,7 @@ var occupancy: Dictionary = {}
 var pieces: Array[PuzzlePiece] = []
 var input_enabled := true
 var assist_pulses_enabled: bool = false
+var completion_tween: Tween = null
 
 @onready var pieces_container: Node2D = $PiecesContainer
 
@@ -73,6 +74,10 @@ func clear_board() -> void:
 	assist_pulses_enabled = false
 	occupancy.clear()
 	pieces.clear()
+	if completion_tween != null and completion_tween.is_valid():
+		completion_tween.kill()
+	completion_tween = null
+	scale = Vector2.ONE
 	if pieces_container == null:
 		return
 	for child in pieces_container.get_children():
@@ -89,6 +94,55 @@ func can_piece_escape(piece: PuzzlePiece) -> bool:
 		piece.exit_direction,
 		board_size,
 		occupancy
+	)
+
+func get_escapable_piece_ids() -> PackedInt32Array:
+	var ids := PackedInt32Array()
+	for piece in pieces:
+		if not is_instance_valid(piece) or piece.is_removed:
+			continue
+		if can_piece_escape(piece):
+			ids.append(piece.piece_id)
+	return ids
+
+func get_newly_escapable_pieces(previous_ids: PackedInt32Array) -> Array[PuzzlePiece]:
+	var previous_set: Dictionary = {}
+	for piece_id in previous_ids:
+		previous_set[piece_id] = true
+
+	var newly_escapable: Array[PuzzlePiece] = []
+	for piece in pieces:
+		if not is_instance_valid(piece) or piece.is_removed or piece.is_animating:
+			continue
+		if previous_set.has(piece.piece_id):
+			continue
+		if can_piece_escape(piece):
+			newly_escapable.append(piece)
+	return newly_escapable
+
+func play_newly_freed_feedback(candidates: Array[PuzzlePiece]) -> int:
+	var signalled := 0
+	for piece in candidates:
+		if not is_instance_valid(piece) or piece.is_removed or piece.is_animating:
+			continue
+		if not can_piece_escape(piece):
+			continue
+		piece.play_newly_freed_feedback()
+		signalled += 1
+	return signalled
+
+func play_completion_settle() -> void:
+	if SettingsManager.reduce_motion:
+		return
+	if completion_tween != null and completion_tween.is_valid():
+		completion_tween.kill()
+	completion_tween = create_tween()
+	completion_tween.tween_property(self, "scale", Vector2.ONE * 0.992, 0.055).set_trans(Tween.TRANS_SINE)
+	completion_tween.tween_property(self, "scale", Vector2.ONE * 1.006, 0.09).set_trans(Tween.TRANS_SINE)
+	completion_tween.tween_property(self, "scale", Vector2.ONE, 0.12).set_trans(Tween.TRANS_SINE)
+	completion_tween.finished.connect(func() -> void:
+		completion_tween = null
+		scale = Vector2.ONE
 	)
 
 func get_first_escapable_piece() -> PuzzlePiece:
