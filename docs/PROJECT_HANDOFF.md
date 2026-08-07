@@ -6,79 +6,113 @@
 **Active branch:** `codex/vertical-slice-level-review`  
 **Active draft PR:** `#8 — Direct and approve the Pathbreak vertical slice`
 
-Use this document to continue the project if the current chat is lost. Read it together with `TASKS.md`, `docs/README.md`, `docs/ARROW_SYSTEM_AUDIT.md`, `docs/DECISIONS.md`, and the latest playtest record.
+Use this document if the current conversation is lost. Then read `TASKS.md`, `docs/README.md`, `docs/ARROW_SYSTEM_AUDIT.md`, `docs/SNAKE_ESCAPE_ANIMATION.md`, and the latest playtest record.
 
 ## 1. Product summary
 
-Pathbreak is an original portrait Android puzzle game built in Godot 4.7.1. The player clears ordered directional paths in a sequence that lets each path escape without colliding with another path.
+Pathbreak is an original portrait Android puzzle game built in Godot 4.7.1. Players clear ordered directional paths when their complete escape route is unobstructed.
 
-The current gate is a complete, tested vertical slice. Do not build the full level pack, final art, or monetization before this gate passes.
+The current objective is to approve the five-level vertical slice before building the production level pipeline, final art, or monetization.
 
-## 2. Confirmed working before the latest arrow migration
+## 2. Accepted gameplay foundation
 
-- Main Menu launches and recommends the first uncleared level.
-- Menu hero board and Start/Continue open the same level.
-- Travelling menu cue works.
-- Level Select and Levels 1–10 load.
-- Progression, failure, retry, results, Replay, and Next Level work.
-- Central nearest-path touch selection works.
-- Hint depletion and `Refill +3` work.
-- Restart works.
-- Automatic final clear works and does not add a Move.
-- Reduce Motion alternatives work.
-- `No path can leave yet` is useful.
-- Clean-save menu shows `Start Level 1`.
-- Level 1 shows `FREE` once.
-- Level 2 starts with five normal hints.
-- Replaying Level 1 shows the real hint inventory.
+The user has confirmed these major gates:
 
-## 3. Latest implemented correction — pending local verification
+- ordered-arrow parser/automated gate passed;
+- movement regression gate passed;
+- new-player direction-comprehension gate passed;
+- corrected arrow visuals are accepted;
+- snake-style corner escape is working as intended.
 
-Two expert prompts were combined:
-
-1. Fix the shared system rather than manually rotating each level.
-2. Treat every object as an ordered grid path whose head direction comes from its selected endpoint and adjacent cell.
-
-Current canonical rule:
+Canonical path rule:
 
 ```text
-cells are tail → ... → head
-cells[-1] - cells[-2]
-= arrowhead direction
-= movement direction
+tail → ... → head
+final segment = arrowhead direction = movement direction
 ```
 
-Implemented:
+Do not return to projection-based head placement, per-level rotations, negative-scale direction hacks, or separate visual/movement direction values.
 
-- `scripts/gameplay/path_visual_geometry.gd`
-- ordered endpoint direction and head/tail helpers;
-- one triangle generator for menu and gameplay;
-- shaft trimming before the triangle;
-- directional triangle hint marker;
-- `PuzzlePieceData` derives movement from ordered cells;
-- `LevelDataValidator` rejects direction mismatches;
-- Level Editor authors only ordered tail-to-head paths;
-- preview-only legacy migration scanner;
-- Levels 1–5 migrated;
-- all-level geometry tests;
-- movement tests updated for the ordered-path model.
+## 3. Snake escape rule
 
-Read `docs/ARROW_SYSTEM_AUDIT.md` for the root cause, files, migration counts, and acceptance checks.
+Bent paths must not slide as rigid L-shapes.
 
-## 4. Migration summary
+Accepted behavior:
 
-Ten sequential levels were inspected.
+```text
+head advances
+→ tail follows the original path
+→ bend travels through the body
+→ path becomes straight
+→ straight path exits
+```
 
-Before migration:
+Reduce Motion keeps the simpler translation/fade.
 
-- 13 paths did not match the final-segment convention;
-- 7 could be repaired by reversing cell order;
-- 6 matched neither endpoint and required small geometry changes;
-- Levels 6–10 already followed the final-segment convention.
+See `docs/SNAKE_ESCAPE_ANIMATION.md`.
 
-The Level 1–5 geometry changes were chosen to preserve the metric targets already encoded in `tests/test_vertical_slice_levels.gd`. They are not verified until the local solver test passes.
+## 4. Confirmed working systems
 
-## 5. Architecture to preserve
+- Main Menu starts the game.
+- Hero board and Start/Continue open the same recommended level.
+- Level Select and Levels 1–10 load.
+- Central nearest-path touch selection.
+- Progression, failure, retry, results, Replay, Next Level.
+- Hint use and persistent hint bank.
+- `Refill +3` flow.
+- Restart.
+- Automatic final clear without adding a Move.
+- Clean-save Level 1 `FREE` hint state.
+- Level 2 normal five-hint state.
+- Replaying Level 1 shows normal hint inventory.
+- `No path can leave yet` feedback.
+
+## 5. Latest change: Level 4–5 difficulty tuning
+
+Earlier playtests showed the game was enjoyable but too easy. Typical early clears were around 10 seconds; Level 4 was cleared in 7 seconds and Level 5 in 16 seconds by the returning tester.
+
+### New Level 4
+
+- 8×8 board;
+- 9 pieces;
+- 2 opening moves;
+- both openings reveal different next safe paths;
+- 15 solution orders;
+- multiple bent paths;
+- target new-player time: 20–35 seconds.
+
+Expected structural checks:
+
+```text
+start → [1, 5]
+after 1 → [4, 5]
+after 5 → [1, 7]
+```
+
+### New Level 5
+
+- 8×8 board;
+- 10 pieces;
+- 1 opening move;
+- five-step staged dependency read before the first branch;
+- 10 solution orders;
+- multiple bent paths;
+- target new-player time: 30–45 seconds.
+
+Expected early structure:
+
+```text
+start → [5]
+after 5 → [6]
+after 5,6 → [9]
+after 5,6,9 → [7]
+after 5,6,9,7 → [4]
+after 5,6,9,7,4 → [2, 8]
+```
+
+These layouts are implemented but not approved until the current parser/solver and playtest pass.
+
+## 6. Architecture to preserve
 
 - Godot 4.7.1 and typed GDScript.
 - Android portrait target.
@@ -88,47 +122,28 @@ The Level 1–5 geometry changes were chosen to preserve the metric targets alre
   - `scripts/gameplay/level_manager.gd`
   - `scripts/gameplay/board_manager.gd`
   - `scripts/gameplay/puzzle_piece.gd`
-- One shared `PuzzlePiece` scene/script for every level.
-- JSON-first sequential level loading.
-- `MovementValidator`, `LevelDataValidator`, and `LevelSolver` remain separate.
-- Central nearest-path selection.
-- `SaveManager` and `SettingsManager` remain separate.
-
-Do not reintroduce the removed legacy gameplay stack, per-direction arrow scenes, negative-scale direction hacks, or per-level head rotations.
-
-## 6. Current UI direction
-
-### Main Menu
-
-- Start/Continue must be obvious within one second.
-- Board and primary button start the same level.
-- Prompt must not overlap the board.
-- Use restrained directional motion, not decorative sparkles.
-
-### Level Select
-
-- Keep four columns on compact phones.
-- Completed, Current, Unlocked, and Locked states must be distinct.
-- The recommended next level must be obvious.
-
-Final art direction remains deferred.
+- One shared `PuzzlePiece` scene/script for all levels.
+- JSON-first level loading.
+- Separate `MovementValidator`, `LevelDataValidator`, and `LevelSolver`.
+- Central nearest-path touch selection.
+- Separate `SaveManager` and `SettingsManager`.
 
 ## 7. Immediate next actions
 
 Follow `TASKS.md`. Current order:
 
-1. Pull the active branch.
-2. Run the parser scan.
-3. Run the migration preview.
-4. Run the ordered-path geometry test.
-5. Run movement, data, and vertical-slice solver tests.
-6. Confirm the migration preview reports zero reversible and ambiguous paths.
-7. Inspect Levels 1–5 visually.
-8. Verify head direction equals movement direction.
-9. Verify Reduce Motion and High Contrast.
-10. Repeat no-explanation testing with new players.
-11. Test Android phone and tablet.
-12. Approve or reject the slice.
+1. Pull latest branch.
+2. Run parser scan.
+3. Run migration preview.
+4. Run ordered-path geometry test; expected `7/7`.
+5. Run movement/data tests.
+6. Run vertical-slice tests; expected `7/7`.
+7. Confirm Level 4 = 9 pieces / 2 openings / 15 solutions.
+8. Confirm Level 5 = 10 pieces / 1 opening / 10 solutions.
+9. Play tuned Level 4 three times.
+10. Play tuned Level 5 three times.
+11. Run at least one no-explanation player test on the new layouts.
+12. Move to Android phone/tablet verification.
 
 ## 8. Local paths and commands
 
@@ -144,7 +159,7 @@ Project:
 /home/silver/Downloads/godot games /projects/arrow puzzle
 ```
 
-Pull and verify:
+Verification:
 
 ```bash
 cd "/home/silver/Downloads/godot games /projects/arrow puzzle"
@@ -164,40 +179,34 @@ GODOT="/home/silver/Downloads/godot games /Godot_v4.7.1-stable_linux.x86_64"
 
 Run the full game with **F5**, not F6.
 
-## 9. Ordered-path manual acceptance
+## 9. Vertical slice exit criteria
 
-- Head is a true endpoint.
-- Head follows the adjacent final segment.
-- Head and movement direction match.
-- Bent paths do not use first-to-last direction.
-- Shaft stops cleanly under the triangle.
-- Tail is at the opposite endpoint.
-- Hint marker points toward the same head.
-- Menu and gameplay use the same rules.
-- Touch, hint, restart, refill, failure, and automatic final clear do not regress.
+- current parser and automated tests pass;
+- Levels 1–3 remain regression-free;
+- tuned Level 4 produces deliberate choice without confusion;
+- tuned Level 5 produces deeper dependency reading without confusion;
+- snake motion remains correct;
+- Main Menu/layout checks pass;
+- High Contrast and Reduce Motion pass;
+- Android phone test passes;
+- Android tablet test passes;
+- remaining defects are documented.
 
-## 10. Vertical-slice exit criteria
+## 10. After approval
 
-- Parser clean.
-- All automated tests pass.
-- Migration preview clean.
-- Main Menu understandable without explanation.
-- Ordered arrow/path language understood by new players.
-- Hint/refill/restart/pause/navigation/save work.
-- Reduce Motion and High Contrast work.
-- Levels 1–5 pass director review.
-- At least three new players provide evidence.
-- Android phone/tablet checks pass.
+Next milestone is the production level pipeline:
 
-## 11. Work after approval
+- ordered tail-to-head editor;
+- schema validation;
+- solver integration;
+- opening/solution/dependency metrics;
+- difficulty/playtest metadata;
+- phone/tablet preview;
+- versioned JSON export and batch validation.
 
-- Production modular level editor.
-- Solver and difficulty metrics inside the editor.
-- Launch-sized original level pack.
-- Final art/audio.
-- Analytics, privacy, signing, testing, and store launch systems.
+Final UI/art follows after gameplay and content production foundations are proven.
 
-## 12. New-conversation continuation prompt
+## 11. New-conversation continuation prompt
 
 ```text
 Continue development of my Godot project Pathbreak in GitHub repository arvindgaikwad/Pathbreak.
@@ -206,11 +215,12 @@ Read these files on branch codex/vertical-slice-level-review:
 1. docs/PROJECT_HANDOFF.md
 2. TASKS.md
 3. docs/ARROW_SYSTEM_AUDIT.md
-4. docs/README.md
-5. docs/DECISIONS.md
-6. docs/AI_ANTI_SLOP_STANDARD.md
-7. docs/VERTICAL_SLICE_PLAYTEST_2026-08-06.md
-8. docs/TESTING_CHECKLIST.md
+4. docs/SNAKE_ESCAPE_ANIMATION.md
+5. docs/README.md
+6. docs/DECISIONS.md
+7. docs/AI_ANTI_SLOP_STANDARD.md
+8. docs/VERTICAL_SLICE_PLAYTEST_2026-08-06.md
+9. docs/TESTING_CHECKLIST.md
 
-The active draft is PR #8. Do not merge it yet. Preserve the modular JSON-first architecture. The current arrow system uses ordered tail-to-head cells and derives both head and movement direction from the final segment. Treat all untested changes as unverified. Continue from the first incomplete P0 task in TASKS.md.
+The active draft is PR #8. Do not merge it yet. Preserve the modular JSON-first architecture. Ordered cells are tail-to-head; the final segment controls both head and movement direction. Bent paths use the accepted snake uncoil animation. Levels 4 and 5 have just been difficulty-tuned and are pending parser/solver/playtest verification. Continue from the first incomplete P0 task in TASKS.md.
 ```
