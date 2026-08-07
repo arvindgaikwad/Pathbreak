@@ -3,19 +3,34 @@ extends Node2D
 const PuzzlePieceScene: PackedScene = preload("res://scenes/game/puzzle_piece.tscn")
 const PuzzlePieceDataScript = preload("res://scripts/gameplay/puzzle_piece_data.gd")
 const PathVisualGeometryScript = preload("res://scripts/gameplay/path_visual_geometry.gd")
+const LevelDataValidatorScript = preload("res://scripts/gameplay/level_data_validator.gd")
+const LevelSolverScript = preload("res://scripts/gameplay/level_solver.gd")
+const EditorGridScript = preload("res://scripts/editor/editor_grid.gd")
+const LevelStudioPreviewSessionScript = preload("res://scripts/editor/level_studio_preview_session.gd")
+
+const PREVIEW_SCENE := "res://scenes/editor/level_preview_screen.tscn"
+const VALID_DIFFICULTIES := ["Easy", "Normal", "Hard"]
 
 var board_bounds := Rect2i(0, 0, 8, 8)
 var grid_size := 64.0
 var pieces_data: Array[Dictionary] = []
 var current_path: Array[Vector2i] = []
 var is_drawing := false
+var level_id: int = 6
+var difficulty: String = "Normal"
+var starting_lives: int = 3
 
-@onready var grid_dots = $BoardPivot/GridDots
+@onready var grid_dots: Node2D = $BoardPivot/GridDots
 @onready var board_pivot: Node2D = $BoardPivot
 @onready var validate_label: Label = $UI/Sidebar/ValidateLabel
+@onready var metrics_label: Label = $UI/Sidebar/MetricsLabel
+@onready var level_spin: SpinBox = $UI/TopPanel/LevelSpin
+@onready var lives_spin: SpinBox = $UI/TopPanel/LivesSpin
+@onready var meta_summary: Label = $UI/TopPanel/MetaSummary
+@onready var preview_button: Button = $UI/Sidebar/PreviewButton
 
 func _ready() -> void:
-	grid_dots.set_script(preload("res://scripts/gameplay/board_manager.gd"))
+	grid_dots.set_script(EditorGridScript)
 	grid_dots.update_grid(board_bounds, grid_size)
 
 	$UI/Sidebar/SaveButton.pressed.connect(_on_save_pressed)
@@ -23,11 +38,31 @@ func _ready() -> void:
 	$UI/Sidebar/ClearButton.pressed.connect(_on_clear_pressed)
 	$UI/Sidebar/DeleteButton.pressed.connect(_on_delete_pressed)
 	$UI/Sidebar/ValidateButton.pressed.connect(_on_validate_pressed)
+	preview_button.pressed.connect(_on_preview_pressed)
 
 	$UI/Sidebar/BtnUP.pressed.connect(func() -> void: _set_last_dir(Vector2i.UP))
 	$UI/Sidebar/BtnDOWN.pressed.connect(func() -> void: _set_last_dir(Vector2i.DOWN))
 	$UI/Sidebar/BtnLEFT.pressed.connect(func() -> void: _set_last_dir(Vector2i.LEFT))
 	$UI/Sidebar/BtnRIGHT.pressed.connect(func() -> void: _set_last_dir(Vector2i.RIGHT))
+
+	level_spin.value_changed.connect(_on_level_value_changed)
+	lives_spin.value_changed.connect(_on_lives_value_changed)
+	$UI/TopPanel/Board6.pressed.connect(func() -> void: _set_board_size(6))
+	$UI/TopPanel/Board7.pressed.connect(func() -> void: _set_board_size(7))
+	$UI/TopPanel/Board8.pressed.connect(func() -> void: _set_board_size(8))
+	$UI/TopPanel/Board9.pressed.connect(func() -> void: _set_board_size(9))
+	$UI/TopPanel/DifficultyEasy.pressed.connect(func() -> void: _set_difficulty("Easy"))
+	$UI/TopPanel/DifficultyNormal.pressed.connect(func() -> void: _set_difficulty("Normal"))
+	$UI/TopPanel/DifficultyHard.pressed.connect(func() -> void: _set_difficulty("Hard"))
+
+	var return_state: Dictionary = LevelStudioPreviewSessionScript.get_editor_state()
+	if not return_state.is_empty():
+		_restore_editor_state(return_state)
+		LevelStudioPreviewSessionScript.clear()
+		_set_validation_message("Returned from preview. Analyze after edits.", true)
+	else:
+		_sync_metadata_controls()
+		_clear_metrics()
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
@@ -77,10 +112,10 @@ func _finish_current_path() -> void:
 	})
 	current_path.clear()
 	_refresh_pieces()
-	_set_validation_message("Valid: ?", true)
+	_mark_analysis_dirty()
 
-func _mouse_to_grid(position: Vector2) -> Vector2i:
-	var local_position := position - board_pivot.position
+func _mouse_to_grid(screen_position: Vector2) -> Vector2i:
+	var local_position := screen_position - board_pivot.position
 	var offset_x := -(board_bounds.size.x * grid_size) / 2.0
 	var offset_y := -(board_bounds.size.y * grid_size) / 2.0
 	var grid_position := local_position - Vector2(offset_x, offset_y)
@@ -112,8 +147,8 @@ func _refresh_pieces() -> void:
 func _draw() -> void:
 	if current_path.is_empty():
 		return
-	var offset_x := -(board_bounds.size.x * grid_size) / 2.0
-	var offset_y := -(board_bounds.size.y * grid_size) / 2.0
+	var offset_x := board_pivot.position.x - (board_bounds.size.x * grid_size) / 2.0
+	var offset_y := board_pivot.position.y - (board_bounds.size.y * grid_size) / 2.0
 	var points := PackedVector2Array()
 	for cell in current_path:
 		points.append(
@@ -154,43 +189,144 @@ func _set_last_dir(requested_direction: Vector2i) -> void:
 		)
 		return
 	_refresh_pieces()
-	_set_validation_message("Head endpoint updated.", true)
+	_mark_analysis_dirty()
 
 func _on_clear_pressed() -> void:
 	pieces_data.clear()
 	_refresh_pieces()
-	_set_validation_message("Valid: ?", true)
+	_mark_analysis_dirty()
 
 func _on_delete_pressed() -> void:
 	if not pieces_data.is_empty():
 		pieces_data.pop_back()
 	_refresh_pieces()
-	_set_validation_message("Valid: ?", true)
+	_mark_analysis_dirty()
 
-func _on_save_pressed() -> void:
-	var save_data: Dictionary = {
-		"width": board_bounds.size.x,
-		"height": board_bounds.size.y,
-		"lives": 3,
-		"pieces": []
-	}
+func _on_level_value_changed(value: float) -> void:
+	level_id = maxi(int(value), 1)
+	_sync_metadata_controls()
+	_mark_analysis_dirty()
+
+func _on_lives_value_changed(value: float) -> void:
+	starting_lives = maxi(int(value), 1)
+	_sync_metadata_controls()
+	_mark_analysis_dirty()
+
+func _set_difficulty(value: String) -> void:
+	if value not in VALID_DIFFICULTIES:
+		return
+	difficulty = value
+	_sync_metadata_controls()
+	_mark_analysis_dirty()
+
+func _set_board_size(size: int) -> void:
+	var new_bounds := Rect2i(0, 0, size, size)
 	for piece_dictionary in pieces_data:
 		var cells: Array[Vector2i] = piece_dictionary["cells"]
-		var direction := PathVisualGeometryScript.direction_from_cells(cells)
-		var serialized_cells: Array = []
 		for cell in cells:
-			serialized_cells.append([cell.x, cell.y])
-		save_data["pieces"].append({
-			"cells": serialized_cells,
-			"direction": [direction.x, direction.y],
-			"head_endpoint": "end"
-		})
+			if not new_bounds.has_point(cell):
+				_set_validation_message("Cannot shrink board: an existing path would be outside it.", false)
+				return
+	board_bounds = new_bounds
+	grid_dots.update_grid(board_bounds, grid_size)
+	_refresh_pieces()
+	_sync_metadata_controls()
+	_mark_analysis_dirty()
+
+func _sync_metadata_controls() -> void:
+	if level_spin != null:
+		level_spin.set_value_no_signal(level_id)
+	if lives_spin != null:
+		lives_spin.set_value_no_signal(starting_lives)
+	$UI/TopPanel/Board6.disabled = board_bounds.size == Vector2i(6, 6)
+	$UI/TopPanel/Board7.disabled = board_bounds.size == Vector2i(7, 7)
+	$UI/TopPanel/Board8.disabled = board_bounds.size == Vector2i(8, 8)
+	$UI/TopPanel/Board9.disabled = board_bounds.size == Vector2i(9, 9)
+	$UI/TopPanel/DifficultyEasy.disabled = difficulty == "Easy"
+	$UI/TopPanel/DifficultyNormal.disabled = difficulty == "Normal"
+	$UI/TopPanel/DifficultyHard.disabled = difficulty == "Hard"
+	meta_summary.text = "L%d • %dx%d • %s • %d lives" % [
+		level_id,
+		board_bounds.size.x,
+		board_bounds.size.y,
+		difficulty,
+		starting_lives
+	]
+	$UI/Sidebar/SaveButton.text = "Export L%d Draft" % level_id
+	preview_button.text = "Preview L%d" % level_id
+
+func _build_level() -> PuzzleLevelData:
+	var level := PuzzleLevelData.new()
+	level.level_id = level_id
+	level.board_size = board_bounds.size
+	level.difficulty = difficulty
+	level.starting_lives = starting_lives
+	for piece_index in range(pieces_data.size()):
+		var piece_dictionary: Dictionary = pieces_data[piece_index]
+		var cells: Array[Vector2i] = piece_dictionary["cells"]
+		var direction := PathVisualGeometryScript.direction_from_cells(cells)
+		level.pieces.append(PuzzlePieceDataScript.create(piece_index + 1, cells, direction))
+	return level
+
+func _analyze_for_action(action_name: String) -> Dictionary:
+	var level := _build_level()
+	var errors: PackedStringArray = LevelDataValidatorScript.validate(level)
+	if not errors.is_empty():
+		_show_validation_errors(errors)
+		return {"ok": false}
+	var report: Dictionary = LevelSolverScript.analyze(level)
+	_show_metrics(report)
+	if int(report["opening_move_count"]) <= 0:
+		_set_validation_message("%s blocked: level has no opening move." % action_name, false)
+		return {"ok": false, "report": report}
+	if not bool(report["solvable"]):
+		_set_validation_message("%s blocked: solver cannot clear this level." % action_name, false)
+		return {"ok": false, "report": report}
+	return {"ok": true, "level": level, "report": report}
+
+func _on_preview_pressed() -> void:
+	var analysis := _analyze_for_action("Preview")
+	if not bool(analysis.get("ok", false)):
+		return
+	var level: PuzzleLevelData = analysis["level"]
+	LevelStudioPreviewSessionScript.begin_preview(level, _build_editor_state())
+	get_tree().change_scene_to_file(PREVIEW_SCENE)
+
+func _on_save_pressed() -> void:
+	var analysis := _analyze_for_action("Export")
+	if not bool(analysis.get("ok", false)):
+		return
+	var level: PuzzleLevelData = analysis["level"]
+	var save_data := _serialize_level(level)
 	var file := FileAccess.open("res://data/editor_level.json", FileAccess.WRITE)
 	if file == null:
 		_set_validation_message("Could not write editor_level.json.", false)
 		return
 	file.store_string(JSON.stringify(save_data, "  "))
-	_set_validation_message("Saved canonical ordered paths.", true)
+	_set_validation_message("Validated and exported L%d draft JSON." % level_id, true)
+	_show_metrics(analysis["report"])
+
+func _serialize_level(level: PuzzleLevelData) -> Dictionary:
+	var save_data: Dictionary = {
+		"level_id": level.level_id,
+		"width": level.board_size.x,
+		"height": level.board_size.y,
+		"difficulty": level.difficulty,
+		"lives": level.starting_lives,
+		"pieces": []
+	}
+	for piece in level.pieces:
+		if piece == null:
+			continue
+		var serialized_cells: Array = []
+		for cell in piece.cells:
+			serialized_cells.append([cell.x, cell.y])
+		save_data["pieces"].append({
+			"cells": serialized_cells,
+			"direction": [piece.exit_direction.x, piece.exit_direction.y],
+			"head_endpoint": "end"
+		})
+	return save_data
 
 func _on_load_pressed() -> void:
 	var path := "res://data/editor_level.json"
@@ -206,6 +342,11 @@ func _on_load_pressed() -> void:
 		_set_validation_message("Invalid editor level JSON.", false)
 		return
 	var data: Dictionary = parsed
+	level_id = maxi(int(data.get("level_id", level_id)), 1)
+	difficulty = str(data.get("difficulty", difficulty))
+	if difficulty not in VALID_DIFFICULTIES:
+		difficulty = "Normal"
+	starting_lives = maxi(int(data.get("lives", 3)), 1)
 	board_bounds.size = Vector2i(int(data.get("width", 8)), int(data.get("height", 8)))
 	grid_dots.update_grid(board_bounds, grid_size)
 	pieces_data.clear()
@@ -238,60 +379,102 @@ func _on_load_pressed() -> void:
 				continue
 		pieces_data.append({"cells": cells, "direction": direction})
 	_refresh_pieces()
+	_sync_metadata_controls()
+	_clear_metrics()
 	if rejected > 0:
 		_set_validation_message("Loaded with %d ambiguous path(s) rejected." % rejected, false)
 	else:
-		_set_validation_message("Loaded canonical ordered paths.", true)
+		_set_validation_message("Loaded canonical draft. Press Analyze.", true)
+
+func _build_editor_state() -> Dictionary:
+	var serialized_pieces: Array = []
+	for piece_dictionary in pieces_data:
+		var serialized_cells: Array = []
+		var cells: Array[Vector2i] = piece_dictionary["cells"]
+		for cell in cells:
+			serialized_cells.append([cell.x, cell.y])
+		serialized_pieces.append({"cells": serialized_cells})
+	return {
+		"level_id": level_id,
+		"difficulty": difficulty,
+		"lives": starting_lives,
+		"board_size": [board_bounds.size.x, board_bounds.size.y],
+		"pieces": serialized_pieces
+	}
+
+func _restore_editor_state(state: Dictionary) -> void:
+	level_id = maxi(int(state.get("level_id", 6)), 1)
+	difficulty = str(state.get("difficulty", "Normal"))
+	if difficulty not in VALID_DIFFICULTIES:
+		difficulty = "Normal"
+	starting_lives = maxi(int(state.get("lives", 3)), 1)
+	var size_data: Array = state.get("board_size", [8, 8])
+	if size_data.size() >= 2:
+		board_bounds.size = Vector2i(int(size_data[0]), int(size_data[1]))
+	pieces_data.clear()
+	for raw_piece in state.get("pieces", []):
+		if not raw_piece is Dictionary:
+			continue
+		var cells: Array[Vector2i] = []
+		for raw_cell in raw_piece.get("cells", []):
+			if raw_cell is Array and raw_cell.size() >= 2:
+				cells.append(Vector2i(int(raw_cell[0]), int(raw_cell[1])))
+		if PathVisualGeometryScript.validate_ordered_cells(cells).is_empty():
+			pieces_data.append({
+				"cells": cells,
+				"direction": PathVisualGeometryScript.direction_from_cells(cells)
+			})
+	grid_dots.update_grid(board_bounds, grid_size)
+	_refresh_pieces()
+	_sync_metadata_controls()
+	_clear_metrics()
 
 func _on_validate_pressed() -> void:
-	var valid_paths := _validate_editor_paths()
-	var solvable := valid_paths and _can_solve()
-	_set_validation_message("Valid: Yes!" if solvable else "Valid: NO", solvable)
+	var level := _build_level()
+	var errors: PackedStringArray = LevelDataValidatorScript.validate(level)
+	if not errors.is_empty():
+		_show_validation_errors(errors)
+		return
 
-func _validate_editor_paths() -> bool:
-	var occupied: Dictionary = {}
-	for piece_index in range(pieces_data.size()):
-		var cells: Array[Vector2i] = pieces_data[piece_index]["cells"]
-		if not PathVisualGeometryScript.validate_ordered_cells(cells).is_empty():
-			return false
-		for cell in cells:
-			if not board_bounds.has_point(cell) or occupied.has(cell):
-				return false
-			occupied[cell] = piece_index
-	return true
+	var report: Dictionary = LevelSolverScript.analyze(level)
+	_show_metrics(report)
+	if int(report["opening_move_count"]) <= 0:
+		_set_validation_message("Invalid: no opening move.", false)
+	elif not bool(report["solvable"]):
+		_set_validation_message("Invalid: solver cannot clear level.", false)
+	else:
+		_set_validation_message("Valid and solvable. Ready to preview.", true)
 
-func _can_solve() -> bool:
-	var pieces_copy: Array = pieces_data.duplicate(true)
-	var occupied: Dictionary = {}
-	for piece_id in range(pieces_copy.size()):
-		var piece: Dictionary = pieces_copy[piece_id]
-		piece["id"] = piece_id
-		piece["direction"] = PathVisualGeometryScript.direction_from_cells(piece["cells"])
-		for cell in piece["cells"]:
-			occupied[cell] = piece_id
+func _show_validation_errors(errors: PackedStringArray) -> void:
+	_clear_metrics()
+	if errors.is_empty():
+		return
+	_set_validation_message("Invalid: %s" % errors[0], false)
+	if errors.size() > 1:
+		metrics_label.text = "%d more validation error(s)." % (errors.size() - 1)
 
-	var removed_something := true
-	while removed_something and not pieces_copy.is_empty():
-		removed_something = false
-		for piece_index in range(pieces_copy.size() - 1, -1, -1):
-			var piece: Dictionary = pieces_copy[piece_index]
-			if _can_escape(piece, occupied):
-				for cell in piece["cells"]:
-					occupied.erase(cell)
-				pieces_copy.remove_at(piece_index)
-				removed_something = true
-	return pieces_copy.is_empty()
+func _show_metrics(report: Dictionary) -> void:
+	var solution_text := str(report["solution_count"])
+	if bool(report["solution_count_capped"]):
+		solution_text += "+"
+	metrics_label.text = (
+		"Pieces %d | Open %d | Solutions %s\nForced states %d | Branch states %d | Forced chain %d" % [
+			int(report["piece_count"]),
+			int(report["opening_move_count"]),
+			solution_text,
+			int(report["forced_state_count"]),
+			int(report["branch_state_count"]),
+			int(report["longest_forced_chain"])
+		]
+	)
 
-func _can_escape(piece: Dictionary, occupied: Dictionary) -> bool:
-	var direction: Vector2i = piece["direction"]
-	for cell in piece["cells"]:
-		var test_cell: Vector2i = cell + direction
-		while board_bounds.has_point(test_cell):
-			var blocker = occupied.get(test_cell)
-			if blocker != null and blocker != piece["id"]:
-				return false
-			test_cell += direction
-	return true
+func _clear_metrics() -> void:
+	if metrics_label != null:
+		metrics_label.text = "Draw paths tail → head, then Analyze."
+
+func _mark_analysis_dirty() -> void:
+	_set_validation_message("Analysis needed.", true)
+	_clear_metrics()
 
 func _set_validation_message(message: String, positive: bool) -> void:
 	validate_label.text = message

@@ -25,6 +25,47 @@ static func has_reachable_dead_end(level: PuzzleLevelData) -> bool:
 	var visited: Dictionary = {}
 	return _state_has_dead_end(level, _all_piece_ids(level), visited)
 
+static func analyze(level: PuzzleLevelData, solution_cap: int = DEFAULT_SOLUTION_CAP) -> Dictionary:
+	var report := {
+		"piece_count": 0,
+		"opening_move_count": 0,
+		"opening_piece_ids": [],
+		"solution_count": 0,
+		"solution_count_capped": false,
+		"solvable": false,
+		"reachable_dead_end": false,
+		"reachable_state_count": 0,
+		"forced_state_count": 0,
+		"branch_state_count": 0,
+		"dead_end_state_count": 0,
+		"longest_forced_chain": 0,
+		"one_solution": []
+	}
+	if level == null or level.pieces.is_empty():
+		return report
+
+	var cap := maxi(solution_cap, 1)
+	var all_ids := _all_piece_ids(level)
+	var openings := _get_escapable_piece_ids(level, all_ids)
+	var solution_count := count_solutions(level, cap)
+	var graph_metrics := _analyze_reachable_states(level, all_ids)
+	var one_solution := find_one_solution(level)
+
+	report["piece_count"] = level.pieces.size()
+	report["opening_move_count"] = openings.size()
+	report["opening_piece_ids"] = openings
+	report["solution_count"] = solution_count
+	report["solution_count_capped"] = solution_count >= cap
+	report["solvable"] = solution_count > 0
+	report["reachable_dead_end"] = int(graph_metrics["dead_end_state_count"]) > 0
+	report["reachable_state_count"] = graph_metrics["reachable_state_count"]
+	report["forced_state_count"] = graph_metrics["forced_state_count"]
+	report["branch_state_count"] = graph_metrics["branch_state_count"]
+	report["dead_end_state_count"] = graph_metrics["dead_end_state_count"]
+	report["longest_forced_chain"] = graph_metrics["longest_forced_chain"]
+	report["one_solution"] = one_solution
+	return report
+
 static func _all_piece_ids(level: PuzzleLevelData) -> Array[int]:
 	var piece_ids: Array[int] = []
 	if level == null:
@@ -132,6 +173,74 @@ static func _state_has_dead_end(
 			return true
 
 	return false
+
+static func _analyze_reachable_states(level: PuzzleLevelData, initial_ids: Array[int]) -> Dictionary:
+	var metrics := {
+		"reachable_state_count": 0,
+		"forced_state_count": 0,
+		"branch_state_count": 0,
+		"dead_end_state_count": 0,
+		"longest_forced_chain": 0
+	}
+	var visited: Dictionary = {}
+	var forced_chain_memo: Dictionary = {}
+	_analyze_state_graph(level, initial_ids, visited, metrics)
+	metrics["longest_forced_chain"] = _longest_forced_chain(level, initial_ids, forced_chain_memo)
+	return metrics
+
+static func _analyze_state_graph(
+	level: PuzzleLevelData,
+	remaining_ids: Array[int],
+	visited: Dictionary,
+	metrics: Dictionary
+) -> void:
+	if remaining_ids.is_empty():
+		return
+	var key := _state_key(remaining_ids)
+	if visited.has(key):
+		return
+	visited[key] = true
+	metrics["reachable_state_count"] = int(metrics["reachable_state_count"]) + 1
+
+	var escapable_ids := _get_escapable_piece_ids(level, remaining_ids)
+	if escapable_ids.is_empty():
+		metrics["dead_end_state_count"] = int(metrics["dead_end_state_count"]) + 1
+		return
+	if escapable_ids.size() == 1:
+		metrics["forced_state_count"] = int(metrics["forced_state_count"]) + 1
+	else:
+		metrics["branch_state_count"] = int(metrics["branch_state_count"]) + 1
+
+	for piece_id in escapable_ids:
+		var next_ids: Array[int] = remaining_ids.duplicate()
+		next_ids.erase(piece_id)
+		_analyze_state_graph(level, next_ids, visited, metrics)
+
+static func _longest_forced_chain(
+	level: PuzzleLevelData,
+	remaining_ids: Array[int],
+	memo: Dictionary
+) -> int:
+	if remaining_ids.is_empty():
+		return 0
+	var key := _state_key(remaining_ids)
+	if memo.has(key):
+		return int(memo[key])
+
+	var escapable_ids := _get_escapable_piece_ids(level, remaining_ids)
+	if escapable_ids.is_empty():
+		memo[key] = 0
+		return 0
+
+	var best_child := 0
+	for piece_id in escapable_ids:
+		var next_ids: Array[int] = remaining_ids.duplicate()
+		next_ids.erase(piece_id)
+		best_child = maxi(best_child, _longest_forced_chain(level, next_ids, memo))
+
+	var result := best_child + (1 if escapable_ids.size() == 1 else 0)
+	memo[key] = result
+	return result
 
 static func _state_key(remaining_ids: Array[int]) -> String:
 	var parts := PackedStringArray()
