@@ -2,13 +2,14 @@ extends Node2D
 
 signal piece_selected(piece: PuzzlePiece)
 
-var PuzzlePieceScene = preload("res://scenes/game/puzzle_piece.tscn")
+var PuzzlePieceScene: PackedScene = preload("res://scenes/game/puzzle_piece.tscn")
 
 var board_size := Vector2i(8, 8)
 var grid_size := 64.0
 var occupancy: Dictionary = {}
 var pieces: Array[PuzzlePiece] = []
 var input_enabled := true
+var assist_pulses_enabled: bool = false
 
 @onready var pieces_container: Node2D = $PiecesContainer
 
@@ -69,6 +70,7 @@ func setup_level(level_data: PuzzleLevelData) -> void:
 			occupancy[cell] = piece.piece_id
 
 func clear_board() -> void:
+	assist_pulses_enabled = false
 	occupancy.clear()
 	pieces.clear()
 	if pieces_container == null:
@@ -95,7 +97,18 @@ func get_first_escapable_piece() -> PuzzlePiece:
 			return piece
 	return null
 
+func get_only_remaining_piece() -> PuzzlePiece:
+	var candidate: PuzzlePiece = null
+	for piece in pieces:
+		if not is_instance_valid(piece) or piece.is_removed:
+			continue
+		if candidate != null:
+			return null
+		candidate = piece
+	return candidate
+
 func update_assist_pulses(enabled: bool) -> void:
+	assist_pulses_enabled = enabled
 	for piece in pieces:
 		if is_instance_valid(piece) and not piece.is_removed:
 			piece.set_idle_pulse(enabled and can_piece_escape(piece))
@@ -148,5 +161,6 @@ func _unhandled_input(event: InputEvent) -> void:
 func _on_settings_changed() -> void:
 	queue_redraw()
 	for piece in pieces:
-		if is_instance_valid(piece) and not piece.is_removed and not piece.is_animating:
-			piece.reset_color()
+		if not is_instance_valid(piece) or piece.is_removed or piece.is_animating:
+			continue
+		piece.set_idle_pulse(assist_pulses_enabled and can_piece_escape(piece))

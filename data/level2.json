@@ -1,19 +1,22 @@
 {
-  "width": 8,
-  "height": 8,
+  "width": 6,
+  "height": 6,
   "lives": 3,
   "pieces": [
     {
       "cells": [[2, 2], [3, 2]],
-      "direction": [1, 0]
+      "direction": [1, 0],
+      "head_endpoint": "end"
     },
     {
-      "cells": [[4, 2], [4, 3], [5, 3]],
-      "direction": [0, 1]
+      "cells": [[4, 2], [5, 2], [5, 3]],
+      "direction": [0, 1],
+      "head_endpoint": "end"
     },
     {
-      "cells": [[3, 4], [4, 4]],
-      "direction": [-1, 0]
+      "cells": [[4, 4], [3, 4]],
+      "direction": [-1, 0],
+      "head_endpoint": "end"
     }
   ]
 }

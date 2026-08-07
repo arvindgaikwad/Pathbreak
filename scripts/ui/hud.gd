@@ -10,9 +10,12 @@ signal settings_pressed
 @onready var subtitle_label: Label = $TopBar/Margin/VBox/SubtitleLabel
 @onready var lives_count_label: Label = $BottomBar/Margin/HBox/LivesCard/VBox/IconBox/CountLabel
 @onready var hint_count_badge: Label = $BottomBar/Margin/HBox/HintCard/VBox/IconBox/BadgeLabel
+@onready var hint_title_label: Label = $BottomBar/Margin/HBox/HintCard/VBox/TitleLabel
 @onready var lives_card: PanelContainer = $BottomBar/Margin/HBox/LivesCard
 @onready var hint_card: PanelContainer = $BottomBar/Margin/HBox/HintCard
 @onready var restart_card: PanelContainer = $BottomBar/Margin/HBox/RestartCard
+@onready var hint_button: Button = $BottomBar/Margin/HBox/HintCard/ClickTarget
+@onready var restart_button: Button = $BottomBar/Margin/HBox/RestartCard/ClickTarget
 @onready var back_button: Button = $TopBar/Margin/VBox/TopRow/BackButton
 @onready var settings_button: Button = $TopBar/Margin/VBox/TopRow/SettingsButton
 
@@ -22,17 +25,19 @@ const COLOR_SECONDARY_TEXT := Color("#717D93")
 const COLOR_BORDER := Color("#E7EBF1")
 const DEFAULT_SUBTITLE := "Clear all paths"
 
-var interaction_locked := false
-var controls_enabled := true
+var interaction_locked: bool = false
+var controls_enabled: bool = true
 var message_tween: Tween = null
 
 func _ready() -> void:
 	_apply_styles()
 	lives_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_prepare_clickable_card(hint_card)
-	_prepare_clickable_card(restart_card)
-	hint_card.gui_input.connect(_on_card_input.bind(hint_card, func() -> void: hint_pressed.emit()))
-	restart_card.gui_input.connect(_on_card_input.bind(restart_card, func() -> void: restart_pressed.emit()))
+	hint_button.pressed.connect(
+		_on_action_card_pressed.bind(hint_card, func() -> void: hint_pressed.emit())
+	)
+	restart_button.pressed.connect(
+		_on_action_card_pressed.bind(restart_card, func() -> void: restart_pressed.emit())
+	)
 	back_button.pressed.connect(func() -> void:
 		if not controls_enabled:
 			return
@@ -45,16 +50,6 @@ func _ready() -> void:
 		AudioManager.play_button_sound()
 		settings_pressed.emit()
 	)
-
-func _prepare_clickable_card(card: Control) -> void:
-	card.mouse_filter = Control.MOUSE_FILTER_STOP
-	_set_descendant_mouse_filter(card, Control.MOUSE_FILTER_IGNORE)
-
-func _set_descendant_mouse_filter(root: Node, filter_value: int) -> void:
-	for child in root.get_children():
-		if child is Control:
-			(child as Control).mouse_filter = filter_value
-		_set_descendant_mouse_filter(child, filter_value)
 
 func _apply_styles() -> void:
 	var card_style := StyleBoxFlat.new()
@@ -99,19 +94,11 @@ func _apply_styles() -> void:
 		button.add_theme_stylebox_override("pressed", circle_pressed)
 		button.add_theme_stylebox_override("focus", circle_style)
 
-func _on_card_input(event: InputEvent, card: Control, callback: Callable) -> void:
+func _on_action_card_pressed(card: Control, callback: Callable) -> void:
 	if interaction_locked or not controls_enabled:
-		return
-	var activated: bool = (
-		event is InputEventMouseButton
-		and event.button_index == MOUSE_BUTTON_LEFT
-		and event.pressed
-	) or (event is InputEventScreenTouch and event.pressed)
-	if not activated:
 		return
 
 	interaction_locked = true
-	get_viewport().set_input_as_handled()
 	AudioManager.play_button_sound()
 	var tween := create_tween()
 	tween.tween_property(card, "scale", Vector2(0.96, 0.96), 0.07).set_trans(Tween.TRANS_SINE)
@@ -127,13 +114,16 @@ func update_hud(level_num: int, difficulty: String, lives: int, hints: int) -> v
 	var tutorial_hint_available := level_num == 1 and not SaveManager.tutorial_completed
 	if tutorial_hint_available:
 		hint_count_badge.text = "FREE"
+		hint_title_label.text = "Hint"
 	elif hints > 0:
 		hint_count_badge.text = "×%d" % hints
+		hint_title_label.text = "Hint"
 	else:
-		hint_count_badge.text = "0"
+		hint_count_badge.text = "+3"
+		hint_title_label.text = "Refill"
 
-	var hint_available := hints > 0 or tutorial_hint_available
-	hint_card.modulate = Color.WHITE if hint_available else Color(1.0, 1.0, 1.0, 0.5)
+	# The card remains active at zero because it opens the refill flow.
+	hint_card.modulate = Color.WHITE
 
 func show_message(message: String, accent: bool = false) -> void:
 	if message_tween != null and message_tween.is_valid():
@@ -154,8 +144,10 @@ func set_controls_enabled(enabled: bool) -> void:
 	controls_enabled = enabled
 	back_button.disabled = not enabled
 	settings_button.disabled = not enabled
-	hint_card.mouse_filter = Control.MOUSE_FILTER_STOP if enabled else Control.MOUSE_FILTER_IGNORE
-	restart_card.mouse_filter = Control.MOUSE_FILTER_STOP if enabled else Control.MOUSE_FILTER_IGNORE
+	hint_button.disabled = not enabled
+	restart_button.disabled = not enabled
 	var alpha := 1.0 if enabled else 0.55
 	back_button.modulate.a = alpha
 	settings_button.modulate.a = alpha
+	hint_card.modulate.a = alpha
+	restart_card.modulate.a = alpha

@@ -3,6 +3,7 @@ extends Control
 var ResultPopupScene: PackedScene = preload("res://scenes/game/result_popup.tscn")
 var FailScreenScene: PackedScene = preload("res://scenes/GameOverScreen.tscn")
 var PauseMenuScene: PackedScene = preload("res://scenes/game/pause_menu.tscn")
+var HintRefillPopupScene: PackedScene = preload("res://scenes/game/hint_refill_popup.tscn")
 
 @onready var board_pivot: Node2D = $BoardPivot
 @onready var board = $BoardPivot/Board
@@ -19,12 +20,14 @@ var total_pieces: int = 0
 var remaining_pieces: int = 0
 var input_locked: bool = false
 var pause_menu: PauseMenu = null
+var hint_refill_popup: HintRefillPopup = null
 var level_data_list: Array[PuzzleLevelData] = []
 
 const TOP_RESERVED := 190.0
 const BOTTOM_RESERVED := 190.0
 const SIDE_MARGIN := 24.0
 const MAX_BOARD_SCALE := 1.25
+const HINT_REFILL_AMOUNT := 3
 
 func _ready() -> void:
 	_load_levels()
@@ -129,6 +132,7 @@ func load_level(index: int) -> void:
 		return
 
 	_close_pause_menu(false)
+	_close_hint_refill_popup(false)
 	input_locked = false
 	board.set_input_enabled(true)
 	hud.set_controls_enabled(true)
@@ -150,7 +154,7 @@ func load_level(index: int) -> void:
 	var tutorial_active := current_level_idx == 0 and not SaveManager.tutorial_completed
 	board.update_assist_pulses(tutorial_active)
 	if tutorial_active:
-		hud.show_message("Tap the path that can leave the board", true)
+		hud.show_message("Follow the moving light to the arrow", true)
 	_update_layout()
 
 func _on_piece_tapped(piece: PuzzlePiece) -> void:
@@ -165,17 +169,20 @@ func _on_piece_tapped(piece: PuzzlePiece) -> void:
 		piece.animate_successful_escape()
 		remaining_pieces -= 1
 
-		if current_level_idx == 0 and remaining_pieces == 1:
-			hud.show_message("Great! Now clear the last path", true)
+		if remaining_pieces == 1:
+			_lock_gameplay()
+			get_tree().create_timer(0.32).timeout.connect(_auto_clear_final_piece)
+			return
+
+		if remaining_pieces <= 0:
+			_lock_gameplay()
+			get_tree().create_timer(0.28).timeout.connect(_on_level_completed)
+			return
 
 		get_tree().create_timer(0.35).timeout.connect(func() -> void:
 			if not input_locked:
 				board.update_assist_pulses(current_level_idx == 0 and not SaveManager.tutorial_completed)
 		)
-
-		if remaining_pieces <= 0:
-			_lock_gameplay()
-			get_tree().create_timer(0.28).timeout.connect(_on_level_completed)
 	else:
 		AudioManager.play_blocked_sound()
 		SettingsManager.play_haptic(&"error")
@@ -192,6 +199,40 @@ func _on_piece_tapped(piece: PuzzlePiece) -> void:
 		if lives_left <= 0:
 			_lock_gameplay()
 			get_tree().create_timer(0.35).timeout.connect(_show_fail_screen)
+
+func _auto_clear_final_piece() -> void:
+	if remaining_pieces != 1:
+		return
+
+	var final_piece: PuzzlePiece = board.get_only_remaining_piece()
+	if final_piece == null:
+		push_warning("Expected one remaining path, but the board state was inconsistent.")
+		input_locked = false
+		board.set_input_enabled(true)
+		hud.set_controls_enabled(true)
+		return
+
+	if not board.can_piece_escape(final_piece):
+		push_warning("The final remaining path could not escape.")
+		hud.show_message("The final path is still blocked")
+		input_locked = false
+		board.set_input_enabled(true)
+		hud.set_controls_enabled(true)
+		return
+
+	hud.show_message("Last path clears itself", true)
+	final_piece.play_final_clear_preview()
+	var preview_duration := 0.12 if SettingsManager.reduce_motion else 0.44
+	get_tree().create_timer(preview_duration).timeout.connect(func() -> void:
+		if not is_instance_valid(final_piece) or final_piece.is_removed:
+			return
+		AudioManager.play_move_sound()
+		SettingsManager.play_haptic(&"light")
+		board.remove_piece_occupancy(final_piece)
+		final_piece.animate_successful_escape()
+		remaining_pieces = 0
+		get_tree().create_timer(0.30).timeout.connect(_on_level_completed)
+	)
 
 func _show_fail_screen() -> void:
 	var fail_screen = FailScreenScene.instantiate()
@@ -264,7 +305,7 @@ func _on_hint_pressed() -> void:
 
 	var free_tutorial_hint := current_level_idx == 0 and not SaveManager.tutorial_completed
 	if not free_tutorial_hint and hints_left <= 0:
-		hud.show_message("No hints left")
+		_open_hint_refill_popup()
 		return
 
 	var candidate: PuzzlePiece = board.get_first_escapable_piece()
@@ -284,14 +325,61 @@ func _on_hint_pressed() -> void:
 		)
 
 	candidate.play_hint_pulse()
-	hud.show_message("Tap the blue path", true)
+	hud.show_message("Follow the blue light to the arrow", true)
 	SettingsManager.play_haptic(&"light")
+
+func _open_hint_refill_popup() -> void:
+	if hint_refill_popup != null or input_locked:
+		return
+
+	input_locked = true
+	board.set_input_enabled(false)
+	hud.set_controls_enabled(false)
+	hint_refill_popup = HintRefillPopupScene.instantiate() as HintRefillPopup
+	if hint_refill_popup == null:
+		push_error("Hint refill scene does not use HintRefillPopup script.")
+		input_locked = false
+		board.set_input_enabled(true)
+		hud.set_controls_enabled(true)
+		return
+
+	add_child(hint_refill_popup)
+	hint_refill_popup.refill_pressed.connect(_on_hint_refill_confirmed)
+	hint_refill_popup.cancelled.connect(_on_hint_refill_cancelled)
+
+func _on_hint_refill_confirmed() -> void:
+	var hints_used_before_refill := maxi(hints_at_level_start - hints_left, 0)
+	hints_left = HINT_REFILL_AMOUNT
+	hints_at_level_start = hints_used_before_refill + hints_left
+	SaveManager.hint_count = hints_left
+	SaveManager.save_game()
+	hud.update_hud(
+		level_data_list[current_level_idx].level_id,
+		level_data_list[current_level_idx].difficulty,
+		lives_left,
+		hints_left
+	)
+	_close_hint_refill_popup(true)
+	hud.show_message("3 hints added", true)
+	SettingsManager.play_haptic(&"success")
+
+func _on_hint_refill_cancelled() -> void:
+	_close_hint_refill_popup(true)
+
+func _close_hint_refill_popup(resume_gameplay: bool) -> void:
+	if hint_refill_popup != null:
+		hint_refill_popup.queue_free()
+		hint_refill_popup = null
+	if resume_gameplay:
+		input_locked = false
+		board.set_input_enabled(true)
+		hud.set_controls_enabled(true)
 
 func _on_settings_pressed() -> void:
 	_open_pause_menu()
 
 func _open_pause_menu() -> void:
-	if pause_menu != null or input_locked:
+	if pause_menu != null or hint_refill_popup != null or input_locked:
 		return
 	input_locked = true
 	board.set_input_enabled(false)
@@ -352,7 +440,9 @@ func _on_back_pressed() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if not event.is_action_pressed("ui_cancel"):
 		return
-	if pause_menu != null:
+	if hint_refill_popup != null:
+		_on_hint_refill_cancelled()
+	elif pause_menu != null:
 		_resume_from_pause()
 	elif not input_locked:
 		_open_pause_menu()

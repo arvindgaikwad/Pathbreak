@@ -1,6 +1,8 @@
 class_name LevelDataValidator
 extends RefCounted
 
+const PathVisualGeometryScript = preload("res://scripts/gameplay/path_visual_geometry.gd")
+
 const VALID_DIRECTIONS: Array[Vector2i] = [
 	Vector2i.UP,
 	Vector2i.DOWN,
@@ -28,14 +30,29 @@ static func validate(level: PuzzleLevelData) -> PackedStringArray:
 		if piece_ids.has(piece.piece_id):
 			errors.append("Duplicate piece id %d." % piece.piece_id)
 		piece_ids[piece.piece_id] = true
-		if piece.cells.is_empty():
-			errors.append("Piece %d has no cells." % piece.piece_id)
-			continue
-		if piece.exit_direction not in VALID_DIRECTIONS:
-			errors.append("Piece %d has an invalid exit direction." % piece.piece_id)
 
-		for cell_index in range(piece.cells.size()):
-			var cell := piece.cells[cell_index]
+		var path_errors := PathVisualGeometryScript.validate_ordered_cells(piece.cells)
+		for path_error in path_errors:
+			errors.append("Piece %d: %s" % [piece.piece_id, path_error])
+		if piece.cells.is_empty():
+			continue
+
+		var derived_direction := PathVisualGeometryScript.direction_from_cells(
+			piece.cells,
+			piece.head_endpoint
+		)
+		if derived_direction not in VALID_DIRECTIONS:
+			errors.append("Piece %d has an invalid derived head direction." % piece.piece_id)
+		if piece.exit_direction != derived_direction:
+			errors.append(
+				"Piece %d movement direction %s does not match ordered head segment %s." % [
+					piece.piece_id,
+					piece.exit_direction,
+					derived_direction
+				]
+			)
+
+		for cell in piece.cells:
 			if not MovementValidator.is_inside_board(cell, level.board_size):
 				errors.append("Piece %d contains out-of-bounds cell %s." % [piece.piece_id, cell])
 			if occupied_cells.has(cell):
@@ -45,15 +62,34 @@ static func validate(level: PuzzleLevelData) -> PackedStringArray:
 			else:
 				occupied_cells[cell] = piece.piece_id
 
-			if cell_index > 0:
-				var previous_cell := piece.cells[cell_index - 1]
-				var distance := absi(cell.x - previous_cell.x) + absi(cell.y - previous_cell.y)
-				if distance != 1:
-					errors.append(
-					"Piece %d has non-adjacent cells %s and %s." % [piece.piece_id, previous_cell, cell]
-				)
-
 	return errors
+
+static func audit_visual_orientation(level: PuzzleLevelData) -> PackedStringArray:
+	var warnings := PackedStringArray()
+	if level == null:
+		warnings.append("Level resource is null.")
+		return warnings
+	for piece in level.pieces:
+		if piece == null:
+			continue
+		var path_errors := PathVisualGeometryScript.validate_ordered_cells(piece.cells)
+		for path_error in path_errors:
+			warnings.append("Piece %d: %s" % [piece.piece_id, path_error])
+		if piece.cells.size() < 2:
+			continue
+		var derived_direction := PathVisualGeometryScript.direction_from_cells(
+			piece.cells,
+			piece.head_endpoint
+		)
+		if piece.exit_direction != derived_direction:
+			warnings.append(
+				"Piece %d direction mismatch: stored=%s derived=%s." % [
+					piece.piece_id,
+					piece.exit_direction,
+					derived_direction
+				]
+			)
+	return warnings
 
 static func is_valid(level: PuzzleLevelData) -> bool:
 	return validate(level).is_empty()

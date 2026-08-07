@@ -1,6 +1,8 @@
 extends Control
 class_name LivingBoard
 
+const PathVisualGeometryScript = preload("res://scripts/gameplay/path_visual_geometry.gd")
+
 const COLOR_CARD := Color("#FFFFFF")
 const COLOR_BORDER := Color("#E4E9F0")
 const COLOR_SHADOW := Color(0.08, 0.10, 0.16, 0.08)
@@ -8,13 +10,15 @@ const COLOR_GRID := Color("#DDE3EC")
 const COLOR_PATH := Color("#1B2538")
 const COLOR_ACCENT := Color("#3978F6")
 
-const CYCLE_DURATION := 4.0
-const HIGHLIGHT_START := 0.55
-const ESCAPE_START := 1.10
-const ESCAPE_DURATION := 0.80
+const CYCLE_DURATION := 4.4
+const PULSE_START := 0.45
+const PULSE_DURATION := 1.20
+const HIGHLIGHT_DURATION := 0.42
+const ESCAPE_START := PULSE_START + PULSE_DURATION + HIGHLIGHT_DURATION
+const ESCAPE_DURATION := 0.72
 
-var elapsed := 0.0
-var active_index := 0
+var elapsed: float = 0.0
+var active_index: int = 0
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -33,23 +37,37 @@ func _draw() -> void:
 	_draw_board_card()
 	_draw_grid()
 
-	var paths := _get_paths()
-	var directions := [Vector2.RIGHT, Vector2.DOWN, Vector2.LEFT]
+	var paths: Array[PackedVector2Array] = _get_paths()
 	for index in range(paths.size()):
+		var direction := PathVisualGeometryScript.direction_from_points(paths[index])
 		var offset := Vector2.ZERO
 		var path_color := COLOR_PATH
+		var marker_progress: float = -1.0
+
 		if index == active_index:
-			path_color = COLOR_ACCENT
-			if not SettingsManager.reduce_motion:
+			if SettingsManager.reduce_motion:
+				path_color = COLOR_ACCENT
+			elif elapsed >= ESCAPE_START:
+				path_color = COLOR_ACCENT
 				var escape_progress := clampf(
 					(elapsed - ESCAPE_START) / ESCAPE_DURATION,
 					0.0,
 					1.0
 				)
-				offset = directions[index] * ease(escape_progress, 1.6) * 150.0
-				if elapsed < HIGHLIGHT_START:
-					path_color = COLOR_PATH
-		_draw_path(paths[index], directions[index], offset, path_color)
+				offset = direction * ease(escape_progress, 1.6) * 150.0
+			elif elapsed >= PULSE_START + PULSE_DURATION:
+				path_color = COLOR_ACCENT
+			elif elapsed >= PULSE_START:
+				marker_progress = clampf(
+					(elapsed - PULSE_START) / PULSE_DURATION,
+					0.0,
+					1.0
+				)
+
+		var shifted: PackedVector2Array = _shift_points(paths[index], offset)
+		_draw_path(shifted, path_color)
+		if marker_progress >= 0.0:
+			_draw_direction_marker(shifted, marker_progress)
 
 func _draw_board_card() -> void:
 	var shadow_rect := Rect2(Vector2(8.0, 12.0), size - Vector2(16.0, 20.0))
@@ -106,28 +124,52 @@ func _get_paths() -> Array[PackedVector2Array]:
 		])
 	]
 
-func _draw_path(
-	points: PackedVector2Array,
-	direction: Vector2,
-	offset: Vector2,
-	color: Color
-) -> void:
+func _shift_points(points: PackedVector2Array, offset: Vector2) -> PackedVector2Array:
 	var shifted := PackedVector2Array()
 	for point in points:
 		shifted.append(point + offset)
+	return shifted
 
-	draw_polyline(shifted, color, 13.0, true)
-	draw_circle(shifted[0], 8.0, color)
+func _draw_path(source_points: PackedVector2Array, color: Color) -> void:
+	if source_points.size() < 2:
+		return
+	var direction := PathVisualGeometryScript.direction_from_points(source_points)
+	var head := PathVisualGeometryScript.head_point(source_points)
+	var tail := PathVisualGeometryScript.tail_point(source_points)
+	var head_length := 24.0
+	var render_points := PathVisualGeometryScript.trim_shaft_for_head(
+		source_points,
+		head_length * 0.44
+	)
 
-	var tip := shifted[-1] + direction * 16.0
-	var side := direction.orthogonal()
-	var arrow := PackedVector2Array([
+	draw_polyline(render_points, color, 13.0, true)
+	draw_circle(tail, 4.5, color)
+	var tip := head + direction * head_length * 0.56
+	var arrow := PathVisualGeometryScript.make_triangle_from_tip(
 		tip,
-		shifted[-1] - direction * 6.0 + side * 14.0,
-		shifted[-1] + direction * 1.0,
-		shifted[-1] - direction * 6.0 - side * 14.0
-	])
+		direction,
+		head_length,
+		13.0
+	)
 	draw_colored_polygon(arrow, color)
+
+func _draw_direction_marker(source_points: PackedVector2Array, progress: float) -> void:
+	if source_points.size() < 2:
+		return
+	var direction := PathVisualGeometryScript.direction_from_points(source_points)
+	var neighbour := PathVisualGeometryScript.neighbour_point(source_points)
+	var head := PathVisualGeometryScript.head_point(source_points)
+	var start_position := neighbour.lerp(head, 0.32)
+	var end_position := head - direction * 12.0
+	var marker_position := start_position.lerp(end_position, clampf(progress, 0.0, 1.0))
+	var marker_tip := marker_position + direction * 4.0
+	var marker := PathVisualGeometryScript.make_triangle_from_tip(
+		marker_tip,
+		direction,
+		8.0,
+		5.0
+	)
+	draw_colored_polygon(marker, COLOR_ACCENT)
 
 func _on_settings_changed() -> void:
 	elapsed = 0.0
