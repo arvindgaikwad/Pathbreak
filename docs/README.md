@@ -12,9 +12,10 @@ Read these files in order:
 2. `../TASKS.md`
 3. `ARROW_SYSTEM_AUDIT.md`
 4. `SNAKE_ESCAPE_ANIMATION.md`
-5. This index
-6. `DECISIONS.md` and `AI_ANTI_SLOP_STANDARD.md`
-7. Latest playtest and testing checklist
+5. `ANDROID_VERTICAL_SLICE_QA.md`
+6. This index
+7. `DECISIONS.md` and `AI_ANTI_SLOP_STANDARD.md`
+8. Latest playtest and testing checklist
 
 ## Source-of-truth order
 
@@ -23,10 +24,11 @@ Read these files in order:
 3. `../TASKS.md` for execution order.
 4. `ARROW_SYSTEM_AUDIT.md` for the ordered path/head correction.
 5. `SNAKE_ESCAPE_ANIMATION.md` for corner-following escape motion.
-6. `VERTICAL_SLICE_REVIEW.md` for approval gates.
-7. Latest dated playtest evidence.
-8. `DECISIONS.md` and focused specifications.
-9. Historical PR descriptions and old conversation notes.
+6. `ANDROID_VERTICAL_SLICE_QA.md` for current platform-export/device verification.
+7. `VERTICAL_SLICE_REVIEW.md` for approval gates.
+8. Latest dated playtest evidence.
+9. `DECISIONS.md` and focused specifications.
+10. Historical PR descriptions and old conversation notes.
 
 When documents disagree, update the stale document rather than guessing.
 
@@ -37,7 +39,8 @@ When documents disagree, update the stale document rather than guessing.
 | `PROJECT_HANDOFF.md` | Current | Recovery guide, commands, next actions, continuation prompt |
 | `../TASKS.md` | Current | Prioritised execution tracker |
 | `ARROW_SYSTEM_AUDIT.md` | Current | Root cause, ordered-path migration, tests, risks |
-| `SNAKE_ESCAPE_ANIMATION.md` | Pending verification | Corner-following escape animation and acceptance checks |
+| `SNAKE_ESCAPE_ANIMATION.md` | Manually verified | Corner-following escape motion and regression checks |
+| `ANDROID_VERTICAL_SLICE_QA.md` | Active | Android preflight, APK export/install, phone/tablet QA |
 | `VERTICAL_SLICE_REVIEW.md` | Current | Approval criteria and Levels 1–5 review |
 | `VERTICAL_SLICE_PLAYTEST_2026-08-06.md` | Current evidence | Playtest observations and verification boundaries |
 | `DECISIONS.md` | Current | Architecture and product decisions |
@@ -59,10 +62,14 @@ When documents disagree, update the stale document rather than guessing.
 - JSON is canonical; `.tres` is fallback only.
 - Current path format is ordered `tail → ... → head`.
 - Final segment direction equals arrowhead and movement direction.
-- The user confirmed the parser/automated gate, movement regression gate, and new-player comprehension gate passed for the ordered-arrow correction.
-- Static path visuals for Levels 2 and 5 were accepted.
-- The latest unverified change is snake-like escape motion for bent paths.
-- Reduce Motion keeps the simpler rigid translation/fade.
+- Ordered-arrow parser/movement/comprehension gates passed.
+- Static path visuals are accepted.
+- Snake-like corner escape is manually accepted.
+- Levels 4–5 are frozen after the latest two-person 30–40 second timing pass.
+- `Android Debug` export preset is now committed with explicit `*.json` packaging and vibration permission.
+- `tools/android_vertical_slice.sh` is the current preflight/export/install helper.
+- The current Android package ID `com.pathbreak.verticalslice` is temporary and must not become the Play Store release ID.
+- Current-head post-snake/post-Level-4–5 automated regression and real Android device QA remain open.
 - Clean-save `FREE`, normal hint inventory, refill, restart, menu-board start, and automatic final clear were manually verified.
 - AI-generated output must pass intent, craft, and verification checks.
 - Parser warnings are defects.
