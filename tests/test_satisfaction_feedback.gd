@@ -27,7 +27,8 @@ func test_newly_freed_dependency_detection() -> bool:
 		[[2, 1], [2, 2]],
 		Vector2i.DOWN
 	)
-	level.pieces = [blocked_piece, blocker_piece]
+	level.pieces.append(blocked_piece)
+	level.pieces.append(blocker_piece)
 	board.setup_level(level)
 
 	var before: PackedInt32Array = board.get_escapable_piece_ids()
