@@ -1,118 +1,131 @@
 # Pathbreak — Satisfaction Prototype v1
 
-**Status:** Implemented on isolated prototype branch; pending local Godot verification  
+**Status:** Director-reviewed; answer-revealing cue rejected, remaining feel work retained for verification  
 **Last reviewed:** 2026-08-07  
 **Branch:** `codex/satisfaction-prototype-v1`  
 **Base:** `codex/vertical-slice-level-review`
 
 ## Purpose
 
-Test whether Pathbreak can become more satisfying to play and watch without weakening puzzle clarity.
-
-This branch is deliberately isolated from the vertical-slice integration branch. Do not merge it until the remaining vertical-slice platform/accessibility gates are closed and this prototype passes its own verification.
+Test whether Pathbreak can become more satisfying to play and watch without weakening the puzzle itself.
 
 Core rule:
 
 > **Clarity first, satisfaction second, spectacle third.**
 
-## Implemented prototype systems
+A second rule is now locked from the first director playtest:
 
-### 1. Newly-freed dependency detection
+> **The game must not automatically identify the next correct path. Solution-revealing assistance belongs to the explicit Hint system.**
 
-`BoardManager` now exposes the set of currently escapable piece IDs and can compare the post-removal board against the pre-removal state.
+## Director finding — newly-freed path cue REJECTED
 
-Only pieces that actually change from:
+The first prototype highlighted a path when it changed from blocked to escapable. Although the causal effect was readable, the director found that it effectively gave away the next answer.
+
+That creates three product problems:
+
+1. it weakens the player's need to inspect the board;
+2. it reduces the value and purpose of the Hint button;
+3. it turns satisfying feedback into passive guidance rather than earned discovery.
+
+Therefore the automatic newly-freed visual pulse and unlock audio are rejected as normal gameplay behavior.
+
+### Current implementation state
+
+`BoardManager` still contains the dependency-state detection helpers because they may later be useful for:
+
+- level-editor analysis;
+- difficulty metrics;
+- automated tests;
+- internal debugging.
+
+However `play_newly_freed_feedback(...)` now deliberately returns `0` and performs no presentation. The coordinator may still calculate the state during this prototype branch, but the player receives no automatic visual or audio answer reveal.
+
+`AudioManager.play_unlock_sound()` is temporarily a no-op while the prototype coordinator hook is cleaned up after verification.
+
+No level data, solver rule, occupancy rule, movement rule, hint count, or difficulty changed.
+
+## What remains accepted from Satisfaction Prototype v1
+
+### 1. Existing living-path release
+
+The accepted snake/uncoil motion remains the primary satisfying event:
 
 ```text
-blocked → escapable
+player chooses a path
+→ path activates
+→ head leads
+→ body follows through its corners
+→ path straightens
+→ path exits
 ```
 
-are eligible for presentation feedback.
+This rewards the player's own decision without revealing another decision.
 
-The movement rule remains owned by the existing `MovementValidator` through `BoardManager.can_piece_escape(...)`. No second gameplay truth was introduced.
+### 2. Blocked-path resistance
 
-### 2. One-shot newly-freed path feedback
+Blocked taps keep their restrained recoil, sound, haptic, and life/mistake consequence. The feedback communicates resistance without solving anything for the player.
 
-`PuzzlePiece.play_newly_freed_feedback()` applies one restrained acknowledgement:
+### 3. Completion settle
 
-- brief navy → blue-accent lift;
-- very small shaft-width increase;
-- one return to normal state;
-- no looping glow;
-- no automatic selection;
-- no repeated pulsing of paths that were already free.
-
-Reduce Motion uses a shorter static color acknowledgement instead of the animated pulse.
-
-### 3. Unravel rhythm
-
-`LevelManager` captures escapable state before a valid removal, updates occupancy, then determines which remaining pieces became newly free.
-
-A short delayed acknowledgement follows the successful escape so the sequence reads as:
-
-```text
-choose
-→ release
-→ board changes
-→ newly freed path acknowledges the dependency
-→ choose again
-```
-
-The game does not automatically play the newly available path.
-
-### 4. Dependency unlock audio cue
-
-`AudioManager.play_unlock_sound()` adds one deliberately quiet prototype tone when at least one newly freed path is successfully signalled.
-
-There is no extra haptic for this event in v1. The user action keeps the haptic; the causal board response stays quieter.
-
-The current procedural audio remains prototype material, not final production sound design.
-
-### 5. Completion settle
-
-When a level completes, the board performs one very small center-based settle before the result popup appears.
+The small board settle after the final automatic clear remains in the prototype.
 
 Normal motion:
 
 ```text
-slight compress
-→ slight release
-→ neutral board scale
-→ result popup
+last path escapes
+→ tiny board compress/release
+→ neutral scale
+→ result screen
 ```
 
-Reduce Motion skips the board-scale settle and uses a much shorter result delay.
+Reduce Motion skips this scale animation and uses the shorter result transition.
 
-No camera shake, confetti, fireworks, or unrelated UI bounce was added.
+### 4. Existing explicit hints
 
-## Files changed
+Hints remain the intentional answer-revealing mechanic.
+
+The distinction is now:
 
 ```text
-scripts/gameplay/board_manager.gd
-scripts/gameplay/puzzle_piece.gd
-scripts/gameplay/level_manager.gd
-scripts/AudioManager.gd
-tests/test_satisfaction_feedback.gd
-docs/SATISFACTION_PROTOTYPE_V1.md
+Normal gameplay
+= player reads the board and discovers what became possible
+
+Hint
+= player explicitly asks the game to identify an escapable path
 ```
 
-## Automated test added
+This separation must remain clear in future feel work and monetization design.
 
-`tests/test_satisfaction_feedback.gd` constructs a small deterministic two-piece board:
+## Revised satisfaction design rule
 
-- piece 1 is blocked by piece 2;
-- piece 2 is initially escapable;
-- after piece 2 occupancy is removed, piece 1 must be detected as newly escapable.
+Future satisfaction effects may react to:
 
-Expected result:
+- the path the player actually tapped;
+- the path currently escaping;
+- the whole board after a meaningful event;
+- the final completion state;
+- non-directional environmental/material responses.
 
-```text
-Satisfaction feedback: 1/1 passed
-```
+Future satisfaction effects must **not** automatically single out:
 
-This test and the modified runtime scripts have not yet been executed in the user's local Godot 4.7.1 build.
+- the next correct path;
+- a newly escapable path;
+- the best branch;
+- the intended solution order.
 
-## Required local verification
+Unless the user explicitly activates a Hint, the player owns the discovery.
+
+## Better replacement directions
+
+Instead of highlighting the answer, future prototypes should explore non-spoiling satisfaction such as:
+
+1. **Release Polish v2** — improve activation timing, path material response, and snake exit feel on the path the player already chose.
+2. **Board tension release** — a tiny board-wide response after a successful removal, with no specific remaining path highlighted.
+3. **Path trail/material wake** — a short restrained effect behind the escaping path only.
+4. **Completion Finish v2** — improve the final mechanism finish without delaying the result screen.
+5. **Audio/haptic identity** — richer feedback attached to player actions, not hidden solution state.
+
+## Verification
 
 Pull the branch:
 
@@ -123,66 +136,23 @@ git switch codex/satisfaction-prototype-v1
 git pull origin codex/satisfaction-prototype-v1
 ```
 
-Run:
+Run the normal regression suite before merging any part of this prototype.
 
-```bash
-GODOT="/home/silver/Downloads/godot games /Godot_v4.7.1-stable_linux.x86_64"
+Manual acceptance now focuses on:
 
-"$GODOT" --headless --path . --editor --quit
-"$GODOT" --headless --path . --script tests/test_satisfaction_feedback.gd
-"$GODOT" --headless --path . --script tests/test_path_visual_geometry.gd
-"$GODOT" --headless --path . --script tests/test_movement_validator.gd
-"$GODOT" --headless --path . --script tests/test_level_data_validator.gd
-"$GODOT" --headless --path . --script tests/test_vertical_slice_levels.gd
-"$GODOT" --headless --path . --script tests/test_mobile_project_settings.gd
-```
+- no remaining path is highlighted merely because it became escapable;
+- no unlock sound reveals a newly available answer;
+- Hint still has a clear purpose;
+- snake release remains satisfying;
+- completion settle remains subtle;
+- puzzle readability is unchanged;
+- Reduce Motion and High Contrast remain correct;
+- Android portrait behavior remains correct.
 
-Do not describe the prototype as working until these pass.
+## Director decision
 
-## Manual acceptance pass
+**Rejected:** automatic blocked → escapable path acknowledgement in normal play.
 
-Use **F5** and focus on Levels 4–5 first because their dependency chains make the new feedback easiest to judge.
+**Keep testing:** player-action release polish, snake motion, completion settle, audio/haptic feel attached to explicit player actions.
 
-Check:
-
-1. A path that was already escapable before the move does **not** pulse again.
-2. A genuinely newly freed path receives exactly one acknowledgement.
-3. The feedback happens after the cause is readable, not before the escaping path has visibly moved.
-4. The pulse does not look like a hint arrow or a command to tap.
-5. Multiple newly freed paths can acknowledge without visual chaos.
-6. Snake escape geometry is unchanged.
-7. Blocked taps are unchanged.
-8. Hint/tutorial feedback still works.
-9. Automatic final clear remains correct.
-10. Completion settle feels calm and does not delay the result screen excessively.
-11. High Contrast remains readable.
-12. Reduce Motion removes the animated pulse/board settle while preserving the state change.
-13. Sound-off disables the unlock cue.
-14. Android portrait orientation remains locked.
-
-## Director acceptance criteria
-
-Keep the system only if it makes cause-and-effect feel better without turning the game into an auto-hint experience.
-
-Reject or reduce it if:
-
-- players stare at the blue pulse instead of reading the board;
-- newly freed feedback gives away too much of the solution;
-- several simultaneous pulses feel noisy;
-- the result delay feels slow;
-- High Contrast or Reduce Motion becomes less clear;
-- Android performance regresses.
-
-## Player test after technical verification
-
-Use three players without explaining the new feedback.
-
-Ask afterward:
-
-1. Did you notice when another path became available?
-2. Did that feel satisfying, helpful, neutral, or distracting?
-3. Which release felt best?
-4. Did any effect make the puzzle harder to understand?
-5. Would you watch another 5–10 second clip of the board unravelling?
-
-Do not tell the player that the blue lift is supposed to mean “newly free” before the test.
+This is an important product constraint for Pathbreak: satisfaction should reward reasoning, not replace it.
