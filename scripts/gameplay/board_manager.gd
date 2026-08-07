@@ -136,16 +136,11 @@ func get_newly_escapable_pieces(previous_ids: PackedInt32Array) -> Array[PuzzleP
 			newly_escapable.append(piece)
 	return newly_escapable
 
-func play_newly_freed_feedback(candidates: Array[PuzzlePiece]) -> int:
-	var signalled := 0
-	for piece in candidates:
-		if not is_instance_valid(piece) or piece.is_removed or piece.is_animating:
-			continue
-		if not can_piece_escape(piece):
-			continue
-		piece.play_newly_freed_feedback()
-		signalled += 1
-	return signalled
+func play_newly_freed_feedback(_candidates: Array[PuzzlePiece]) -> int:
+	# Product decision: automatic blocked→free cues reveal the next answer and compete
+	# with the explicit Hint system. Keep dependency detection available for tooling and
+	# analysis, but gameplay must not visually or audibly identify newly escapable paths.
+	return 0
 
 func play_completion_settle() -> void:
 	if _is_reduce_motion():
