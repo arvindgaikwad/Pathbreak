@@ -12,10 +12,11 @@ Read these files in order:
 2. `../TASKS.md`
 3. `ARROW_SYSTEM_AUDIT.md`
 4. `SNAKE_ESCAPE_ANIMATION.md`
-5. `ANDROID_VERTICAL_SLICE_QA.md`
-6. This index
-7. `DECISIONS.md` and `AI_ANTI_SLOP_STANDARD.md`
-8. Latest playtest and testing checklist
+5. `ANDROID_DEVICE_VERIFICATION_2026-08-07.md`
+6. `ANDROID_VERTICAL_SLICE_QA.md`
+7. This index
+8. `DECISIONS.md` and `AI_ANTI_SLOP_STANDARD.md`
+9. Latest playtest and testing checklist
 
 ## Source-of-truth order
 
@@ -24,11 +25,12 @@ Read these files in order:
 3. `../TASKS.md` for execution order.
 4. `ARROW_SYSTEM_AUDIT.md` for the ordered path/head correction.
 5. `SNAKE_ESCAPE_ANIMATION.md` for corner-following escape motion.
-6. `ANDROID_VERTICAL_SLICE_QA.md` for current platform-export/device verification.
-7. `VERTICAL_SLICE_REVIEW.md` for approval gates.
-8. Latest dated playtest evidence.
-9. `DECISIONS.md` and focused specifications.
-10. Historical PR descriptions and old conversation notes.
+6. `ANDROID_DEVICE_VERIFICATION_2026-08-07.md` for completed physical tablet evidence.
+7. `ANDROID_VERTICAL_SLICE_QA.md` for remaining Android checks.
+8. `VERTICAL_SLICE_REVIEW.md` for approval gates.
+9. Latest dated playtest evidence.
+10. `DECISIONS.md` and focused specifications.
+11. Historical PR descriptions and old conversation notes.
 
 When documents disagree, update the stale document rather than guessing.
 
@@ -40,8 +42,8 @@ When documents disagree, update the stale document rather than guessing.
 | `../TASKS.md` | Current | Prioritised execution tracker |
 | `ARROW_SYSTEM_AUDIT.md` | Current | Root cause, ordered-path migration, tests, risks |
 | `SNAKE_ESCAPE_ANIMATION.md` | Manually verified | Corner-following escape motion and regression checks |
-| `ANDROID_DEVICE_VERIFICATION_2026-08-07.md` | Verified | Physical Android device QA report (Samsung Galaxy Tab S6 Lite) |
-| `ANDROID_VERTICAL_SLICE_QA.md` | Active | Android preflight, APK export/install, phone/tablet QA |
+| `ANDROID_DEVICE_VERIFICATION_2026-08-07.md` | Verified evidence | Physical Samsung Galaxy Tab S6 Lite QA report |
+| `ANDROID_VERTICAL_SLICE_QA.md` | Active | Remaining phone, lifecycle, accessibility, and device QA |
 | `VERTICAL_SLICE_REVIEW.md` | Current | Approval criteria and Levels 1–5 review |
 | `VERTICAL_SLICE_PLAYTEST_2026-08-06.md` | Current evidence | Playtest observations and verification boundaries |
 | `DECISIONS.md` | Current | Architecture and product decisions |
@@ -67,10 +69,14 @@ When documents disagree, update the stale document rather than guessing.
 - Static path visuals are accepted.
 - Snake-like corner escape is manually accepted.
 - Levels 4–5 are frozen after the latest two-person 30–40 second timing pass.
-- `Android Debug` export preset is now committed with explicit `*.json` packaging and vibration permission.
+- Final current-head parser/migration/geometry/movement/data/vertical-slice regression passed before the Android tablet deployment.
+- The debug APK exported, installed, and launched successfully on Samsung Galaxy Tab S6 Lite (`SM_P615`, Android 13).
+- Tablet touch selection, scaling, snake animation performance, audio, and haptics have positive physical-device evidence.
+- A real Android phone test is still required.
+- Android Back, suspend/resume, force-close persistence, settings persistence, and the remaining accessibility checks are not yet fully recorded.
+- `Android Debug` export preset includes explicit `*.json` packaging and vibration permission.
 - `tools/android_vertical_slice.sh` is the current preflight/export/install helper.
 - The current Android package ID `com.pathbreak.verticalslice` is temporary and must not become the Play Store release ID.
-- Current-head post-snake/post-Level-4–5 automated regression and real Android device QA remain open.
 - Clean-save `FREE`, normal hint inventory, refill, restart, menu-board start, and automatic final clear were manually verified.
 - AI-generated output must pass intent, craft, and verification checks.
 - Parser warnings are defects.
