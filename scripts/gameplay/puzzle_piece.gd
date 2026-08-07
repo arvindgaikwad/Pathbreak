@@ -13,6 +13,7 @@ var is_animating: bool = false
 var grid_size: float = 64.0
 var direction_marker: Polygon2D = null
 var direction_tween: Tween = null
+var feedback_tween: Tween = null
 
 var snake_route := PackedVector2Array()
 var snake_body_length: float = 0.0
@@ -34,6 +35,7 @@ const MARKER_START_PROGRESS := 0.0
 const MARKER_END_PROGRESS := 1.0
 const SNAKE_ESCAPE_DURATION := 0.28
 const SNAKE_UNCOIL_PHASE := 0.72
+const FREED_FEEDBACK_ACCENT_STRENGTH := 0.72
 
 func init_from_data(data: PuzzlePieceData, new_grid_size: float = 64.0) -> void:
 	piece_data = data
@@ -200,6 +202,40 @@ func _set_direction_marker_progress(progress: float) -> void:
 		clampf(progress, MARKER_START_PROGRESS, MARKER_END_PROGRESS)
 	)
 
+func _set_freed_feedback_amount(amount: float) -> void:
+	var safe_amount := clampf(amount, 0.0, 1.0)
+	var accent_amount := safe_amount * FREED_FEEDBACK_ACCENT_STRENGTH
+	set_color(_normal_color().lerp(COLOR_ACCENT, accent_amount))
+	var base_width := clampf(grid_size * 0.23, 12.0, 17.0)
+	line.width = base_width * (1.0 + safe_amount * 0.055)
+
+func play_newly_freed_feedback() -> void:
+	if is_removed or is_animating:
+		return
+	_stop_feedback()
+	_stop_pulse()
+	reset_color()
+
+	if SettingsManager.reduce_motion:
+		set_color(_normal_color().lerp(COLOR_ACCENT, 0.62))
+		var timer := get_tree().create_timer(0.18)
+		timer.timeout.connect(func() -> void:
+			if is_instance_valid(self) and not is_removed:
+				line.width = clampf(grid_size * 0.23, 12.0, 17.0)
+				reset_color()
+		)
+		return
+
+	feedback_tween = create_tween()
+	feedback_tween.tween_method(_set_freed_feedback_amount, 0.0, 1.0, 0.10).set_trans(Tween.TRANS_SINE)
+	feedback_tween.tween_method(_set_freed_feedback_amount, 1.0, 0.0, 0.20).set_trans(Tween.TRANS_SINE)
+	feedback_tween.finished.connect(func() -> void:
+		feedback_tween = null
+		line.width = clampf(grid_size * 0.23, 12.0, 17.0)
+		if not is_removed:
+			reset_color()
+	)
+
 func get_escape_animation_duration() -> float:
 	return 0.18 if SettingsManager.reduce_motion else SNAKE_ESCAPE_DURATION
 
@@ -208,6 +244,7 @@ func animate_successful_escape() -> void:
 		return
 	is_removed = true
 	is_animating = true
+	_stop_feedback()
 	_stop_pulse()
 	set_color(COLOR_ACCENT)
 
@@ -306,6 +343,7 @@ func animate_blocked_tap() -> void:
 	if is_removed or is_animating:
 		return
 	is_animating = true
+	_stop_feedback()
 	_stop_pulse()
 	set_color(COLOR_ERROR)
 
@@ -324,6 +362,7 @@ func animate_blocked_tap() -> void:
 func play_hint_pulse() -> void:
 	if is_removed:
 		return
+	_stop_feedback()
 	_stop_pulse()
 	reset_color()
 	if SettingsManager.reduce_motion:
@@ -349,6 +388,7 @@ func play_hint_pulse() -> void:
 func play_final_clear_preview() -> void:
 	if is_removed:
 		return
+	_stop_feedback()
 	_stop_pulse()
 	reset_color()
 	if SettingsManager.reduce_motion:
@@ -390,6 +430,13 @@ func set_idle_pulse(enabled: bool) -> void:
 func _hide_direction_marker() -> void:
 	if direction_marker != null:
 		direction_marker.visible = false
+
+func _stop_feedback() -> void:
+	if feedback_tween != null and feedback_tween.is_valid():
+		feedback_tween.kill()
+	feedback_tween = null
+	if line != null:
+		line.width = clampf(grid_size * 0.23, 12.0, 17.0)
 
 func _stop_pulse() -> void:
 	if direction_tween != null and direction_tween.is_valid():
