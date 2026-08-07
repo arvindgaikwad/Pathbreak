@@ -1,6 +1,6 @@
 # Pathbreak — Production Level Studio v1
 
-**Status:** Next production milestone  
+**Status:** In development  
 **Branch:** `codex/production-level-studio-v1`  
 **Base:** `codex/satisfaction-prototype-v1`
 
@@ -186,3 +186,52 @@ Additionally, the tool must reject at least these deliberately broken cases:
 Pathbreak feel is now locked from the three-person satisfaction/readability test.
 
 Do not use this milestone as an excuse to redesign release motion, hints, completion effects, or the vertical-slice visual language. The Level Studio should serve content production, not reopen settled feel work.
+
+## Implementation status — 2026-08-07
+
+### Gate 1 — editor / solver foundation: manually passed
+
+The authoring screen was manually exercised with multiple straight and bent paths. The screenshots confirmed:
+
+- the dedicated editor grid renders correctly;
+- ordered tail→head drawing works;
+- straight and bent arrow heads read correctly;
+- solver metrics appear;
+- deliberately unsolvable authored boards report zero solutions;
+- invalid/unsolvable boards are blocked from export.
+
+This validates the first editor/solver interaction gate. Automated regression status must still be taken from the latest local test run rather than inferred from screenshots.
+
+### Gate 2 — metadata + real-game preview: implemented, pending local verification
+
+The next slice adds:
+
+- level number control;
+- starting-lives control;
+- Easy / Normal / Hard metadata;
+- 6×6, 7×7, 8×8, and 9×9 board presets;
+- guarded Preview action that requires a valid, solvable level;
+- a preview session bridge that preserves the editor state while switching scenes;
+- a dedicated preview scene that inherits the production `level_manager.gd` and uses the real Board, PuzzlePiece, HUD, movement, snake/uncoil, blocked feedback, completion finish, audio, haptics, and settings;
+- preview-only flow overrides so testing does not write player progression or consume real hints;
+- return-to-editor behavior that restores the authored board after preview;
+- `tests/test_level_studio_preview.gd` for preview-level and editor-state round trips.
+
+The production gameplay manager itself is not replaced by an editor-specific copy. Preview extends the production manager and overrides only preview/session flow.
+
+### Next verification gate
+
+Run the full regression suite, then manually verify:
+
+```text
+choose metadata / board size
+→ draw a valid solvable level
+→ Analyze
+→ Preview
+→ play with real Pathbreak movement
+→ complete or restart
+→ Back to editor
+→ confirm the authored board and metadata are restored
+```
+
+After that passes, the next slice is guarded production export/promotion and creation of the first studio-authored level set.
