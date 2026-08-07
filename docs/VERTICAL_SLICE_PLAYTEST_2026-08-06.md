@@ -14,8 +14,9 @@ The user has confirmed:
 - Gate 3 new-player comprehension passed.
 - The corrected arrowheads are visually much better.
 - The final snake-style corner escape animation is working as intended.
+- Tuned Levels 4 and 5 each take roughly **30–40 seconds** for two tested players.
 
-After those approvals, Levels 4–5 were tuned for greater decision depth. Those new layouts now require a fresh parser/solver/playtest pass.
+The latest difficulty evidence is strong enough to stop tuning Levels 4–5 for now. Do not make them harder merely to increase duration.
 
 ## Early playtest evidence
 
@@ -98,11 +99,9 @@ Earlier builds were enjoyable but too easy:
 
 The problem was not rule confusion after the arrow correction. It was insufficient dependency depth.
 
-## Level 4 tuning — implemented, pending verification
+## Level 4 tuning — timing accepted
 
-Previous Level 4 behaved mostly like one forced chain plus an almost-independent second opening.
-
-New target structure:
+Current structure:
 
 - 8×8 board;
 - 9 pieces;
@@ -119,13 +118,19 @@ after 1 → [4, 5]
 after 5 → [1, 7]
 ```
 
-Director target: **20–35 seconds** for a first-time player, with time spent re-reading dependencies rather than fighting the UI.
+Original director target was **20–35 seconds** for a first-time player.
 
-## Level 5 tuning — implemented, pending verification
+Latest evidence:
 
-Previous Level 5 had 8 pieces and was still cleared too quickly.
+- tested on two people;
+- completion time was roughly **30–40 seconds**;
+- overall play was reported as good.
 
-New target structure:
+**Decision:** accept this timing range for the slice. The small amount above the original 35-second upper target does not justify another redesign without evidence of confusion or frustration.
+
+## Level 5 tuning — timing accepted
+
+Current structure:
 
 - 8×8 board;
 - 10 pieces;
@@ -145,31 +150,41 @@ after 5,6,9,7 → [4]
 after 5,6,9,7,4 → [2, 8]
 ```
 
-Director target: **30–45 seconds** for a first-time player.
+Director target was **30–45 seconds** for a first-time player.
+
+Latest evidence:
+
+- tested on two people;
+- completion time was roughly **30–40 seconds**;
+- overall play was reported as good.
+
+**Decision:** the current Level 5 timing lands inside the intended range. Do not increase difficulty for the vertical slice.
+
+## Current evidence boundary
+
+The two-person timing pass is enough to stop level tuning for now, but the report does not include exact per-player moves, mistakes, hints, or written qualitative notes. Those metrics can be collected later during broader closed testing instead of blocking current platform QA.
+
+Because shared animation and Level 4–5 data changed after earlier automation runs, the current branch should still receive one final parser/test rerun before the vertical slice is considered regression-closed.
 
 ## Next evidence required
 
-Run the current branch after the Level 4–5 changes and record:
+1. Final parser/test rerun on the current head.
+2. Android phone verification.
+3. Android tablet verification.
+4. High Contrast and Reduce Motion regression on device.
+5. Sound/Haptics persistence after app restart.
+6. Main-menu compact-phone/tablet layout closure.
 
-1. parser scan result;
-2. ordered geometry result, expected `7/7`;
-3. movement validator result;
-4. level-data validator result;
-5. vertical-slice result, expected `7/7`;
-6. Level 4 completion time, moves, mistakes, hints;
-7. Level 5 completion time, moves, mistakes, hints;
-8. whether either board feels confusing rather than thoughtful;
-9. whether snake motion remains correct on the new bent paths;
-10. one no-explanation player attempt on the tuned Levels 4–5.
+## Director decision
 
-## Director decision rule
+Levels 1–5 are now good enough to freeze for the vertical slice unless a regression appears.
 
-Keep the new layouts only when the increased duration comes from:
+The next phase is not more difficulty tuning. It is **platform and accessibility closure**:
 
 ```text
-read → decide → satisfying escape → board changes → read again
+final automated regression
+→ Android phone
+→ Android tablet
+→ accessibility/settings
+→ approve vertical slice
 ```
-
-Reject or simplify them if the extra time comes from tiny paths, ambiguous taps, unclear direction, or visual clutter.
-
-Android phone/tablet QA remains the final major slice gate after the tuned difficulty pass.
