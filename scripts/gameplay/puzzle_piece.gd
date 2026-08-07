@@ -101,7 +101,10 @@ func _direction_vector() -> Vector2:
 	return Vector2(exit_direction).normalized()
 
 func _normal_color() -> Color:
-	return COLOR_HIGH_CONTRAST_PATH if SettingsManager.high_contrast else COLOR_PRIMARY_PATH
+	var sm: Node = get_node_or_null("/root/SettingsManager")
+	if sm and sm.get("high_contrast"):
+		return COLOR_HIGH_CONTRAST_PATH
+	return COLOR_PRIMARY_PATH
 
 func reset_color() -> void:
 	set_color(_normal_color())
@@ -209,6 +212,10 @@ func _set_freed_feedback_amount(amount: float) -> void:
 	var base_width := clampf(grid_size * 0.23, 12.0, 17.0)
 	line.width = base_width * (1.0 + safe_amount * 0.055)
 
+func _is_reduce_motion() -> bool:
+	var sm: Node = get_node_or_null("/root/SettingsManager")
+	return bool(sm and sm.get("reduce_motion"))
+
 func play_newly_freed_feedback() -> void:
 	if is_removed or is_animating:
 		return
@@ -216,7 +223,7 @@ func play_newly_freed_feedback() -> void:
 	_stop_pulse()
 	reset_color()
 
-	if SettingsManager.reduce_motion:
+	if _is_reduce_motion():
 		set_color(_normal_color().lerp(COLOR_ACCENT, 0.62))
 		var timer := get_tree().create_timer(0.18)
 		timer.timeout.connect(func() -> void:
@@ -226,8 +233,8 @@ func play_newly_freed_feedback() -> void:
 		)
 		return
 
+	line.width = clampf(grid_size * 0.28, 14.0, 20.0)
 	feedback_tween = create_tween()
-	feedback_tween.tween_method(_set_freed_feedback_amount, 0.0, 1.0, 0.10).set_trans(Tween.TRANS_SINE)
 	feedback_tween.tween_method(_set_freed_feedback_amount, 1.0, 0.0, 0.20).set_trans(Tween.TRANS_SINE)
 	feedback_tween.finished.connect(func() -> void:
 		feedback_tween = null
@@ -237,7 +244,7 @@ func play_newly_freed_feedback() -> void:
 	)
 
 func get_escape_animation_duration() -> float:
-	return 0.18 if SettingsManager.reduce_motion else SNAKE_ESCAPE_DURATION
+	return 0.18 if _is_reduce_motion() else SNAKE_ESCAPE_DURATION
 
 func animate_successful_escape() -> void:
 	if is_removed:
@@ -248,7 +255,7 @@ func animate_successful_escape() -> void:
 	_stop_pulse()
 	set_color(COLOR_ACCENT)
 
-	if SettingsManager.reduce_motion or not _prepare_snake_escape():
+	if _is_reduce_motion() or not _prepare_snake_escape():
 		_animate_reduced_motion_escape()
 		return
 
@@ -347,7 +354,7 @@ func animate_blocked_tap() -> void:
 	_stop_pulse()
 	set_color(COLOR_ERROR)
 
-	var distance := 5.0 if SettingsManager.reduce_motion else 10.0
+	var distance := 5.0 if _is_reduce_motion() else 10.0
 	var shake_direction := Vector2(exit_direction) * distance
 	var tween := create_tween()
 	tween.tween_property(self, "position", shake_direction, 0.05).set_trans(Tween.TRANS_SINE)
@@ -365,7 +372,7 @@ func play_hint_pulse() -> void:
 	_stop_feedback()
 	_stop_pulse()
 	reset_color()
-	if SettingsManager.reduce_motion:
+	if _is_reduce_motion():
 		set_color(COLOR_ACCENT)
 		var color_timer := get_tree().create_timer(0.55)
 		color_timer.timeout.connect(reset_color)
@@ -391,7 +398,7 @@ func play_final_clear_preview() -> void:
 	_stop_feedback()
 	_stop_pulse()
 	reset_color()
-	if SettingsManager.reduce_motion:
+	if _is_reduce_motion():
 		set_color(COLOR_ACCENT)
 		return
 	direction_tween = create_tween()
@@ -412,7 +419,7 @@ func set_idle_pulse(enabled: bool) -> void:
 		if not is_removed:
 			reset_color()
 		return
-	if SettingsManager.reduce_motion:
+	if _is_reduce_motion():
 		set_color(COLOR_ACCENT)
 		return
 

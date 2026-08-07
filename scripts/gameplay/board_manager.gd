@@ -21,24 +21,31 @@ const COLOR_GRID_DOTS := Color("#DDE3EC")
 const COLOR_GRID_DOTS_HIGH := Color("#B8C1CF")
 
 func _ready() -> void:
-	SettingsManager.settings_changed.connect(_on_settings_changed)
+	var sm: Node = get_node_or_null("/root/SettingsManager")
+	if sm and sm.has_signal("settings_changed"):
+		sm.settings_changed.connect(_on_settings_changed)
+
+func _is_reduce_motion() -> bool:
+	var sm: Node = get_node_or_null("/root/SettingsManager")
+	return bool(sm and sm.get("reduce_motion"))
+
+func _is_high_contrast() -> bool:
+	var sm: Node = get_node_or_null("/root/SettingsManager")
+	return bool(sm and sm.get("high_contrast"))
 
 func _draw() -> void:
 	var board_width := board_size.x * grid_size
 	var board_height := board_size.y * grid_size
 	var offset_x := -board_width * 0.5
 	var offset_y := -board_height * 0.5
-	var card_rect := Rect2(
-		Vector2(offset_x - VISUAL_PADDING, offset_y - VISUAL_PADDING),
-		Vector2(board_width + VISUAL_PADDING * 2.0, board_height + VISUAL_PADDING * 2.0)
-	)
 
-	var shadow_rect := card_rect
-	shadow_rect.position += Vector2(0.0, 6.0)
+	var shadow_rect := Rect2(offset_x - 8, offset_y - 4, board_width + 16, board_height + 24)
+	var card_rect := Rect2(offset_x - 12, offset_y - 12, board_width + 24, board_height + 24)
+
 	_draw_rounded_stylebox(shadow_rect, COLOR_SHADOW, 32)
 	_draw_rounded_stylebox(card_rect, COLOR_BOARD_CARD, 32)
 
-	var dot_color := COLOR_GRID_DOTS_HIGH if SettingsManager.high_contrast else COLOR_GRID_DOTS
+	var dot_color := COLOR_GRID_DOTS_HIGH if _is_high_contrast() else COLOR_GRID_DOTS
 	for x in range(board_size.x + 1):
 		for y in range(board_size.y + 1):
 			var point := Vector2(offset_x + x * grid_size, offset_y + y * grid_size)
@@ -53,7 +60,16 @@ func _draw_rounded_stylebox(rect: Rect2, color: Color, radius: int) -> void:
 	style.corner_radius_bottom_right = radius
 	draw_style_box(style, rect)
 
+func _ensure_nodes() -> void:
+	if pieces_container == null:
+		pieces_container = get_node_or_null("PiecesContainer")
+		if pieces_container == null:
+			pieces_container = Node2D.new()
+			pieces_container.name = "PiecesContainer"
+			add_child(pieces_container)
+
 func setup_level(level_data: PuzzleLevelData) -> void:
+	_ensure_nodes()
 	clear_board()
 	board_size = level_data.board_size
 	queue_redraw()
@@ -132,7 +148,7 @@ func play_newly_freed_feedback(candidates: Array[PuzzlePiece]) -> int:
 	return signalled
 
 func play_completion_settle() -> void:
-	if SettingsManager.reduce_motion:
+	if _is_reduce_motion():
 		return
 	if completion_tween != null and completion_tween.is_valid():
 		completion_tween.kill()
