@@ -3,12 +3,12 @@ extends SceneTree
 var BoardScene: PackedScene = preload("res://scenes/game/board.tscn")
 
 func _init() -> void:
-	print("--- Running Pathbreak Satisfaction Feedback Test Suite ---")
-	var passed := test_newly_freed_dependency_detection()
-	print("Satisfaction feedback: %s" % ("1/1 passed" if passed else "0/1 passed"))
+	print("--- Running Pathbreak Satisfaction Safeguard Test Suite ---")
+	var passed := test_dependency_detection_stays_non_presentational()
+	print("Satisfaction safeguard: %s" % ("1/1 passed" if passed else "0/1 passed"))
 	quit(0 if passed else 1)
 
-func test_newly_freed_dependency_detection() -> bool:
+func test_dependency_detection_stays_non_presentational() -> bool:
 	var board = BoardScene.instantiate()
 	root.add_child(board)
 
@@ -42,12 +42,19 @@ func test_newly_freed_dependency_detection() -> bool:
 	runtime_blocker.is_removed = true
 
 	var newly_freed: Array[PuzzlePiece] = board.get_newly_escapable_pieces(before)
-	var passed := newly_freed.size() == 1 and newly_freed[0].piece_id == 1
-	if not passed:
+	if newly_freed.size() != 1 or newly_freed[0].piece_id != 1:
 		var ids := PackedInt32Array()
 		for piece in newly_freed:
 			ids.append(piece.piece_id)
-		push_error("Expected piece 1 to become newly escapable; got %s." % ids)
+		push_error("Expected internal analysis to detect piece 1 as newly escapable; got %s." % ids)
+		board.queue_free()
+		return false
+
+	var signalled: int = board.play_newly_freed_feedback(newly_freed)
+	if signalled != 0:
+		push_error("Normal gameplay must not reveal newly escapable paths; signalled=%d." % signalled)
+		board.queue_free()
+		return false
 
 	board.queue_free()
-	return passed
+	return true
