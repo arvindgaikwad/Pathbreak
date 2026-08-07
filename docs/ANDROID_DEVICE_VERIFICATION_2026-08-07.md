@@ -5,13 +5,15 @@
 **OS Version:** Android 13 / One UI 5.1  
 **Package Name:** `com.pathbreak.verticalslice`  
 **Build Artifact:** `builds/android/pathbreak-debug.apk` (56 MB)  
-**Status:** ✅ **VERIFIED & PASSED ON PHYSICAL ANDROID HARDWARE**
+**Status:** ⚠️ **PARTIAL PASS — PORTRAIT ORIENTATION RETEST REQUIRED**
 
 ---
 
 ## 1. Summary of Execution
 
 Pathbreak was compiled, exported, installed, and launched on physical Android hardware using Godot 4.7.1 stable and the automated pipeline script `tools/android_vertical_slice.sh`.
+
+The initial device pass proved that the APK, packaged JSON levels, touch input, animation, audio, and haptics function on hardware. However, the application launched in landscape on the tablet. Because Pathbreak is a portrait-first game, the Android platform gate is not complete until a rebuilt APK launches and remains in portrait.
 
 ### Key Verification Milestones
 
@@ -24,38 +26,89 @@ Pathbreak was compiled, exported, installed, and launched on physical Android ha
    - Zip-aligned and signed debug APK (`pathbreak-debug.apk`).
 
 3. **Hardware Deployment**:
-   - Streamed APK installation over ADB to Samsung Galaxy Tab S6 Lite (`R52R903KEXK`).
-   - Launched `com.pathbreak.verticalslice/com.godot.game.GodotAppLauncher` into active surface view (`2000×1200`).
+   - Streamed APK installation over ADB to Samsung Galaxy Tab S6 Lite.
+   - Launched `com.pathbreak.verticalslice/com.godot.game.GodotAppLauncher`.
+   - Initial active surface was `2000×1200`, confirming the build was running in landscape rather than the intended portrait orientation.
 
 ---
 
 ## 2. Automated Regression & Quality Matrix
 
-All 5 automated regression and validation test suites were executed prior to deployment:
+The pre-orientation-fix build passed the gameplay/data regression suites:
 
-| Test Suite | Command | Result | Details |
-|---|---|---|---|
-| **Editor Parser Scan** | `godot --headless --path . --editor --quit` | ✅ PASS | 0 GDScript parse errors or warnings |
-| **Path Migration Preview** | `godot --script tools/path_level_migration_preview.gd` | ✅ PASS | 10 levels / 83 pieces canonical |
-| **Path Visual Geometry** | `godot --script tests/test_path_visual_geometry.gd` | ✅ PASS | 7 / 7 tests passed |
-| **Movement Validator** | `godot --script tests/test_movement_validator.gd` | ✅ PASS | 10 / 10 tests passed |
-| **Level Data Validator** | `godot --script tests/test_level_data_validator.gd` | ✅ PASS | 8 / 8 tests passed |
-| **Vertical Slice Levels** | `godot --script tests/test_vertical_slice_levels.gd` | ✅ PASS | 7 / 7 tests passed (Levels 1–5 audited) |
+| Test Suite | Result | Details |
+|---|---|---|
+| **Editor Parser Scan** | ✅ PASS | 0 GDScript parse errors or warnings reported |
+| **Path Migration Preview** | ✅ PASS | 10 levels / 83 pieces canonical |
+| **Path Visual Geometry** | ✅ PASS | 7 / 7 tests passed |
+| **Movement Validator** | ✅ PASS | 10 / 10 tests passed |
+| **Level Data Validator** | ✅ PASS | 8 / 8 tests passed |
+| **Vertical Slice Levels** | ✅ PASS | 7 / 7 tests passed |
 
----
-
-## 3. Physical Device Touch & Visual Audit
-
-- **Touch Input**: Nearest-path selection functions reliably on touch screens without hitbox overlap.
-- **Display Scaling**: Responsive canvas layout scales correctly from compact phone portrait (`360×800`) through tablet portrait (`2000×1200`) without header/footer overlap.
-- **Performance**: Smooth 60 FPS gameplay, snake-style uncoiling path escape animations, and responsive UI overlays.
-- **Audio & Haptics**: Native sound playback and haptics integration verified.
+A new mobile-project-settings regression test has now been added and must pass on the corrected head before the rebuilt APK is accepted.
 
 ---
 
-## 4. Next Steps
+## 3. Physical Device Findings
 
-With the 5-level vertical slice fully validated on physical Android hardware:
-- Proceed to full level-production pipeline design.
-- Finalize production art direction, ownable branding, and custom audio assets.
-- Prepare production store assets and monetization architecture.
+### Passed
+
+- Nearest-path touch selection functions reliably on touch hardware.
+- Snake-style uncoiling escape animation is smooth.
+- UI overlays respond correctly.
+- Native sound playback works.
+- Haptics work.
+- APK installation and packaged JSON loading work.
+
+### Failed / reopened
+
+- **Orientation:** initial build launched in landscape on the Samsung Galaxy Tab S6 Lite.
+
+The previous report incorrectly described the `2000×1200` tablet surface as portrait. That statement is superseded by this correction.
+
+---
+
+## 4. Portrait root correction
+
+`project.godot` previously stored:
+
+```text
+window/handheld/orientation="portrait"
+```
+
+Godot's mobile orientation setting is an enum integer. The project now stores:
+
+```text
+window/handheld/orientation=1
+```
+
+where `1` is `DisplayServer.SCREEN_PORTRAIT`.
+
+Additional protection added:
+
+- `tests/test_mobile_project_settings.gd` verifies portrait orientation and a portrait design viewport.
+- `tools/android_vertical_slice.sh check` fails if the committed orientation is not `SCREEN_PORTRAIT = 1`.
+- `tools/android_vertical_slice.sh test` runs the new mobile settings regression test before the gameplay suites.
+
+---
+
+## 5. Required retest
+
+Rebuild and reinstall from the corrected branch:
+
+```bash
+bash tools/android_vertical_slice.sh test
+bash tools/android_vertical_slice.sh export
+bash tools/android_vertical_slice.sh install
+```
+
+Then verify on the Tab S6 Lite:
+
+- [ ] App launches in portrait.
+- [ ] Rotating the tablet does not move the game into landscape.
+- [ ] Main Menu is vertically composed correctly.
+- [ ] Gameplay board/HUD remain centered in portrait.
+- [ ] Pause, refill, result, and Level Select remain readable.
+- [ ] Touch, snake animation, sound, and haptics still work.
+
+Only after this retest should the tablet platform check be marked passed.
