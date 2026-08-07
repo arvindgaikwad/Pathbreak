@@ -2,6 +2,7 @@ extends SceneTree
 
 const LevelDataValidatorScript = preload("res://scripts/gameplay/level_data_validator.gd")
 const LevelSolverScript = preload("res://scripts/gameplay/level_solver.gd")
+const MovementValidatorScript = preload("res://scripts/gameplay/movement_validator.gd")
 const PuzzleLevelDataScript = preload("res://scripts/gameplay/puzzle_level_data.gd")
 const PuzzlePieceDataScript = preload("res://scripts/gameplay/puzzle_piece_data.gd")
 
@@ -14,7 +15,8 @@ func _init() -> void:
 		test_all_levels_load_and_validate,
 		test_all_levels_are_solvable_without_dead_ends,
 		test_level_1_teaches_two_safe_openings,
-		test_level_5_uses_an_authored_dependency_chain,
+		test_level_4_opens_two_meaningful_chains,
+		test_level_5_uses_a_staged_dependency_chain,
 		test_opening_move_curve,
 		test_solution_sequence_counts
 	]
@@ -63,18 +65,48 @@ func test_level_1_teaches_two_safe_openings() -> bool:
 	var solution_count := LevelSolverScript.count_solutions(level)
 	return level.pieces.size() == 2 and openings.size() == 2 and solution_count == 2
 
-func test_level_5_uses_an_authored_dependency_chain() -> bool:
-	var level := _get_level(5)
+func test_level_4_opens_two_meaningful_chains() -> bool:
+	var level := _get_level(4)
 	if level == null:
 		return false
 	var openings := LevelSolverScript.get_initial_escapable_piece_ids(level)
-	var solution_count := LevelSolverScript.count_solutions(level, 100)
-	var bent_piece_count := _count_bent_pieces(level)
+	var after_first := _escapable_ids_after_removing(level, [1])
+	var after_second := _escapable_ids_after_removing(level, [5])
 	return (
-		level.pieces.size() == 8
-		and openings.size() == 1
-		and solution_count == 6
-		and bent_piece_count >= 2
+		level.pieces.size() == 9
+		and openings == [1, 5]
+		and LevelSolverScript.count_solutions(level, 100) == 15
+		and _count_bent_pieces(level) >= 4
+		and after_first == [4, 5]
+		and after_second == [1, 7]
+	)
+
+func test_level_5_uses_a_staged_dependency_chain() -> bool:
+	var level := _get_level(5)
+	if level == null:
+		return false
+	var forced_states: Array[Dictionary] = [
+		{"removed": [], "expected": [5]},
+		{"removed": [5], "expected": [6]},
+		{"removed": [5, 6], "expected": [9]},
+		{"removed": [5, 6, 9], "expected": [7]},
+		{"removed": [5, 6, 9, 7], "expected": [4]},
+		{"removed": [5, 6, 9, 7, 4], "expected": [2, 8]}
+	]
+	for state in forced_states:
+		var removed_ids: Array[int] = []
+		for raw_id in state["removed"]:
+			removed_ids.append(int(raw_id))
+		var expected_ids: Array[int] = []
+		for raw_id in state["expected"]:
+			expected_ids.append(int(raw_id))
+		if _escapable_ids_after_removing(level, removed_ids) != expected_ids:
+			return false
+
+	return (
+		level.pieces.size() == 10
+		and LevelSolverScript.count_solutions(level, 100) == 10
+		and _count_bent_pieces(level) >= 4
 	)
 
 func test_opening_move_curve() -> bool:
@@ -95,7 +127,7 @@ func test_opening_move_curve() -> bool:
 	return true
 
 func test_solution_sequence_counts() -> bool:
-	var expected_counts: Array[int] = [2, 1, 12, 7, 6]
+	var expected_counts: Array[int] = [2, 1, 12, 15, 10]
 	if levels.size() != expected_counts.size():
 		return false
 	for level_index in range(levels.size()):
@@ -119,6 +151,30 @@ func test_solution_sequence_counts() -> bool:
 			)
 			return false
 	return true
+
+func _escapable_ids_after_removing(
+	level: PuzzleLevelData,
+	removed_ids: Array[int]
+) -> Array[int]:
+	var removed_lookup: Dictionary = {}
+	for piece_id in removed_ids:
+		removed_lookup[piece_id] = true
+
+	var occupancy: Dictionary = {}
+	for piece in level.pieces:
+		if piece == null or removed_lookup.has(piece.piece_id):
+			continue
+		for cell in piece.cells:
+			occupancy[cell] = piece.piece_id
+
+	var escapable_ids: Array[int] = []
+	for piece in level.pieces:
+		if piece == null or removed_lookup.has(piece.piece_id):
+			continue
+		if MovementValidatorScript.can_escape(piece, level.board_size, occupancy):
+			escapable_ids.append(piece.piece_id)
+	escapable_ids.sort()
+	return escapable_ids
 
 func _load_slice_levels() -> Array[PuzzleLevelData]:
 	var loaded_levels: Array[PuzzleLevelData] = []
