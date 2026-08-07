@@ -6,13 +6,13 @@
 **Active branch:** `codex/vertical-slice-level-review`  
 **Active draft PR:** `#8 — Direct and approve the Pathbreak vertical slice`
 
-Use this document if the current conversation is lost. Then read `TASKS.md`, `docs/README.md`, `docs/ARROW_SYSTEM_AUDIT.md`, `docs/SNAKE_ESCAPE_ANIMATION.md`, and the latest playtest record.
+Use this document if the current conversation is lost. Then read `TASKS.md`, `docs/README.md`, `docs/ARROW_SYSTEM_AUDIT.md`, `docs/SNAKE_ESCAPE_ANIMATION.md`, `docs/ANDROID_VERTICAL_SLICE_QA.md`, and the latest playtest record.
 
 ## 1. Product summary
 
 Pathbreak is an original portrait Android puzzle game built in Godot 4.7.1. Players clear ordered directional paths when their complete escape route is unobstructed.
 
-The current objective is to approve the five-level vertical slice before building the production level pipeline, final art, or monetization.
+The current objective is to close Android/device/accessibility verification for the five-level vertical slice before building the production level pipeline, final art, or monetization.
 
 ## 2. Accepted gameplay foundation
 
@@ -22,7 +22,8 @@ The user has confirmed these major gates:
 - movement regression gate passed;
 - new-player direction-comprehension gate passed;
 - corrected arrow visuals are accepted;
-- snake-style corner escape is working as intended.
+- snake-style corner escape is working as intended;
+- Levels 4–5 now take roughly 30–40 seconds in the latest two-person test and are accepted for the slice.
 
 Canonical path rule:
 
@@ -67,52 +68,52 @@ See `docs/SNAKE_ESCAPE_ANIMATION.md`.
 - Replaying Level 1 shows normal hint inventory.
 - `No path can leave yet` feedback.
 
-## 5. Latest change: Level 4–5 difficulty tuning
+## 5. Levels 4–5 are frozen for platform QA
 
-Earlier playtests showed the game was enjoyable but too easy. Typical early clears were around 10 seconds; Level 4 was cleared in 7 seconds and Level 5 in 16 seconds by the returning tester.
-
-### New Level 4
+### Level 4
 
 - 8×8 board;
 - 9 pieces;
 - 2 opening moves;
-- both openings reveal different next safe paths;
-- 15 solution orders;
-- multiple bent paths;
-- target new-player time: 20–35 seconds.
+- 15 solution orders encoded in tests;
+- latest two-person completion time: roughly 30–40 seconds.
 
-Expected structural checks:
-
-```text
-start → [1, 5]
-after 1 → [4, 5]
-after 5 → [1, 7]
-```
-
-### New Level 5
+### Level 5
 
 - 8×8 board;
 - 10 pieces;
 - 1 opening move;
-- five-step staged dependency read before the first branch;
-- 10 solution orders;
-- multiple bent paths;
-- target new-player time: 30–45 seconds.
+- 10 solution orders encoded in tests;
+- latest two-person completion time: roughly 30–40 seconds.
 
-Expected early structure:
+**Decision:** do not continue increasing difficulty. Reopen Levels 1–5 only when Android/device testing reveals a concrete defect or later player evidence shows confusion/frustration.
+
+## 6. Android preparation now in the repository
+
+Added:
 
 ```text
-start → [5]
-after 5 → [6]
-after 5,6 → [9]
-after 5,6,9 → [7]
-after 5,6,9,7 → [4]
-after 5,6,9,7,4 → [2, 8]
+export_presets.cfg
+tools/android_vertical_slice.sh
+docs/ANDROID_VERTICAL_SLICE_QA.md
 ```
 
-These layouts are implemented but not approved until the current parser/solver and playtest pass.
+The committed `Android Debug` preset:
 
-## 6. Architecture to preserve
+- exports to `builds/android/pathbreak-debug.apk`;
+- includes ARMv7 and ARM64;
+- explicitly includes `*.json`, which is required because level JSON is the canonical non-resource level format;
+- enables Android vibration permission for haptics;
+- keeps Internet permission disabled for this offline slice;
+- uses temporary package ID `com.pathbreak.verticalslice`.
+
+The temporary package ID is for device testing only. Do not publish it to Google Play. Final package ID follows final name and publisher decisions.
+
+Local Android SDK/JDK paths and keystore credentials are machine-local and must not be committed.
+
+See `docs/ANDROID_VERTICAL_SLICE_QA.md`.
+
+## 7. Architecture to preserve
 
 - Godot 4.7.1 and typed GDScript.
 - Android portrait target.
@@ -128,24 +129,22 @@ These layouts are implemented but not approved until the current parser/solver a
 - Central nearest-path touch selection.
 - Separate `SaveManager` and `SettingsManager`.
 
-## 7. Immediate next actions
+## 8. Immediate next actions
 
-Follow `TASKS.md`. Current order:
+Follow `TASKS.md`. Current sequence:
 
 1. Pull latest branch.
-2. Run parser scan.
-3. Run migration preview.
-4. Run ordered-path geometry test; expected `7/7`.
-5. Run movement/data tests.
-6. Run vertical-slice tests; expected `7/7`.
-7. Confirm Level 4 = 9 pieces / 2 openings / 15 solutions.
-8. Confirm Level 5 = 10 pieces / 1 opening / 10 solutions.
-9. Play tuned Level 4 three times.
-10. Play tuned Level 5 three times.
-11. Run at least one no-explanation player test on the new layouts.
-12. Move to Android phone/tablet verification.
+2. Run `bash tools/android_vertical_slice.sh check`.
+3. Resolve any missing Java/Android SDK/export-template requirements locally.
+4. Run `bash tools/android_vertical_slice.sh test` for the final post-snake/post-difficulty current-head regression.
+5. Run `bash tools/android_vertical_slice.sh export`.
+6. Connect an authorized Android phone and run `bash tools/android_vertical_slice.sh install`.
+7. Execute phone QA from `docs/ANDROID_VERTICAL_SLICE_QA.md`.
+8. Install/test on Samsung Galaxy Tab S6 Lite or another Android tablet.
+9. Close Reduce Motion, High Contrast, Sound/Haptics persistence, compact-phone, and tablet-layout checks.
+10. Approve or reject the vertical slice.
 
-## 8. Local paths and commands
+## 9. Local paths and commands
 
 Godot:
 
@@ -159,40 +158,69 @@ Project:
 /home/silver/Downloads/godot games /projects/arrow puzzle
 ```
 
-Verification:
+Pull:
 
 ```bash
 cd "/home/silver/Downloads/godot games /projects/arrow puzzle"
 git fetch origin
 git switch codex/vertical-slice-level-review
 git pull origin codex/vertical-slice-level-review
-
-GODOT="/home/silver/Downloads/godot games /Godot_v4.7.1-stable_linux.x86_64"
-
-"$GODOT" --headless --path . --editor --quit
-"$GODOT" --headless --path . --script tools/path_level_migration_preview.gd
-"$GODOT" --headless --path . --script tests/test_path_visual_geometry.gd
-"$GODOT" --headless --path . --script tests/test_movement_validator.gd
-"$GODOT" --headless --path . --script tests/test_level_data_validator.gd
-"$GODOT" --headless --path . --script tests/test_vertical_slice_levels.gd
 ```
 
-Run the full game with **F5**, not F6.
+Android workflow:
 
-## 9. Vertical slice exit criteria
+```bash
+bash tools/android_vertical_slice.sh check
+bash tools/android_vertical_slice.sh test
+bash tools/android_vertical_slice.sh export
+bash tools/android_vertical_slice.sh install
+```
 
-- current parser and automated tests pass;
-- Levels 1–3 remain regression-free;
-- tuned Level 4 produces deliberate choice without confusion;
-- tuned Level 5 produces deeper dependency reading without confusion;
+Or:
+
+```bash
+bash tools/android_vertical_slice.sh all
+```
+
+Device logs:
+
+```bash
+bash tools/android_vertical_slice.sh logcat
+```
+
+Run the full desktop game with **F5**, not F6.
+
+## 10. Android setup reference
+
+Godot 4.7 desktop Android export requires a local Java SDK, Android SDK, and matching export templates. Godot 4.7 documentation recommends OpenJDK 17 and current Android SDK components.
+
+In Godot configure:
+
+```text
+Editor Settings → Export → Android
+```
+
+Set:
+
+- Java SDK Path;
+- Android SDK Path.
+
+Do not put those machine-specific paths in project files.
+
+## 11. Vertical slice exit criteria
+
+- current post-snake/post-Level-4–5 parser and automated tests pass;
+- Levels 1–5 remain regression-free;
+- Levels 4–5 remain in the accepted timing/readability range;
 - snake motion remains correct;
 - Main Menu/layout checks pass;
 - High Contrast and Reduce Motion pass;
+- Sound/Haptics persistence pass;
 - Android phone test passes;
 - Android tablet test passes;
 - remaining defects are documented.
 
-## 10. After approval
+## 12. After approval
 
 Next milestone is the production level pipeline:
 
@@ -206,7 +234,9 @@ Next milestone is the production level pipeline:
 
 Final UI/art follows after gameplay and content production foundations are proven.
 
-## 11. New-conversation continuation prompt
+Google Play release preparation is later and requires a final globally unique package ID, release keystore outside Git, Gradle/AAB export, final launcher icons, privacy/Data Safety work, and closed testing.
+
+## 13. New-conversation continuation prompt
 
 ```text
 Continue development of my Godot project Pathbreak in GitHub repository arvindgaikwad/Pathbreak.
@@ -216,11 +246,12 @@ Read these files on branch codex/vertical-slice-level-review:
 2. TASKS.md
 3. docs/ARROW_SYSTEM_AUDIT.md
 4. docs/SNAKE_ESCAPE_ANIMATION.md
-5. docs/README.md
-6. docs/DECISIONS.md
-7. docs/AI_ANTI_SLOP_STANDARD.md
-8. docs/VERTICAL_SLICE_PLAYTEST_2026-08-06.md
-9. docs/TESTING_CHECKLIST.md
+5. docs/ANDROID_VERTICAL_SLICE_QA.md
+6. docs/README.md
+7. docs/DECISIONS.md
+8. docs/AI_ANTI_SLOP_STANDARD.md
+9. docs/VERTICAL_SLICE_PLAYTEST_2026-08-06.md
+10. docs/TESTING_CHECKLIST.md
 
-The active draft is PR #8. Do not merge it yet. Preserve the modular JSON-first architecture. Ordered cells are tail-to-head; the final segment controls both head and movement direction. Bent paths use the accepted snake uncoil animation. Levels 4 and 5 have just been difficulty-tuned and are pending parser/solver/playtest verification. Continue from the first incomplete P0 task in TASKS.md.
+The active draft is PR #8. Do not merge it yet. Preserve the modular JSON-first architecture. Ordered cells are tail-to-head; the final segment controls both head and movement direction. Bent paths use the accepted snake-uncoil animation. Levels 1–5 are frozen for Android QA; Levels 4–5 currently take roughly 30–40 seconds in the latest two-person test. The immediate task is Android preflight/export/device QA using tools/android_vertical_slice.sh and docs/ANDROID_VERTICAL_SLICE_QA.md. Continue from the first incomplete P0 task in TASKS.md.
 ```
