@@ -134,3 +134,21 @@
   - Levels 1–5 were migrated; Levels 6–10 are protected by the full-pack audit test.
   - The compatibility `direction` field remains temporarily but must mirror the final segment.
 - **Rejected alternative:** Geometric projection to a “leading cell” was rejected because it can attach a head to a non-endpoint and does not guarantee agreement with the adjacent final segment.
+
+## Record 020 — Pathbreak owns the satisfying living-path puzzle direction
+
+- **Status:** Approved product direction
+- **Decision:** Position Pathbreak around satisfying visual release, living-path flow, precise clarity, and dependency unravel rather than competing only on arrow-puzzle quantity or cosmetic variation.
+- **Internal position:** `The satisfying living-path puzzle.`
+- **Player promise:** A correct decision should visibly release tension from a readable mechanism.
+- **Reason:** The base arrow/path puzzle category is crowded. The accepted snake-uncoil animation, precise nearest-path controls, and authored dependency structure provide the beginning of an ownable experience that is visible immediately in gameplay footage.
+- **Quality rule:** `Clarity first, satisfaction second, spectacle third.` Any effect that makes blockers, direction, or cause-and-effect harder to read must be removed even if it looks impressive.
+- **Consequences:**
+  - The remaining vertical-slice platform/accessibility gates still close before new gameplay-presentation work.
+  - After vertical-slice approval, build `Satisfaction Prototype v1` before mass level production or final UI art.
+  - Prototype release polish, newly-freed-path feedback, unravel rhythm, completion finish, and a small audio/haptic pack.
+  - Newly freed feedback must acknowledge `blocked → escapable` state changes without becoming an automatic hint system.
+  - Reduce Motion and High Contrast parity are mandatory for every new presentation effect.
+  - Capture real 5–10 second gameplay clips after the prototype passes; do not build fake ad-only mechanics.
+  - The Production Level Studio follows the satisfaction prototype so its preview can support the locked Pathbreak feel language.
+- **Specification:** `docs/SATISFACTION_BLUEPRINT.md`.
