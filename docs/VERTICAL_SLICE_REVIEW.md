@@ -1,237 +1,174 @@
 # Pathbreak — Vertical Slice Director Review
 
-Status: active production gate
-Branch: `codex/vertical-slice-level-review`
+**Status:** Active production gate  
+**Last reviewed:** 2026-08-07  
+**Branch:** `codex/vertical-slice-level-review`
 
 ## Purpose
 
-Approve or reject Levels 1–5 as the quality reference for all future Pathbreak content. This review focuses on teaching order, puzzle structure, touch fairness, difficulty, pacing, feedback, and complete player flow. Final visual identity is deliberately deferred.
+Approve Levels 1–5 as the gameplay-quality reference before mass level production, final art, or monetization. The slice must prove rule clarity, touch trust, path readability, satisfying motion, difficulty progression, persistence, and Android readiness.
 
-## Review process
+## Gates
 
-### Gate 1 — Static level audit
-
-For each level, record:
-
-- board dimensions;
-- piece count;
-- bent-piece count;
-- number of valid opening moves;
-- number of possible full-clear sequences;
-- intended lesson;
-- whether the data actually teaches that lesson;
-- density and likely touch ambiguity.
-
-### Gate 2 — Automated validation
+### Gate 1 — Structure and automation
 
 Required:
 
-- JSON schema/data validation;
-- no overlapping or disconnected cells;
-- at least one complete solution;
+- JSON/data validation;
+- ordered tail-to-head path validation;
+- arrowhead direction equals final path segment and movement direction;
+- at least one full-clear solution;
 - intended opening-move count;
-- no state that can become permanently unsolvable after a legal move;
-- stable level order and IDs.
+- no reachable dead-end after legal moves;
+- stable level IDs and progression.
 
-Implemented automation:
+**Status before the latest Level 4–5 tuning:** passed by the user for the ordered-arrow correction. Because Levels 4–5 have now changed, the full suite must be rerun once more.
 
-- `scripts/gameplay/level_solver.gd` counts complete clear orders, finds one solution, reports opening moves, and detects reachable dead ends.
-- `tests/test_vertical_slice_levels.gd` loads the five canonical JSON levels and checks their structure, opening curve, solution counts, and solvability.
+### Gate 2 — Gameplay regression
 
-Local verification command:
+Verify movement, hints, restart, refill, automatic final clear, failure/result flow, and direction matching.
 
-```bash
-godot --headless --path . --script tests/test_vertical_slice_levels.gd
-```
+**Status before latest level-data tuning:** passed. Snake-style corner escape was also manually approved afterward.
 
-### Gate 3 — Director playtest
+### Gate 3 — New-player comprehension
 
-Each level is played three times:
+Verify without verbal explanation that players understand:
 
-1. first-time player behaviour;
-2. deliberate wrong-tap and recovery behaviour;
-3. replay for speed and optimal moves.
+- which endpoint is the arrowhead;
+- which way a path will move;
+- blocking;
+- bent paths;
+- menu start hierarchy.
 
-Record:
-
-- time to first move;
-- completion time;
-- mistakes;
-- hints;
-- restarts;
-- confusing paths;
-- accidental selections;
-- emotional rhythm: clear, satisfying, dull, frustrating, or surprising.
+**Status:** passed for the corrected ordered-path visual language. Levels 4–5 require a difficulty retest because their layouts have changed.
 
 ### Gate 4 — Device and accessibility QA
 
-Test at minimum:
+Still required:
 
-- 360 × 800 phone;
-- 393 × 873 phone;
-- 412 × 915 phone;
-- one Android phone;
-- one Android tablet;
-- high contrast on/off;
-- reduce motion on/off;
-- sound and haptics on/off.
+- compact phone layout;
+- Android phone;
+- Android tablet;
+- High Contrast;
+- Reduce Motion;
+- sound/haptic persistence;
+- Back/lifecycle behaviour.
 
-### Gate 5 — Flow QA
+### Gate 5 — Final connected-flow approval
 
-Verify:
+Still required after the tuned levels pass.
 
-- F5 starts at Main Menu;
-- Continue selects the intended level;
-- Levels opens and returns correctly;
-- gameplay back, pause, resume, restart, and Main Menu work;
-- Hint highlights a valid path and consumes the correct amount;
-- failure, replay, completion, Next Level, and final-level exit work;
-- progress survives restart.
+## Current level structure
 
-## Current static audit
-
-The counts below were derived from the JSON data using the same directional ray-blocking rule as `MovementValidator`.
-
-| Level | Board | Pieces | Valid opening moves | Full-clear sequences | Intended lesson | Director verdict |
+| Level | Board | Pieces | Opening moves | Full-clear sequences | Main lesson | Current status |
 |---|---:|---:|---:|---:|---|---|
-| 1 | 6×6 | 2 | 2 | 2 | Learn the exit rule with two clearly available moves | Redesigned: structurally matches the lesson. Visual tutorial playtest remains required. |
-| 2 | 8×8 | 3 | 1 | 1 | Understand one obvious blocker | Conditional: clean forced sequence, but the blocker lesson must be verified visually and through first-time play. |
-| 3 | 8×10 | 4 | 3 | 12 | Read a bent path | Conditional: introduces a bend, but three openings may dilute the lesson and make the level feel less authored. |
-| 4 | 8×8 | 8 | 2 | 7 | Choose between valid moves | Promising: two openings and limited solution variety fit the intended lesson. Requires touch-density review. |
-| 5 | 8×8 | 8 | 1 | 6 | Representative 45–90 second challenge | Redesigned: one clear entry move and a limited dependency chain. Timing, readability, and satisfaction remain unverified. |
+| 1 | 6×6 | 2 | 2 | 2 | Rule discovery | Teaching and fresh-save `FREE` state verified |
+| 2 | 6×6 | 3 | 1 | 1 | Blocking | Comprehension verified |
+| 3 | 6×6 | 4 | 3 | 12 | Bent-path reading | Comprehension verified |
+| 4 | 8×8 | 9 | 2 | 15 | Two meaningful safe chains | Newly tuned; parser/solver/playtest pending |
+| 5 | 8×8 | 10 | 1 | 10 | Deeper staged dependency chain | Newly tuned; parser/solver/playtest pending |
 
-## Level decisions
+## Level 4 direction
 
-### Level 1
+The previous Level 4 had eight pieces and seven solution orders, but structurally it behaved mostly like one long forced chain plus an almost-independent extra opening. That made the initial two-choice promise less meaningful than it looked.
 
-The data redesign is complete.
+The tuned Level 4 now has:
 
-Current structure:
+- nine pieces;
+- six bent paths, giving the approved snake motion useful but readable exposure;
+- exactly two opening moves;
+- each opening immediately reveals a different next safe path;
+- fifteen complete solution orders;
+- constrained branching rather than one disposable side move.
 
-- two straight paths;
-- both are immediately safe;
-- either can be selected first;
-- the other remains available;
-- exactly two full-clear orders;
-- target completion time remains 5–15 seconds.
+Structural acceptance targets encoded in tests:
 
-Approval still requires observing a first-time player without explaining the rule.
+```text
+initial openings: [1, 5]
+after clearing 1: [4, 5]
+after clearing 5: [1, 7]
+solutions: 15
+```
 
-### Level 2
+**Director intention:** the player should feel they have two legitimate ways to start, then repeatedly re-read the board as each branch changes.
 
-Keep temporarily and playtest.
+Target first-time duration: **20–35 seconds**. This is a playtest target, not an automated guarantee.
 
-Target observation:
+## Level 5 direction
 
-- player notices the blocked path;
-- one wrong tap clearly communicates blocking;
-- no explanation beyond concise feedback is required;
-- completion in roughly 10–20 seconds.
+The previous Level 5 had eight pieces, one opening, and six solution orders. It was structurally authored but still completed too quickly by experienced and new players.
 
-### Level 3
+The tuned Level 5 now has:
 
-Revise only after playtest evidence.
+- ten pieces;
+- five bent paths;
+- one clear opening;
+- a visible forced opening chain that teaches the player to follow dependencies rather than tap randomly;
+- the first real branch only after several successful reads;
+- ten complete solution orders, allowing some choice without becoming random cleanup.
 
-Target:
+Structural sequence encoded in tests:
 
-- bent path is the visual focus;
-- at most two strong opening candidates unless three choices are intentionally taught;
-- no close overlapping touch regions;
-- completion in roughly 15–30 seconds.
+```text
+start               → [5]
+after 5             → [6]
+after 5,6           → [9]
+after 5,6,9         → [7]
+after 5,6,9,7       → [4]
+after 5,6,9,7,4     → [2, 8]
+```
 
-### Level 4
+**Director intention:** Level 5 should feel like the first small complete Pathbreak puzzle: readable, deliberate, satisfying, and long enough to require several board re-evaluations.
 
-Keep as the strongest existing candidate.
+Target first-time duration: **30–45 seconds**. This remains a playtest target.
 
-Target:
+## Snake escape animation
 
-- two valid openings are both readable;
-- different orders feel meaningfully different but remain safe;
-- no accidental taps on the denser board;
-- completion in roughly 25–50 seconds.
+The bent-path escape language is now part of the slice foundation.
 
-### Level 5
+The user manually verified that a corner path:
 
-The structural redesign is complete.
+1. moves head-first;
+2. pulls the body through its existing bend;
+3. keeps the visible bend until the tail reaches it;
+4. becomes straight;
+5. exits as a straight path.
 
-Current structure:
+Do not regress to rigid L-shape translation.
 
-- eight pieces;
-- one initial valid move;
-- six complete solution orders rather than 13,440;
-- an authored chain with a small amount of safe branching;
-- several bent paths using only previously introduced rules;
-- target completion time remains 45–90 seconds.
+See `SNAKE_ESCAPE_ANIMATION.md`.
 
-Approval still depends on whether the chain is understandable and satisfying on a real phone. Structural difficulty must not become visual confusion.
+## Difficulty philosophy
 
-## Slice difficulty curve
+Difficulty must come from **understandable dependency reading**, not from:
 
-Expected progression:
+- misleading arrowheads;
+- tiny paths;
+- ambiguous taps;
+- unnecessary visual clutter;
+- random numbers of pieces;
+- hidden rules.
 
-| Level | Cognitive load | Opening choice | Expected first-time duration |
-|---|---|---:|---:|
-| 1 | Rule discovery | 2 obvious | 5–15 s |
-| 2 | Blocking | 1 | 10–20 s |
-| 3 | Shape reading | 1–2 preferred; currently 3 | 15–30 s |
-| 4 | Safe choice | 2 | 25–50 s |
-| 5 | Combined reasoning | 1 | 45–90 s |
+A good harder level makes the player stop and inspect the board, then feel confident when the chosen path escapes.
 
-A level is not harder merely because it has more pieces. Difficulty should come from understandable dependencies, not visual clutter or ambiguous taps.
+## Next verification sequence
 
-## Player test script
+1. Run parser scan on the current head.
+2. Run ordered-path geometry tests; expected `7/7`.
+3. Run movement validator and level-data validator.
+4. Run vertical-slice tests; expected `7/7` with Level 4 = 15 solutions and Level 5 = 10 solutions.
+5. Play Level 4 three times and record time/mistakes/hints.
+6. Play Level 5 three times and record time/mistakes/hints.
+7. Give tuned Levels 4–5 to at least one player without explaining the solution.
+8. Keep the layouts only if the extra time comes from reasoning rather than confusion.
+9. Proceed to Android phone/tablet verification.
 
-Do not explain the controls before Level 1.
+## Approval rule
 
-Ask after each level:
+Do not approve the slice merely because the solver passes. Levels 4–5 must also hit the intended emotional rhythm:
 
-1. What did you think the rule was?
-2. Which path did you expect to move?
-3. Did any tap select something you did not intend?
-4. Did the mistake feel fair?
-5. Was the level too easy, right, or confusing?
+```text
+read → decide → satisfying escape → board changes → read again
+```
 
-Do not correct the player during the first attempt unless the game becomes unusable.
-
-## Approval scorecard
-
-Score each item from 0 to 2:
-
-- rule clarity;
-- touch trust;
-- visual readability;
-- difficulty fit;
-- satisfying feedback;
-- restart/hint usefulness;
-- completion flow;
-- replay value;
-- phone layout;
-- tablet layout.
-
-Interpretation:
-
-- 18–20: approved;
-- 15–17: approved with minor changes;
-- 11–14: revise and retest;
-- 0–10: redesign.
-
-## Current gate status
-
-- Automated solver and slice-specific test suite: implemented, local Godot verification pending.
-- Level 1: structurally redesigned; playtest required.
-- Level 2: playtest required.
-- Level 3: playtest and likely tuning required.
-- Level 4: playtest required; strongest existing candidate.
-- Level 5: structurally redesigned; playtest required.
-- Final UI/art direction: deferred.
-- Mass level production: blocked until all five levels pass.
-
-## Next implementation sequence
-
-1. Run the Godot parser scan and all three test suites.
-2. Conduct a complete five-level director playtest from Main Menu.
-3. Record screenshots, completion times, mistakes, hints, and confusing moments for each level.
-4. Tune Levels 2–4 using the recorded evidence.
-5. Repeat automated tests after every level-data change.
-6. Test on Android phone and tablet.
-7. Approve or reject the slice as a complete package.
+The vertical slice remains open until the tuned levels and Android QA pass.
