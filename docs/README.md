@@ -12,11 +12,12 @@ Read these files in order:
 2. `../TASKS.md`
 3. `ARROW_SYSTEM_AUDIT.md`
 4. `SNAKE_ESCAPE_ANIMATION.md`
-5. `ANDROID_DEVICE_VERIFICATION_2026-08-07.md`
-6. `ANDROID_VERTICAL_SLICE_QA.md`
-7. This index
-8. `DECISIONS.md` and `AI_ANTI_SLOP_STANDARD.md`
-9. Latest playtest and testing checklist
+5. `SATISFACTION_BLUEPRINT.md`
+6. `ANDROID_DEVICE_VERIFICATION_2026-08-07.md`
+7. `ANDROID_VERTICAL_SLICE_QA.md`
+8. This index
+9. `DECISIONS.md` and `AI_ANTI_SLOP_STANDARD.md`
+10. Latest playtest and testing checklist
 
 ## Source-of-truth order
 
@@ -25,12 +26,13 @@ Read these files in order:
 3. `../TASKS.md` for execution order.
 4. `ARROW_SYSTEM_AUDIT.md` for the ordered path/head correction.
 5. `SNAKE_ESCAPE_ANIMATION.md` for corner-following escape motion.
-6. `ANDROID_DEVICE_VERIFICATION_2026-08-07.md` for completed physical tablet evidence.
-7. `ANDROID_VERTICAL_SLICE_QA.md` for remaining Android checks.
-8. `VERTICAL_SLICE_REVIEW.md` for approval gates.
-9. Latest dated playtest evidence.
-10. `DECISIONS.md` and focused specifications.
-11. Historical PR descriptions and old conversation notes.
+6. `SATISFACTION_BLUEPRINT.md` for Pathbreak's product differentiation and post-slice feel prototype.
+7. `ANDROID_DEVICE_VERIFICATION_2026-08-07.md` for completed physical tablet evidence.
+8. `ANDROID_VERTICAL_SLICE_QA.md` for remaining Android checks.
+9. `VERTICAL_SLICE_REVIEW.md` for approval gates.
+10. Latest dated playtest evidence.
+11. `DECISIONS.md` and focused specifications.
+12. Historical PR descriptions and old conversation notes.
 
 When documents disagree, update the stale document rather than guessing.
 
@@ -42,6 +44,7 @@ When documents disagree, update the stale document rather than guessing.
 | `../TASKS.md` | Current | Prioritised execution tracker |
 | `ARROW_SYSTEM_AUDIT.md` | Current | Root cause, ordered-path migration, tests, risks |
 | `SNAKE_ESCAPE_ANIMATION.md` | Manually verified | Corner-following escape motion and regression checks |
+| `SATISFACTION_BLUEPRINT.md` | Approved direction | Product differentiation, feel rules, prototype scope, and clip test |
 | `ANDROID_DEVICE_VERIFICATION_2026-08-07.md` | Verified evidence | Physical Samsung Galaxy Tab S6 Lite QA report |
 | `ANDROID_VERTICAL_SLICE_QA.md` | Active | Remaining phone, lifecycle, accessibility, and device QA |
 | `VERTICAL_SLICE_REVIEW.md` | Current | Approval criteria and Levels 1–5 review |
@@ -68,6 +71,9 @@ When documents disagree, update the stale document rather than guessing.
 - Ordered-arrow parser/movement/comprehension gates passed.
 - Static path visuals are accepted.
 - Snake-like corner escape is manually accepted.
+- Product direction is now **the satisfying living-path puzzle**.
+- Product quality rule is **clarity first, satisfaction second, spectacle third**.
+- After vertical-slice approval, `Satisfaction Prototype v1` comes before mass level production and final UI art.
 - Levels 4–5 are frozen after the latest two-person 30–40 second timing pass.
 - Final current-head parser/migration/geometry/movement/data/vertical-slice regression passed before the Android tablet deployment.
 - The debug APK exported, installed, and launched successfully on Samsung Galaxy Tab S6 Lite (`SM_P615`, Android 13).
