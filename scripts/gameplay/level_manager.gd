@@ -28,10 +28,8 @@ const BOTTOM_RESERVED := 190.0
 const SIDE_MARGIN := 24.0
 const MAX_BOARD_SCALE := 1.25
 const HINT_REFILL_AMOUNT := 3
-const NEWLY_FREED_REVEAL_DELAY := 0.20
-const NEWLY_FREED_REVEAL_DELAY_REDUCED := 0.10
-const RESULT_SETTLE_DELAY := 0.24
-const RESULT_SETTLE_DELAY_REDUCED := 0.08
+const FINISH_GAP_AFTER_ESCAPE := 0.015
+const REDUCE_MOTION_RESULT_GAP := 0.040
 
 func _ready() -> void:
 	_load_levels()
@@ -167,26 +165,28 @@ func _on_piece_tapped(piece: PuzzlePiece) -> void:
 
 	move_count += 1
 	if board.can_piece_escape(piece):
-		var previously_escapable: PackedInt32Array = board.get_escapable_piece_ids()
 		AudioManager.play_move_sound()
 		SettingsManager.play_haptic(&"success")
 		board.remove_piece_occupancy(piece)
+		var escape_duration := piece.get_escape_animation_duration()
 		piece.animate_successful_escape()
 		remaining_pieces -= 1
 
 		if remaining_pieces == 1:
 			_lock_gameplay()
-			get_tree().create_timer(0.32).timeout.connect(_auto_clear_final_piece)
+			get_tree().create_timer(escape_duration + FINISH_GAP_AFTER_ESCAPE).timeout.connect(
+				_auto_clear_final_piece
+			)
 			return
 
 		if remaining_pieces <= 0:
 			_lock_gameplay()
-			get_tree().create_timer(0.28).timeout.connect(_on_level_completed)
+			get_tree().create_timer(escape_duration + FINISH_GAP_AFTER_ESCAPE).timeout.connect(
+				_on_level_completed
+			)
 			return
 
-		var newly_escapable: Array[PuzzlePiece] = board.get_newly_escapable_pieces(previously_escapable)
-		_schedule_newly_freed_feedback(newly_escapable)
-		get_tree().create_timer(0.35).timeout.connect(func() -> void:
+		get_tree().create_timer(escape_duration + 0.06).timeout.connect(func() -> void:
 			if not input_locked:
 				board.update_assist_pulses(current_level_idx == 0 and not SaveManager.tutorial_completed)
 		)
@@ -206,22 +206,6 @@ func _on_piece_tapped(piece: PuzzlePiece) -> void:
 		if lives_left <= 0:
 			_lock_gameplay()
 			get_tree().create_timer(0.35).timeout.connect(_show_fail_screen)
-
-func _schedule_newly_freed_feedback(candidates: Array[PuzzlePiece]) -> void:
-	if candidates.is_empty():
-		return
-	var reveal_delay := (
-		NEWLY_FREED_REVEAL_DELAY_REDUCED
-		if SettingsManager.reduce_motion
-		else NEWLY_FREED_REVEAL_DELAY
-	)
-	get_tree().create_timer(reveal_delay).timeout.connect(func() -> void:
-		if not is_instance_valid(board):
-			return
-		var signalled: int = board.play_newly_freed_feedback(candidates)
-		if signalled > 0:
-			AudioManager.play_unlock_sound()
-	)
 
 func _auto_clear_final_piece() -> void:
 	if remaining_pieces != 1:
@@ -243,18 +227,23 @@ func _auto_clear_final_piece() -> void:
 		hud.set_controls_enabled(true)
 		return
 
-	hud.show_message("Last path clears itself", true)
+	if current_level_idx == 0 and not SaveManager.tutorial_completed:
+		hud.show_message("Last path clears itself", true)
+
 	final_piece.play_final_clear_preview()
-	var preview_duration := 0.12 if SettingsManager.reduce_motion else 0.44
+	var preview_duration := final_piece.get_final_clear_preview_duration()
 	get_tree().create_timer(preview_duration).timeout.connect(func() -> void:
 		if not is_instance_valid(final_piece) or final_piece.is_removed:
 			return
+		var final_escape_duration := final_piece.get_escape_animation_duration()
 		AudioManager.play_move_sound()
 		SettingsManager.play_haptic(&"light")
 		board.remove_piece_occupancy(final_piece)
 		final_piece.animate_successful_escape()
 		remaining_pieces = 0
-		get_tree().create_timer(0.30).timeout.connect(_on_level_completed)
+		get_tree().create_timer(final_escape_duration + FINISH_GAP_AFTER_ESCAPE).timeout.connect(
+			_on_level_completed
+		)
 	)
 
 func _show_fail_screen() -> void:
@@ -289,7 +278,11 @@ func _on_level_completed() -> void:
 		level_data_list.size()
 	)
 
-	var settle_delay := RESULT_SETTLE_DELAY_REDUCED if SettingsManager.reduce_motion else RESULT_SETTLE_DELAY
+	var settle_delay := (
+		REDUCE_MOTION_RESULT_GAP
+		if SettingsManager.reduce_motion
+		else board.get_completion_settle_duration()
+	)
 	get_tree().create_timer(settle_delay).timeout.connect(func() -> void:
 		_show_result_popup(elapsed_seconds, hints_used)
 	)
@@ -399,7 +392,7 @@ func _on_hint_refill_cancelled() -> void:
 func _close_hint_refill_popup(resume_gameplay: bool) -> void:
 	if hint_refill_popup != null:
 		hint_refill_popup.queue_free()
-		hint_refill_popup = null
+	hint_refill_popup = null
 	if resume_gameplay:
 		input_locked = false
 		board.set_input_enabled(true)
