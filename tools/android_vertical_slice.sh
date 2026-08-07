@@ -64,7 +64,11 @@ check_project() {
     echo "ERROR: JSON level files are not included by the export preset."
     exit 1
   }
-  echo "Project and Android Debug preset found."
+  grep -q '^window/handheld/orientation=1$' "$PROJECT_ROOT/project.godot" || {
+    echo "ERROR: Pathbreak mobile orientation is not locked to portrait (SCREEN_PORTRAIT = 1)."
+    exit 1
+  }
+  echo "Project, portrait orientation, and Android Debug preset found."
 }
 
 check_godot() {
@@ -131,6 +135,7 @@ run_regression() {
   print_header "Godot parser and regression suite"
   cd "$PROJECT_ROOT"
   "$GODOT_BIN" --headless --path . --editor --quit
+  "$GODOT_BIN" --headless --path . --script tests/test_mobile_project_settings.gd
   "$GODOT_BIN" --headless --path . --script tools/path_level_migration_preview.gd
   "$GODOT_BIN" --headless --path . --script tests/test_path_visual_geometry.gd
   "$GODOT_BIN" --headless --path . --script tests/test_movement_validator.gd
@@ -184,7 +189,7 @@ Usage:
   bash tools/android_vertical_slice.sh logcat
 
 Commands:
-  check    Verify Godot, Java, Android SDK, export preset, and connected devices.
+  check    Verify portrait config, Godot, Java, Android SDK, export preset, and connected devices.
   test     Run the Pathbreak parser + automated regression suites.
   export   Run checks and create builds/android/pathbreak-debug.apk.
   install  Install the existing APK to an authorized Android device.
