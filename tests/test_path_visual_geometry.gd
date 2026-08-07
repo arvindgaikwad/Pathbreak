@@ -113,30 +113,39 @@ func test_shaft_trim_preserves_logic_endpoint() -> bool:
 	)
 
 func test_snake_route_follows_corner() -> bool:
-	var points := PackedVector2Array([
+	var route := PackedVector2Array([
 		Vector2(0.0, 0.0),
 		Vector2(64.0, 0.0),
-		Vector2(64.0, 64.0)
+		Vector2(64.0, 64.0),
+		Vector2(64.0, 256.0)
 	])
-	var dense := PathVisualGeometryScript.densify_polyline(points, 8.0)
-	var distances := PathVisualGeometryScript.cumulative_distances(dense)
-	if dense.size() < 3 or distances.is_empty():
+	var body_length := 128.0
+
+	var early := PathVisualGeometryScript.slice_polyline(route, 32.0, 32.0 + body_length)
+	if early.size() != 4:
 		return false
-	if not dense.has(Vector2(64.0, 0.0)):
+	if not early[0].is_equal_approx(Vector2(32.0, 0.0)):
 		return false
-	if not is_equal_approx(distances[-1], 128.0):
+	if not early[1].is_equal_approx(Vector2(64.0, 0.0)):
+		return false
+	if not early[2].is_equal_approx(Vector2(64.0, 64.0)):
+		return false
+	if not early[3].is_equal_approx(Vector2(64.0, 96.0)):
 		return false
 
-	var route := points.duplicate()
-	route.append(Vector2(64.0, 256.0))
-	var travel := 32.0
-	var moved_tail := PathVisualGeometryScript.point_at_distance(route, travel)
-	var moved_corner := PathVisualGeometryScript.point_at_distance(route, 64.0 + travel)
-	var moved_head := PathVisualGeometryScript.point_at_distance(route, 128.0 + travel)
+	var straightened := PathVisualGeometryScript.slice_polyline(
+		route,
+		body_length,
+		body_length * 2.0
+	)
 	return (
-		moved_tail.is_equal_approx(Vector2(32.0, 0.0))
-		and moved_corner.is_equal_approx(Vector2(64.0, 32.0))
-		and moved_head.is_equal_approx(Vector2(64.0, 96.0))
+		straightened.size() == 2
+		and straightened[0].is_equal_approx(Vector2(64.0, 64.0))
+		and straightened[1].is_equal_approx(Vector2(64.0, 192.0))
+		and is_equal_approx(
+			PathVisualGeometryScript.polyline_length(straightened),
+			body_length
+		)
 	)
 
 func test_all_authored_levels_are_canonical() -> bool:
