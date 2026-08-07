@@ -5,6 +5,7 @@ const PuzzlePieceDataScript = preload("res://scripts/gameplay/puzzle_piece_data.
 const PathVisualGeometryScript = preload("res://scripts/gameplay/path_visual_geometry.gd")
 const LevelDataValidatorScript = preload("res://scripts/gameplay/level_data_validator.gd")
 const LevelSolverScript = preload("res://scripts/gameplay/level_solver.gd")
+const EditorGridScript = preload("res://scripts/editor/editor_grid.gd")
 
 var board_bounds := Rect2i(0, 0, 8, 8)
 var grid_size := 64.0
@@ -12,13 +13,13 @@ var pieces_data: Array[Dictionary] = []
 var current_path: Array[Vector2i] = []
 var is_drawing := false
 
-@onready var grid_dots = $BoardPivot/GridDots
+@onready var grid_dots: Node2D = $BoardPivot/GridDots
 @onready var board_pivot: Node2D = $BoardPivot
 @onready var validate_label: Label = $UI/Sidebar/ValidateLabel
 @onready var metrics_label: Label = $UI/Sidebar/MetricsLabel
 
 func _ready() -> void:
-	grid_dots.set_script(preload("res://scripts/gameplay/board_manager.gd"))
+	grid_dots.set_script(EditorGridScript)
 	grid_dots.update_grid(board_bounds, grid_size)
 
 	$UI/Sidebar/SaveButton.pressed.connect(_on_save_pressed)
@@ -83,8 +84,8 @@ func _finish_current_path() -> void:
 	_refresh_pieces()
 	_mark_analysis_dirty()
 
-func _mouse_to_grid(position: Vector2) -> Vector2i:
-	var local_position := position - board_pivot.position
+func _mouse_to_grid(screen_position: Vector2) -> Vector2i:
+	var local_position := screen_position - board_pivot.position
 	var offset_x := -(board_bounds.size.x * grid_size) / 2.0
 	var offset_y := -(board_bounds.size.y * grid_size) / 2.0
 	var grid_position := local_position - Vector2(offset_x, offset_y)
@@ -116,8 +117,8 @@ func _refresh_pieces() -> void:
 func _draw() -> void:
 	if current_path.is_empty():
 		return
-	var offset_x := -(board_bounds.size.x * grid_size) / 2.0
-	var offset_y := -(board_bounds.size.y * grid_size) / 2.0
+	var offset_x := board_pivot.position.x - (board_bounds.size.x * grid_size) / 2.0
+	var offset_y := board_pivot.position.y - (board_bounds.size.y * grid_size) / 2.0
 	var points := PackedVector2Array()
 	for cell in current_path:
 		points.append(
