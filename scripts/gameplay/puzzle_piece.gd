@@ -39,6 +39,8 @@ const SNAKE_ESCAPE_DURATION := 0.240
 const REDUCE_MOTION_ESCAPE_DURATION := 0.180
 const SNAKE_UNCOIL_PHASE := 0.72
 const EXIT_ACCELERATION_POWER := 1.35
+const FINAL_CLEAR_PREVIEW_DURATION := 0.090
+const FINAL_CLEAR_PREVIEW_DURATION_REDUCED := 0.040
 
 func init_from_data(data: PuzzlePieceData, new_grid_size: float = 64.0) -> void:
 	piece_data = data
@@ -248,10 +250,18 @@ func _set_release_activation_amount(amount: float) -> void:
 	set_color(_normal_color().lerp(COLOR_ACCENT, safe_amount))
 	line.width = _base_line_width() * (1.0 + safe_amount * 0.075)
 
+func _set_final_clear_preview_amount(amount: float) -> void:
+	var safe_amount := clampf(amount, 0.0, 1.0)
+	set_color(_normal_color().lerp(COLOR_ACCENT, safe_amount * 0.72))
+	line.width = _base_line_width() * (1.0 + safe_amount * 0.045)
+
 func get_escape_animation_duration() -> float:
 	if _is_reduce_motion():
 		return REDUCE_MOTION_ESCAPE_DURATION
 	return RELEASE_ACTIVATION_RISE + RELEASE_ACTIVATION_SETTLE + SNAKE_ESCAPE_DURATION
+
+func get_final_clear_preview_duration() -> float:
+	return FINAL_CLEAR_PREVIEW_DURATION_REDUCED if _is_reduce_motion() else FINAL_CLEAR_PREVIEW_DURATION
 
 func animate_successful_escape() -> void:
 	if is_removed:
@@ -442,20 +452,26 @@ func play_final_clear_preview() -> void:
 	_stop_release_tween()
 	_stop_pulse()
 	reset_color()
+
+	# The last path is already the only remaining answer, so this is a short whole-path
+	# "mechanism ready" breath rather than the travelling marker used by explicit hints.
 	if _is_reduce_motion():
-		set_color(COLOR_ACCENT)
+		_set_final_clear_preview_amount(0.55)
 		return
+
 	direction_tween = create_tween()
 	direction_tween.tween_method(
-		_set_direction_marker_progress,
-		MARKER_START_PROGRESS,
-		MARKER_END_PROGRESS,
-		0.38
-	).set_trans(Tween.TRANS_SINE)
-	direction_tween.tween_callback(func() -> void:
-		_hide_direction_marker()
-		set_color(COLOR_ACCENT)
-	)
+		_set_final_clear_preview_amount,
+		0.0,
+		0.72,
+		0.055
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	direction_tween.tween_method(
+		_set_final_clear_preview_amount,
+		0.72,
+		0.42,
+		0.035
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 func set_idle_pulse(enabled: bool) -> void:
 	_stop_pulse()
